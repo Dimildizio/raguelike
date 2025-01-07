@@ -14,18 +14,37 @@ class Entity(ABC):
             PREPROCESSED_TILE_SIZE,
             DISPLAY_TILE_SIZE
         )
-        self.sprite = self.sprite_loader.load_sprite(sprite_path)
+        self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
         self.outline = None
+        self.pil_outline = None
         if outline_path:
-            self.outline = self.sprite_loader.load_sprite(outline_path)
+            self.outline, self.pil_outline = self.sprite_loader.load_sprite(outline_path)
 
         # Breathing animation properties
         self.rotation = 0
         self.current_angle = 0
         self.target_angle = random.uniform(-BREATHING_AMPLITUDE, BREATHING_AMPLITUDE)
         self.breath_speed = random.uniform(0.5, 1.5) * BREATHING_SPEED
-        self.is_breathing_in = True  # Direction of breathing
+        self.is_breathing_in = True
 
+    def draw(self, screen, offset_x=0, offset_y=0):
+        # Draw outline first (if exists) - no rotation
+        if self.outline:
+            outline_rect = self.outline.get_rect(center=(
+                self.x + DISPLAY_TILE_SIZE // 2 + offset_x,
+                self.y + DISPLAY_TILE_SIZE // 2 + offset_y
+            ))
+            screen.blit(self.outline, outline_rect)
+
+        # Draw entity sprite with PIL-based rotation
+        if self.pil_sprite:
+            rotated_surface = self.sprite_loader.rotate_sprite(self.pil_sprite, self.rotation)
+            if rotated_surface:
+                sprite_rect = rotated_surface.get_rect(center=(
+                    self.x + DISPLAY_TILE_SIZE // 2 + offset_x,
+                    self.y + DISPLAY_TILE_SIZE // 2 + offset_y
+                ))
+                screen.blit(rotated_surface, sprite_rect)
     def update_breathing(self):
         # Move current angle towards target angle
         if self.is_breathing_in:
@@ -47,22 +66,6 @@ class Entity(ABC):
         # Update rotation (add base_rotation for characters that face different directions)
         self.rotation = self.current_angle
 
-    def draw(self, screen, offset_x=0, offset_y=0):
-        # Draw outline first (if exists) - no rotation
-        if self.outline:
-            outline_rect = self.outline.get_rect(center=(
-                self.x + DISPLAY_TILE_SIZE // 2 + offset_x,
-                self.y + DISPLAY_TILE_SIZE // 2 + offset_y
-            ))
-            screen.blit(self.outline, outline_rect)
-
-        # Draw entity sprite with rotation
-        rotated_sprite = pygame.transform.rotate(self.sprite, self.rotation)
-        sprite_rect = rotated_sprite.get_rect(center=(
-            self.x + DISPLAY_TILE_SIZE // 2 + offset_x,
-            self.y + DISPLAY_TILE_SIZE // 2 + offset_y
-        ))
-        screen.blit(rotated_sprite, sprite_rect)
     @abstractmethod
     def update(self):
         pass

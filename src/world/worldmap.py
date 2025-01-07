@@ -7,6 +7,7 @@ from entities.monster import Monster
 from entities.npc import NPC
 from constants import SPRITES
 from utils.sprite_loader import SpriteLoader
+from systems.combat_animation import CombatAnimation
 
 
 class WorldMap:
@@ -15,6 +16,8 @@ class WorldMap:
         self.width = width
         self.height = height
         self.tile_size = DISPLAY_TILE_SIZE
+        self.combat_animation = CombatAnimation()
+
         self.sprite_loader = SpriteLoader(
             ORIGINAL_SPRITE_SIZE,
             PREPROCESSED_TILE_SIZE,
@@ -38,25 +41,38 @@ class WorldMap:
                 
                 # Create tile with preprocessed sprite
                 self.tiles[y][x] = Tile(pixel_x, pixel_y, SPRITES["FLOOR"])
-    
-    def draw(self, screen, camera_x=0, camera_y=0):
-        # Draw all tiles
-        for row in self.tiles:
-            for tile in row:
-                tile.draw(screen, -camera_x, -camera_y)
-        
-        # Draw all entities
-        for entity in self.entities:
-            entity.draw(screen, -camera_x, -camera_y)
 
-    def add_entity(self, entity, tile_x, tile_y):
-        # Convert tile coordinates to pixel coordinates
-        entity.x = tile_x * self.tile_size
-        entity.y = tile_y * self.tile_size
-        self.entities.append(entity)
-        
-        # Update tile's entity reference
-        self.tiles[tile_y][tile_x].entity = entity
+    def update(self):
+        for entity in self.entities:
+            entity.update()
+        if hasattr(self, 'combat_animation'):
+            self.combat_animation.update()
+
+    def draw(self, screen, camera_x=0, camera_y=0):
+        # Draw tiles
+        for y in range(self.height):
+            for x in range(self.width):
+                self.tiles[y][x].draw(screen, -camera_x, -camera_y)
+
+        # Draw entities with potential shake offset
+        for entity in self.entities:
+            draw_x = entity.x
+            draw_y = entity.y
+
+            # Apply shake offset if this is the target entity
+            if (hasattr(self, 'combat_animation') and
+                    self.combat_animation.is_playing and
+                    entity == self.combat_animation.target):
+                draw_x += self.combat_animation.shake_offset[0]
+                draw_y += self.combat_animation.shake_offset[1]
+
+            # Draw the entity at the calculated position
+            entity.draw(screen, -camera_x + (draw_x - entity.x), -camera_y + (draw_y - entity.y))
+
+        # Draw combat animation effects
+        if hasattr(self, 'combat_animation'):
+            self.combat_animation.draw(screen, camera_x, camera_y)
+
     
     def remove_entity(self, entity):
         if entity in self.entities:
@@ -75,15 +91,16 @@ class WorldMap:
         # Check if movement is valid
         if not (0 <= new_tile_x < self.width and 0 <= new_tile_y < self.height):
             return False
-            
-        # Get entity at destination tile
-        destination_entity = self.tiles[new_tile_y][new_tile_x].entity
-        
+
+            # Get entity at destination tile
+        destination_tile = self.tiles[new_tile_y][new_tile_x]
+        destination_entity = destination_tile.entity
+
         # Check if destination has an entity
         if destination_entity is not None:
             # If player moves into monster, trigger combat
             if isinstance(entity, Character) and isinstance(destination_entity, Monster):
-                self.state_manager.enter_combat([destination_entity])
+                self.combat_animation.start_attack(entity, destination_entity)
             return False
             
         # Clear old tile's entity reference
@@ -98,33 +115,6 @@ class WorldMap:
         # Update new tile's entity reference
         self.tiles[new_tile_y][new_tile_x].entity = entity
         return True
-        
-    def draw(self, screen, camera_x=0, camera_y=0):
-        # Calculate visible area
-        visible_start_x = camera_x // self.tile_size
-        visible_start_y = camera_y // self.tile_size
-        visible_end_x = visible_start_x + (WINDOW_WIDTH // self.tile_size) + 2
-        visible_end_y = visible_start_y + (WINDOW_HEIGHT // self.tile_size) + 2
-        
-        # Clamp to map bounds
-        visible_start_x = max(0, visible_start_x)
-        visible_start_y = max(0, visible_start_y)
-        visible_end_x = min(self.width, visible_end_x)
-        visible_end_y = min(self.height, visible_end_y)
-        
-        # Draw only visible tiles
-        for y in range(visible_start_y, visible_end_y):
-            for x in range(visible_start_x, visible_end_x):
-                self.tiles[y][x].draw(screen, -camera_x, -camera_y)
-        
-        # Draw visible entities
-        for entity in self.entities:
-            # Check if entity is in visible area
-            entity_tile_x = entity.x // self.tile_size
-            entity_tile_y = entity.y // self.tile_size
-            if (visible_start_x <= entity_tile_x <= visible_end_x and
-                visible_start_y <= entity_tile_y <= visible_end_y):
-                entity.draw(screen, -camera_x, -camera_y)
 
     def get_random_empty_position(self):
         """Find a random empty tile position"""

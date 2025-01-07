@@ -3,6 +3,21 @@ import random
 from utils.sprite_loader import SpriteLoader
 from constants import *
 
+import pygame
+import random
+from utils.sprite_loader import SpriteLoader
+from constants import *
+
+import pygame
+from utils.sprite_loader import SpriteLoader
+from constants import *
+
+import pygame
+import random
+from utils.sprite_loader import SpriteLoader
+from constants import *
+
+
 class Tile:
     def __init__(self, x, y, sprite_path):
         self.x = x
@@ -12,10 +27,17 @@ class Tile:
             PREPROCESSED_TILE_SIZE,
             DISPLAY_TILE_SIZE
         )
-        self.sprite = self.sprite_loader.load_sprite(sprite_path)
+        # Unpack the tuple returned by load_sprite
+        self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
         self.rotation = random.choice([0, 90, 180, 270])
-        self.entity = None  # Stores what's on this tile
-        
+        self.entity = None
+
     def draw(self, screen, offset_x=0, offset_y=0):
-        rotated_sprite = pygame.transform.rotate(self.sprite, self.rotation)
-        screen.blit(rotated_sprite, (self.x + offset_x, self.y + offset_y))
+        if self.pil_sprite:
+            # Use PIL-based rotation
+            rotated_surface = self.sprite_loader.rotate_sprite(self.pil_sprite, self.rotation)
+            if rotated_surface:
+                screen.blit(rotated_surface, (self.x + offset_x, self.y + offset_y))
+        else:
+            # Fallback to regular surface if PIL sprite isn't available
+            screen.blit(self.surface, (self.x + offset_x, self.y + offset_y))

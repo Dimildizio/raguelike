@@ -17,6 +17,7 @@ class NPC(Entity):
 
     def update(self):
         self.update_breathing()
+
     def add_dialog(self, line):
         self.dialog_lines.append(line)
         

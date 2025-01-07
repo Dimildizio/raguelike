@@ -28,6 +28,8 @@ SPRITES = {
     "OUTLINE_GREEN": os.path.join(ASSET_DIR, "outline_green.png"),
     "OUTLINE_YELLOW": os.path.join(ASSET_DIR, "outline_yellow.png"),
     "OUTLINE_RED": os.path.join(ASSET_DIR, "outline_red.png"),
+    "SLASH": os.path.join(ASSET_DIR, "slash.png"),
+
 }
 
 
@@ -95,3 +97,9 @@ DIRECTION_LEFT = 180
 DIRECTION_UP = 90
 DIRECTION_RIGHT = 0
 DIRECTION_PLAYER_START = DIRECTION_LEFT
+
+
+ATTACK_ANIMATION_DURATION = 0.5  # seconds
+ATTACK_DISTANCE = 0.5
+SHAKE_AMPLITUDE = 3  # pixels
+SHAKE_FREQUENCY = 30

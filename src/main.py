@@ -46,8 +46,6 @@ class Game:
             if self.state_manager.current_state == GameState.PLAYING:
                 if self.state_manager.player:  # Check if player exists
                     self.state_manager.player.update()
-                    for entity in self.state_manager.current_map.entities:
-                        entity.update()
                     self.update_camera() 
             elif self.state_manager.current_state == GameState.COMBAT:
                 self.update_combat()
