@@ -7,6 +7,7 @@ from world.worldmap import WorldMap
 from constants import *
 from entities.monster import Monster
 from entities.npc import NPC
+from ui.dialog_ui import DialogUI
 
 
 
@@ -17,6 +18,7 @@ class Game:
         pygame.display.set_caption(GAME_TITLE)
         self.clock = pygame.time.Clock()
         self.state_manager = GameStateManager()
+        self.dialog_ui = DialogUI()
 
     def update_camera(self):
         # Center camera on player
@@ -41,6 +43,10 @@ class Game:
                     running = False
                 self.handle_input(event)
 
+            if (self.state_manager.current_state == GameState.DIALOG and
+                    self.dialog_ui.should_exit):
+                self.dialog_ui.should_exit = False  # Reset flag
+                self.state_manager.change_state(GameState.PLAYING)
             # Updates
             if self.state_manager.current_state == GameState.PLAYING:
                 if self.state_manager.player:  # Check if player exists
@@ -62,6 +68,8 @@ class Game:
                 self.draw_combat()
             elif self.state_manager.current_state == GameState.MAIN_MENU:
                 self.draw_menu()
+            elif self.state_manager.current_state == GameState.DIALOG:
+                self.dialog_ui.draw(self.screen, self.state_manager.current_npc)
 
             pygame.display.flip()
             self.clock.tick(FPS)
@@ -88,6 +96,8 @@ class Game:
             self.handle_combat_input(event)
         elif self.state_manager.current_state == GameState.MAIN_MENU:
             self.handle_menu_input(event)
+        elif self.state_manager.current_state == GameState.DIALOG:
+            self.dialog_ui.handle_input(event)
 
     def handle_combat_input(self, event):
         if event.type == pygame.KEYDOWN:
@@ -138,8 +148,11 @@ class Game:
                 )
 
             # Interaction
-            elif event.key == pygame.K_e:  # Interact
+            if event.key == pygame.K_e:  # Interact
                 # Check adjacent tiles for NPCs
+                player_tile_x = int(self.state_manager.player.x // self.state_manager.current_map.tile_size)
+                player_tile_y = int(self.state_manager.player.y // self.state_manager.current_map.tile_size)
+
                 adjacent_positions = [
                     (player_tile_x + 1, player_tile_y),
                     (player_tile_x - 1, player_tile_y),
@@ -150,6 +163,7 @@ class Game:
                 for pos_x, pos_y in adjacent_positions:
                     tile = self.state_manager.current_map.get_tile_at(pos_x, pos_y)
                     if tile and tile.entity and isinstance(tile.entity, NPC):
+                        self.state_manager.current_npc = tile.entity
                         self.state_manager.change_state(GameState.DIALOG)
                         break
 
@@ -158,6 +172,7 @@ class Game:
                 self.state_manager.change_state(GameState.INVENTORY)
             elif event.key == pygame.K_ESCAPE:  # Menu
                 self.state_manager.change_state(GameState.MAIN_MENU)
+
 
     def handle_menu_input(self, event):
         if event.type == pygame.KEYDOWN:
