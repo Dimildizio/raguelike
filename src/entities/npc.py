@@ -17,15 +17,15 @@ class NPC(Entity):
         # Slower, gentler breathing for NPCs
         self.breath_speed *= 0.7
         self.target_angle *= 0.6
-        self.dialog_lines = []
+
+        self.reputation = 50  # Start with neutral reputation
+        self.active_quests = []
+        self.interaction_history = []
 
     def update(self):
         self.update_breathing()
 
-    def add_dialog(self, line):
-        self.dialog_lines.append(line)
-        
-    def get_next_dialog(self):
-        if self.dialog_lines:
-            return self.dialog_lines[0]  # Could be made more sophisticated with conversation trees
-        return "..."
+    def add_to_history(self, interaction):
+        self.interaction_history.append(interaction)
+        if len(self.interaction_history) > 10:  # Keep last 10 interactions
+            self.interaction_history.pop(0)

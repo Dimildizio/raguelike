@@ -23,6 +23,7 @@ class GameStateManager:
         self.current_map = WorldMap(self)
         self.player = None  # Don't create player until game starts
         self.combat_system = None
+        self.current_npc = None
 
 
 

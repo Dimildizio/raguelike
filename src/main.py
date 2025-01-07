@@ -34,7 +34,14 @@ class Game:
             # Clamp camera position
             self.camera_x = max(0, min(self.camera_x, max_camera_x))
             self.camera_y = max(0, min(self.camera_y, max_camera_y))
-    
+
+
+    def exit_dialogue(self):
+        self.dialog_ui.should_exit = False  # Reset flag
+        self.state_manager.current_npc = None
+        self.dialog_ui.current_npc = None
+        self.state_manager.change_state(GameState.PLAYING)
+
     def run(self):
         running = True
         while running:
@@ -43,10 +50,8 @@ class Game:
                     running = False
                 self.handle_input(event)
 
-            if (self.state_manager.current_state == GameState.DIALOG and
-                    self.dialog_ui.should_exit):
-                self.dialog_ui.should_exit = False  # Reset flag
-                self.state_manager.change_state(GameState.PLAYING)
+            if (self.state_manager.current_state == GameState.DIALOG and self.dialog_ui.should_exit):
+                self.exit_dialogue()
             # Updates
             if self.state_manager.current_state == GameState.PLAYING:
                 if self.state_manager.player:  # Check if player exists
@@ -161,11 +166,14 @@ class Game:
                 ]
 
                 for pos_x, pos_y in adjacent_positions:
-                    tile = self.state_manager.current_map.get_tile_at(pos_x, pos_y)
-                    if tile and tile.entity and isinstance(tile.entity, NPC):
-                        self.state_manager.current_npc = tile.entity
-                        self.state_manager.change_state(GameState.DIALOG)
-                        break
+                    if 0 <= pos_x < self.state_manager.current_map.width and 0 <= pos_y < self.state_manager.current_map.height:
+                        tile = self.state_manager.current_map.tiles[pos_y][pos_x]
+                        if tile and tile.entity and isinstance(tile.entity, NPC):
+                            self.dialog_ui.current_npc = tile.entity
+                            self.state_manager.current_npc = tile.entity
+
+                            self.state_manager.change_state(GameState.DIALOG)
+                            break
 
             # Menu controls
             elif event.key == pygame.K_i:  # Inventory
@@ -271,7 +279,7 @@ class Game:
         pygame.draw.rect(screen, RED, bar_bg_rect)
 
         # Draw current health
-        health_percentage = entity.health / PLAYER_START_HP  # You might want to use max_health instead
+        health_percentage = entity.health / PLAYER_START_HP
         health_width = int(HEALTH_BAR_WIDTH * health_percentage)
         health_rect = pygame.Rect(x, y, health_width, HEALTH_BAR_HEIGHT)
         pygame.draw.rect(screen, GREEN, health_rect)
