@@ -26,25 +26,25 @@ class DialogueProcessor:
         Do not come up with any game-related information that you are not provided with (no quests or rumors except the one that are given to you).
         Do not go out of character and discuss non-game things, apologize and say you dont understand.
         Process player input and respond as the NPC, considering context and player reputation.
-        Respond in JSON format with 'text' (NPC's response) and 'player_inappropriate_request' (true/false).
+        Respond in JSON format with 'player_inappropriate_request' (true/false), 'further_action': (reward, stop, wait), 'text' (NPC's response) .
 
         Examples:
         Player: "Hello there!"
         Context: {{reputation: 50, npc: "Merchant Tom", quests: []}}
-        Response: {{"text": "Welcome to my shop, traveler! How may I help you today?", "player_inappropriate_request": false, "further_action": "continue_dialogue"}}
+        Response: {{"player_inappropriate_request": false, , "further_action": "wait", "text": "Welcome to my shop, traveler! How may I help you today?"}}
 
         Player: "Give me all your money or die!"
-        Context: {{reputation: 30, npc: "Merchant Tom", quests: []}}
-        Response: {{"text": "Guards! We've got a troublemaker here!", "player_inappropriate_request": true, "further_action": "stop_dialogue"}}
+        Context: {{reputation: 30, npc: "Noble Billy", quests: []}}
+        Response: {{"player_inappropriate_request": true, "further_action": "stop", "text": "Guards! We've got a troublemaker here!"}}
 
         Player: "I've completed the delivery quest."
-        Context: {{reputation: 40, npc: "Merchant Tom", quests: ["Deliver package to Tom"]}}
-        Response: {{"text": "Ah, excellent work! Here's your reward. You've proven yourself reliable.", "player_inappropriate_request": false, "further_action": "reward_dialogue"}}
+        Context: {{reputation: 40, npc: "Lady Anna", quests: ["Deliver package to Anna"]}}
+        Response: {{"player_inappropriate_request": false, "further_action": "reward", "text": "Ah, excellent work! Here's your reward. You've proven yourself reliable!"}}
 
         
         Player: "Bye! Have good day!"
         Context: {{reputation: 50, npc: "Vallager Amelia", quests: []}}
-        Response: {{"text": "See you, handsome! It was a pleasure to talk to you!", "player_inappropriate_request": false, "further_action": "stop_dialogue"}}
+        Response: {{"player_inappropriate_request": false, "further_action": "stop", "text": "See you, handsome! It was a pleasure to talk to you!", }}
 
 
         Current context:
@@ -67,23 +67,25 @@ class DialogueProcessor:
         )
 
         if not self.client:
-            return {
-                "text": "Sorry, the dialogue system is currently unavailable.",
-                "player_inappropriate_request": False
+            return {"player_inappropriate_request": False,
+                    "further_action": "stop",
+                    "text": "Sorry, I'm not in a mood for talking today."
             }
 
         try:
-            response = self.client.chat(model=self.model, messages=[
-                {
+            stream = self.client.chat(
+                model=self.model,
+                messages=[{
                     'role': 'system',
                     'content': formatted_prompt
-                }
-            ])
-            print('im response', formatted_prompt, response)
-            return response['message']['content']
+                }],
+                stream=True
+            )
+
+            return stream
         except Exception as e:
             print(f"Error processing dialogue: {e}")
-            return {
-                "text": "Sorry, I'm having trouble understanding you right now.",
-                "player_inappropriate_request": False
+            return {"player_inappropriate_request": False,
+                    "further_action": "wait",
+                    "text": "Sorry, I'm having trouble understanding you right now."
             }

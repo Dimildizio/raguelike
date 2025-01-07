@@ -17,6 +17,10 @@ class DialogUI:
         self.dialogue_processor = DialogueProcessor()
         self.current_response = "Hello traveler! How can I help you today?"
 
+        self.streaming_response = ""
+        self.is_streaming = False
+        self.stream = None
+
         self.SIDE_PANEL_WIDTH = 0.2  # 20% of screen width
         self.TOP_MARGIN = 0.03  # 3% of screen height
         self.PORTRAIT_SIZE = 0.15  # 15% of screen height
@@ -64,6 +68,7 @@ class DialogUI:
         if text.lower() in ["bye", "goodbye", "see you"]:
             self.should_exit = True
             return
+
         try:
             response = self.dialogue_processor.process_dialogue(
                 player_input=text,
@@ -73,32 +78,64 @@ class DialogUI:
                 interaction_history=npc.interaction_history
             )
 
-            # Find the first and last curly braces
-            start_idx = response.find('{')
-            end_idx = response.rfind('}') + 1
-            if start_idx != -1 and end_idx != 0:
-                json_str = response[start_idx:end_idx]
+            # Get the complete response first (not as stream)
+            if isinstance(response, dict):  # Error response
+                self.current_response = response["text"]
+                return
 
-                # Parse JSON response
-                print(f"Parsing JSON: {json_str}")  # Debug print
-                response_data = json.loads(json_str)
-                self.current_response = response_data["text"]
-                npc.add_to_history(text, self.current_response)
+            # Initialize streaming
+            self.stream = response
+            self.streaming_response = ""
+            self.is_streaming = True
+            self.current_response = ""  # Clear current response while streaming
 
-                # Update NPC reputation if request was inappropriate
-                if response_data["player_inappropriate_request"]:
-                    npc.reputation = max(0, npc.reputation - 10)  # Decrease reputation
-
-            else:
-                print(f"Invalid JSON format: {response}")  # Debug print
-                self.current_response = "Sorry, I didn't quite understand that."
-
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")  # Debug print
-            self.current_response = "Sorry, I didn't quite understand that."
         except Exception as e:
             print(f"Unexpected error: {e}")  # Debug print
             self.current_response = "Sorry, I didn't quite understand that."
+
+    def update(self):
+        """Call this in your game loop"""
+        if self.is_streaming and self.stream:
+            try:
+                # Try to get next chunk
+                chunk = next(self.stream, None)
+
+                if chunk is None:
+                    # Stream finished
+                    self.is_streaming = False
+
+                    # Find the actual response text between markers
+                    start_marker = '"text": "'
+                    end_marker = '"}'
+
+                    start_idx = self.streaming_response.find(start_marker)
+                    if start_idx != -1:
+                        start_idx += len(start_marker)  # Move past the marker
+                        end_idx = self.streaming_response.find(end_marker, start_idx)
+                        if end_idx != -1 or '"\n}' != -1 or '" }' != -1:
+                            actual_response = self.streaming_response[start_idx:end_idx]
+                            self.current_response = actual_response
+                            self.current_npc.add_to_history(self.input_text, self.current_response)
+
+                            # Check for inappropriate flag in the remaining JSON
+                            if '"player_inappropriate_request": true' in self.streaming_response:
+                                self.current_npc.reputation = max(0, self.current_npc.reputation - 10)
+                    return
+
+                # Accumulate streaming response
+                if 'message' in chunk and 'content' in chunk['message']:
+                    self.streaming_response += chunk['message']['content']
+
+                    # Try to show partial response by finding the text between markers
+                    start_marker = '"text": "'
+                    start_idx = self.streaming_response.find(start_marker)
+                    if start_idx != -1:
+                        start_idx += len(start_marker)
+                        self.current_response = self.streaming_response[start_idx:]
+
+            except Exception as e:
+                print(f"Streaming error: {e}")
+                self.is_streaming = False
 
     def draw(self, screen, npc):
         screen_width = screen.get_width()

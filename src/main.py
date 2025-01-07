@@ -75,6 +75,7 @@ class Game:
             elif self.state_manager.current_state == GameState.MAIN_MENU:
                 self.draw_menu()
             elif self.state_manager.current_state == GameState.DIALOG:
+                self.dialog_ui.update()
                 self.dialog_ui.draw(self.screen, self.state_manager.current_npc)
 
             pygame.display.flip()
