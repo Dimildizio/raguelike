@@ -1,0 +1,4 @@
+numpy==2.2.1
+ollama==0.4.5
+pillow==11.1.0
+pygame==2.6.1
