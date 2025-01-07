@@ -14,11 +14,12 @@ from ui.dialog_ui import DialogUI
 class Game:
     def __init__(self):
         pygame.init()
+        #self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN)
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption(GAME_TITLE)
         self.clock = pygame.time.Clock()
         self.state_manager = GameStateManager()
-        self.dialog_ui = DialogUI()
+        self.dialog_ui = DialogUI(self.state_manager)
 
     def update_camera(self):
         # Center camera on player
@@ -115,8 +116,19 @@ class Game:
                         damage = self.state_manager.combat_system.process_attack(current_entity, target)
                         self.state_manager.combat_system.next_turn()
 
+    def toggle_fullscreen(self):
+        is_fullscreen = bool(self.screen.get_flags() & pygame.FULLSCREEN)
+        if is_fullscreen:
+            # Switch to windowed mode
+            self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        else:
+            # Switch to fullscreen
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.SCALED)
+
     def handle_playing_input(self, event):
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F11:  # Or any key you prefer
+                self.toggle_fullscreen()
             player_tile_x = self.state_manager.player.x // self.state_manager.current_map.tile_size
             player_tile_y = self.state_manager.player.y // self.state_manager.current_map.tile_size
 

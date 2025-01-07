@@ -25,8 +25,10 @@ NUM_NPCS = 2
 ASSET_DIR = "assets"
 SPRITES = {
     "PLAYER": os.path.join(ASSET_DIR, "player.png"),
+    "HERO_FACE": os.path.join(ASSET_DIR, "hero_face.png"),
     "FLOOR": os.path.join(ASSET_DIR, "floor_tile.png"),
     "NPC": os.path.join(ASSET_DIR, "npc.png"),
+    "NPC_FACE": os.path.join(ASSET_DIR, "villager_face.png"),
     "MONSTER": os.path.join(ASSET_DIR, "monster.png"),
     "OUTLINE_GREEN": os.path.join(ASSET_DIR, "outline_green.png"),
     "OUTLINE_YELLOW": os.path.join(ASSET_DIR, "outline_yellow.png"),

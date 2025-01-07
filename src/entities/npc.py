@@ -1,13 +1,16 @@
 import math
 import random
+import pygame
 from .entity import Entity
 from constants import *
 from systems.combat_stats import CombatStats
 
 
 class NPC(Entity):
-    def __init__(self, x, y, sprite_path=SPRITES["NPC"], name="Villager"):
+    def __init__(self, x, y, sprite_path=SPRITES["NPC"], name="Villager Amelia"):
         super().__init__(x, y, sprite_path, SPRITES["OUTLINE_YELLOW"])
+        self.face_surface = pygame.image.load(SPRITES["NPC_FACE"]).convert_alpha()
+        self.face_surface = pygame.transform.scale(self.face_surface, (256, 256))
         self.name = name
         self.combat_stats = CombatStats(
             base_hp=PLAYER_START_HP,
@@ -25,7 +28,12 @@ class NPC(Entity):
     def update(self):
         self.update_breathing()
 
-    def add_to_history(self, interaction):
+    def add_to_history(self, player_text, npc_response):
+        # Add new interaction
+        interaction = {
+            "player": player_text,
+            f"npc": npc_response
+        }
         self.interaction_history.append(interaction)
-        if len(self.interaction_history) > 10:  # Keep last 10 interactions
+        if len(self.interaction_history) > 10:
             self.interaction_history.pop(0)
