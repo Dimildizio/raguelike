@@ -2,14 +2,18 @@ import math
 import random
 from .entity import Entity
 from constants import *
+from systems.combat_stats import CombatStats
 
 
 class NPC(Entity):
     def __init__(self, x, y, sprite_path=SPRITES["NPC"], name="Villager"):
         super().__init__(x, y, sprite_path, SPRITES["OUTLINE_YELLOW"])
         self.name = name
-        self.health = NPC_BASE_HP
-        self.armor = NPC_BASE_ARMOR
+        self.combat_stats = CombatStats(
+            base_hp=PLAYER_START_HP,
+            base_armor=PLAYER_START_ARMOR,
+            base_damage=PLAYER_BASE_DAMAGE
+        )
         # Slower, gentler breathing for NPCs
         self.breath_speed *= 0.7
         self.target_angle *= 0.6

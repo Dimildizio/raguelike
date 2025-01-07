@@ -7,7 +7,6 @@ from world.worldmap import WorldMap
 from constants import *
 from entities.monster import Monster
 from entities.npc import NPC
-from constants import SPRITES
 
 
 
@@ -29,7 +28,7 @@ class Game:
             # Optional: Add camera bounds to prevent showing outside the map
             max_camera_x = self.state_manager.current_map.width * DISPLAY_TILE_SIZE - WINDOW_WIDTH
             max_camera_y = self.state_manager.current_map.height * DISPLAY_TILE_SIZE - WINDOW_HEIGHT
-            
+
             # Clamp camera position
             self.camera_x = max(0, min(self.camera_x, max_camera_x))
             self.camera_y = max(0, min(self.camera_y, max_camera_y))
@@ -42,10 +41,12 @@ class Game:
                     running = False
                 self.handle_input(event)
 
-            # Update
+            # Updates
             if self.state_manager.current_state == GameState.PLAYING:
                 if self.state_manager.player:  # Check if player exists
                     self.state_manager.player.update()
+                    self.state_manager.current_map.update()
+
                     self.update_camera() 
             elif self.state_manager.current_state == GameState.COMBAT:
                 self.update_combat()

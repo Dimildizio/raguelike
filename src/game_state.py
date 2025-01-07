@@ -4,7 +4,7 @@ from entities.character import Character
 from systems.combat import CombatSystem
 from entities.monster import Monster
 from entities.npc import NPC
-from constants import SPRITES
+from constants import *
 import random
 
 
@@ -24,25 +24,33 @@ class GameStateManager:
         self.player = None  # Don't create player until game starts
         self.combat_system = None
 
+
+
     def start_new_game(self):
+        self.player = None
+        self.current_map = None
+
+        # Create player
         self.player = Character(0, 0, SPRITES["PLAYER"])
-        
-        # Get random empty positions for entities
-        player_pos = self.current_map.get_random_empty_position()
-        monster_pos = self.current_map.get_random_empty_position()
-        npc_pos = self.current_map.get_random_empty_position()
-        
-        # Add entities at random positions
-        self.current_map.add_entity(self.player, player_pos[0], player_pos[1])
-        
-        # Add test entities
-        test_monster = Monster(0, 0, SPRITES["MONSTER"])
-        self.current_map.add_entity(test_monster, monster_pos[0], monster_pos[1])
-        
-        test_npc = NPC(0, 0, SPRITES["NPC"], "Test NPC")
-        test_npc.add_dialog("Hello, traveler!")
-        self.current_map.add_entity(test_npc, npc_pos[0], npc_pos[1])
-        
+
+        # Create monsters
+        monsters = [
+            Monster(0, 0, SPRITES["MONSTER"]) for _ in range(NUM_MONSTERS)
+        ]
+
+        # Create NPCs
+        npcs = [
+            NPC(0, 0, SPRITES["NPC"]) for _ in range(NUM_NPCS)
+        ]
+
+        # Create and setup map
+        self.current_map = WorldMap(MAP_WIDTH, MAP_HEIGHT)
+        self.current_map.generate_map()
+        # Place all entities
+        self.current_map.place_entities(self.player, monsters, npcs)
+        self.change_state(GameState.MAIN_MENU)
+
+
     def change_state(self, new_state):
         self.current_state = new_state
     

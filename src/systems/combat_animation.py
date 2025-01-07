@@ -1,16 +1,5 @@
 import pygame
 import time
-from utils.sprite_loader import SpriteLoader
-from constants import *
-
-import pygame
-import time
-import math
-from utils.sprite_loader import SpriteLoader
-from constants import *
-
-import pygame
-import time
 import math
 from utils.sprite_loader import SpriteLoader
 from constants import *
@@ -44,8 +33,8 @@ class CombatAnimation:
         # Calculate angle to face attacker
         dx = attacker.x - target.x
         dy = attacker.y - target.y
-        angle = math.degrees(math.atan2(-dy, dx)) - 90
-        self.target.rotation = angle
+        angle = math.degrees(math.atan2(-dy, dx)) + 90
+        self.target.base_rotation = angle
 
     def update(self):
         if not self.is_playing:
