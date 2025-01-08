@@ -2,6 +2,7 @@ import pygame
 from .tile import Tile
 import random
 import math
+import heapq
 from constants import *
 from entities.character import Character
 from entities.monster import Monster
@@ -238,13 +239,19 @@ class WorldMap:
         decision = self.decide_monster_action(monster, distance)
 
         # ACTION EXECUTION PHASE
+        result = False
         if decision == "flee":
-            return self.execute_flee(monster, dx, dy, monster_tile_x, monster_tile_y)
+            result = self.execute_flee(monster, dx, dy, monster_tile_x, monster_tile_y)
         elif decision == "attack":
-            return self.execute_attack(monster, player)
+            result = self.execute_attack(monster, player)
         elif decision == "approach":
-            return self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
+            result = self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
 
+        # If monster still has AP and made a successful action, it can act again next frame
+        if monster.action_points > 0 and result:
+            return True
+
+        # If monster couldn't act or is out of AP, it's done
         return False
 
 
@@ -284,9 +291,8 @@ class WorldMap:
         """Execute attack action"""
         if not monster.can_do_action(ATTACK_ACTION_COST):
             return False
-
+        animation = True
         monster.spend_action_points(ATTACK_ACTION_COST)
-        damage = monster.attack(player)
 
         # Calculate angle to face target
         dx = player.x - monster.x
@@ -295,26 +301,111 @@ class WorldMap:
         monster.base_rotation = angle
 
         if hasattr(self, 'combat_animation'):
-            return self.combat_animation.start_attack(monster, player)
-        return True
+            animation = self.combat_animation.start_attack(monster, player)
+        damage = monster.attack(player)
+        return animation
+
+    def get_neighbors(self, x, y):
+        """Get valid neighboring tiles"""
+        neighbors = []
+        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:  # Four directions (no diagonals)
+            new_x, new_y = x + dx, y + dy
+            if (0 <= new_x < self.width and
+                    0 <= new_y < self.height and
+                    self.is_tile_walkable(new_x, new_y)):
+                neighbors.append((new_x, new_y))
+        return neighbors
+
+    def is_tile_walkable(self, x, y):
+        """Check if a tile can be walked on"""
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return False
+        tile = self.tiles[y][x]
+        return tile and (tile.entity is None or not tile.entity.is_alive)
+
+    def manhattan_distance(self, x1, y1, x2, y2):
+        """Calculate Manhattan distance between two points"""
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    def find_path_to_target(self, start_x, start_y, target_x, target_y):
+        """A* pathfinding to find best path to target"""
+        from queue import PriorityQueue
+
+        # Initialize data structures
+        frontier = PriorityQueue()
+        frontier.put((0, (start_x, start_y)))
+        came_from = {(start_x, start_y): None}
+        cost_so_far = {(start_x, start_y): 0}
+
+        while not frontier.empty():
+            current = frontier.get()[1]
+
+            # If we found a tile adjacent to target, we're done
+            if self.manhattan_distance(current[0], current[1], target_x, target_y) == 1:
+                break
+
+            # Check all neighbors
+            for next_tile in self.get_neighbors(current[0], current[1]):
+                new_cost = cost_so_far[current] + 1
+
+                if next_tile not in cost_so_far or new_cost < cost_so_far[next_tile]:
+                    cost_so_far[next_tile] = new_cost
+                    priority = new_cost + self.manhattan_distance(next_tile[0], next_tile[1], target_x, target_y)
+                    frontier.put((priority, next_tile))
+                    came_from[next_tile] = current
+
+        # Reconstruct path
+        if current in came_from:
+            path = []
+            while current != (start_x, start_y):
+                path.append(current)
+                current = came_from[current]
+            path.reverse()
+            return path
+        return []
 
     def execute_approach(self, monster, dx, dy, monster_tile_x, monster_tile_y):
-        """Execute approach movement"""
+        """Execute approach movement using pathfinding"""
         if not monster.can_do_action(MOVE_ACTION_COST):
             return False
 
-        # Calculate new position
-        move_x = monster_tile_x + (1 if dx > 0 else -1) if abs(dx) > abs(dy) else monster_tile_x
-        move_y = monster_tile_y + (1 if dy > 0 else -1) if abs(dx) <= abs(dy) else monster_tile_y
+        player = self.state_manager.player
+        player_tile_x = player.x // self.tile_size
+        player_tile_y = player.y // self.tile_size
+
+        # Find path to player
+        path = self.find_path_to_target(
+            monster_tile_x,
+            monster_tile_y,
+            player_tile_x,
+            player_tile_y
+        )
+
+        if not path:
+            return False
+
+        # Get next step in path
+        next_x, next_y = path[0]
 
         # Calculate facing direction
-        if abs(dx) > abs(dy):
-            monster.base_rotation = DIRECTION_RIGHT if dx > 0 else DIRECTION_LEFT
-        else:
-            monster.base_rotation = DIRECTION_DOWN if dy > 0 else DIRECTION_UP
+        dx = next_x - monster_tile_x
+        dy = next_y - monster_tile_y
 
-        monster.spend_action_points(MOVE_ACTION_COST)
-        return self.move_entity(monster, move_x, move_y)
+        if dx > 0:
+            monster.base_rotation = DIRECTION_RIGHT
+        elif dx < 0:
+            monster.base_rotation = DIRECTION_LEFT
+        elif dy > 0:
+            monster.base_rotation = DIRECTION_DOWN
+        elif dy < 0:
+            monster.base_rotation = DIRECTION_UP
+
+        # Move to next tile
+        if self.move_entity(monster, next_x, next_y):
+            monster.spend_action_points(MOVE_ACTION_COST)
+            return True
+
+        return False
 
     def execute_flee(self, monster, dx, dy, monster_tile_x, monster_tile_y):
         """Execute fleeing movement"""
@@ -331,5 +422,8 @@ class WorldMap:
         else:
             monster.base_rotation = DIRECTION_UP if dy > 0 else DIRECTION_DOWN
 
-        monster.spend_action_points(MOVE_ACTION_COST)
-        return self.move_entity(monster, move_x, move_y)
+        # Only spend AP if movement was successful
+        if self.move_entity(monster, move_x, move_y):
+            monster.spend_action_points(MOVE_ACTION_COST)
+            return True
+        return False

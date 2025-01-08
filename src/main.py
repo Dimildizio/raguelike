@@ -1,6 +1,6 @@
 import pygame
 import sys
-
+import time
 from game_state import GameStateManager, GameState
 from entities.character import Character
 from world.worldmap import WorldMap  
@@ -120,11 +120,22 @@ class Game:
                 self.state_manager.current_map.combat_animation.is_playing:
             return
 
-        # Process the monster's turn
-        self.state_manager.current_map.handle_monster_turn(monster)
+        # Add a pause between actions
+        current_time = time.time()
+        if not hasattr(self, 'last_action_time'):
+            self.last_action_time = 0
 
-        # Remove the monster from the queue
-        self.monsters_queue.pop(0)
+        # Wait for MOVEMENT_DELAY seconds between actions
+        if current_time - self.last_action_time < MOVEMENT_DELAY:
+            return
+
+        # Process the monster's turn
+        action_result = self.state_manager.current_map.handle_monster_turn(monster)
+        self.last_action_time = current_time
+
+        # Only remove monster from queue if it can't take any more actions
+        if not action_result:
+            self.monsters_queue.pop(0)
 
     def handle_monster_turn(self, monster):
         # Simple AI: attack player
@@ -369,7 +380,7 @@ class Game:
         self.screen.blit(health_surface, (padding, padding))
 
         # Health text
-        health_text = f"HP: {self.state_manager.player.health}/{PLAYER_START_HP}"
+        health_text = f"HP: {int(self.state_manager.player.health)}/{PLAYER_START_HP}"
         health_text_surface = font.render(health_text, True, WHITE)
         text_y_offset = (bar_height - health_text_surface.get_height()) // 2
         self.screen.blit(health_text_surface, (padding + 5, padding + text_y_offset))
