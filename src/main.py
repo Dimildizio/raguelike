@@ -20,6 +20,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.state_manager = GameStateManager()
         self.dialog_ui = DialogUI(self.state_manager)
+        self.monsters_queue = None
 
     def update_camera(self):
         # Center camera on player
@@ -62,6 +63,8 @@ class Game:
                     self.state_manager.current_map.update()
 
                     self.update_camera()
+                    if hasattr(self, 'monsters_queue') and self.monsters_queue:
+                        self.process_next_monster()
             elif self.state_manager.current_state == GameState.COMBAT:
                 self.update_combat()
 
@@ -92,9 +95,41 @@ class Game:
                 # AI turn
                 self.handle_monster_turn(current_entity)
 
+    def handle_monster_turns(self):
+        # Get all monsters from the current map
+        self.monsters_queue = [entity for entity in self.state_manager.current_map.entities
+                               if isinstance(entity, Monster) and entity.is_alive]
+
+        # Reset action points for all monsters
+        for monster in self.monsters_queue:
+            monster.reset_action_points()
+
+        # Start processing the first monster
+        self.process_next_monster()
+
+    def process_next_monster(self):
+        # If there are no more monsters to process, we're done
+        if not self.monsters_queue:
+            return
+
+        # Get the next monster
+        monster = self.monsters_queue[0]
+
+        # If there's an animation playing, wait
+        if hasattr(self.state_manager.current_map, 'combat_animation') and \
+                self.state_manager.current_map.combat_animation.is_playing:
+            return
+
+        # Process the monster's turn
+        self.state_manager.current_map.handle_monster_turn(monster)
+
+        # Remove the monster from the queue
+        self.monsters_queue.pop(0)
+
     def handle_monster_turn(self, monster):
         # Simple AI: attack player
         damage = self.state_manager.combat_system.process_attack(monster, self.state_manager.player)
+        print('monster damage:', damage)
         self.state_manager.combat_system.next_turn()
 
     def handle_input(self, event):
@@ -138,9 +173,8 @@ class Game:
 
             if event.key == pygame.K_SPACE:  # End turn
                 self.state_manager.player.reset_action_points()
-                # TODO: Handle NPC/Monster turns here
+                self.handle_monster_turns()
                 return
-
 
             # Movement
             if event.key == pygame.K_w:  # Up
@@ -295,14 +329,14 @@ class Game:
         pygame.draw.rect(screen, RED, bar_bg_rect)
 
         # Draw current health
-        health_percentage = entity.health / PLAYER_START_HP
+        health_percentage = int(entity.health // PLAYER_START_HP)
         health_width = int(HEALTH_BAR_WIDTH * health_percentage)
         health_rect = pygame.Rect(x, y, health_width, HEALTH_BAR_HEIGHT)
         pygame.draw.rect(screen, GREEN, health_rect)
 
         # Draw health text
         font = pygame.font.Font(None, 24)
-        health_text = f"HP: {entity.health}"
+        health_text = f"HP: {int(entity.health)}"
         text_surface = font.render(health_text, True, WHITE)
         text_rect = text_surface.get_rect(centerx=x + HEALTH_BAR_WIDTH // 2, centery=y + HEALTH_BAR_HEIGHT // 2)
         screen.blit(text_surface, text_rect)

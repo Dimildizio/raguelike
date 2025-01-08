@@ -18,7 +18,7 @@ DISPLAY_TILE_SIZE = 128
 MAP_WIDTH = 10  # in tiles
 MAP_HEIGHT = 10  # in tiles
 
-NUM_MONSTERS = 2
+NUM_MONSTERS = 3
 NUM_NPCS = 2
 
 # Asset paths
@@ -82,7 +82,15 @@ NPC_BASE_ARMOR = 5
 MONSTER_BASE_HP = 50
 MONSTER_BASE_ARMOR = 5
 MONSTER_BASE_DAMAGE = 15
-MONSTER_AGGRO_RANGE = 5  # in tiles
+MONSTER_AGGRO_RANGE = 3
+MONSTER_FLEE_HEALTH = 0.3      # Percentage of health when monster tries to flee
+MONSTER_ATTACK_RANGE = 1
+MONSTER_PERSONALITY_TYPES = [
+    "aggressive",    # Attacks more often, flees less
+    "cautious",      # Maintains distance, attacks when advantageous
+    "cowardly",      # Flees at higher health, attacks less often
+    "territorial"    # Only aggressive when player is very close
+]
 
 # Dialog settings
 DIALOG_FONT_SIZE = 16

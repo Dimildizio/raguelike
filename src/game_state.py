@@ -37,7 +37,7 @@ class GameStateManager:
 
         # Create monsters
         monsters = [
-            Monster(0, 0, "MONSTER") for _ in range(NUM_MONSTERS)
+            Monster(0, 0, "MONSTER", name=f'Monster_{n}') for n in range(NUM_MONSTERS)
         ]
 
         # Create NPCs
@@ -50,7 +50,7 @@ class GameStateManager:
                 mood=random.choice(moods)) for n in range(NUM_NPCS)]
 
         # Create and setup map
-        self.current_map = WorldMap(MAP_WIDTH, MAP_HEIGHT)
+        self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
         self.current_map.generate_map()
         # Place all entities
         self.current_map.place_entities(self.player, monsters, npcs)

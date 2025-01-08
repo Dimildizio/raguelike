@@ -1,6 +1,7 @@
 import pygame
 from .tile import Tile
 import random
+import math
 from constants import *
 from entities.character import Character
 from entities.monster import Monster
@@ -217,3 +218,118 @@ class WorldMap:
                 x = random.randint(0, self.width - 1)
                 y = random.randint(0, self.height - 1)
                 placed = self.add_entity(entity, x, y)
+
+    def handle_monster_turn(self, monster):
+        if not monster.is_alive:
+            return False
+
+        # Get positions and calculate distance
+        monster_tile_x = monster.x // self.tile_size
+        monster_tile_y = monster.y // self.tile_size
+        player = self.state_manager.player
+        player_tile_x = player.x // self.tile_size
+        player_tile_y = player.y // self.tile_size
+
+        dx = player_tile_x - monster_tile_x
+        dy = player_tile_y - monster_tile_y
+        distance = abs(dx) + abs(dy)
+
+        # DECISION MAKING PHASE
+        decision = self.decide_monster_action(monster, distance)
+
+        # ACTION EXECUTION PHASE
+        if decision == "flee":
+            return self.execute_flee(monster, dx, dy, monster_tile_x, monster_tile_y)
+        elif decision == "attack":
+            return self.execute_attack(monster, player)
+        elif decision == "approach":
+            return self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
+
+        return False
+
+
+    def decide_monster_action(self, monster, distance):
+        """Decide what action the monster should take based on its personality and situation"""
+        # Check if player is too far
+        if distance > MONSTER_AGGRO_RANGE:
+            print('small aggro distance')
+            return "none"
+
+        # Get monster's current state
+        health_percentage = monster.health / monster.max_health
+
+        # Should we flee?
+        if health_percentage < MONSTER_FLEE_HEALTH:
+            # Brave monsters might still fight
+            if random.random() > monster.bravery:
+                print('flee')
+                return "flee"
+
+        # Should we attack?
+        if distance == 1:  # Adjacent to player
+            # Aggressive monsters are more likely to attack
+            if random.random() < monster.aggression:
+                return "attack"
+
+        # Should we approach?
+        if distance <= MONSTER_AGGRO_RANGE:
+            # Aggressive monsters are more likely to approach
+            result = random.random()
+            print(f'Lets attack: {result} vs {monster.aggression}')
+            if result < monster.aggression:
+                return "approach"
+        return "none"
+
+    def execute_attack(self, monster, player):
+        """Execute attack action"""
+        if not monster.can_do_action(ATTACK_ACTION_COST):
+            return False
+
+        monster.spend_action_points(ATTACK_ACTION_COST)
+        damage = monster.attack(player)
+
+        # Calculate angle to face target
+        dx = player.x - monster.x
+        dy = player.y - monster.y
+        angle = math.degrees(math.atan2(-dy, dx)) + 90
+        monster.base_rotation = angle
+
+        if hasattr(self, 'combat_animation'):
+            return self.combat_animation.start_attack(monster, player)
+        return True
+
+    def execute_approach(self, monster, dx, dy, monster_tile_x, monster_tile_y):
+        """Execute approach movement"""
+        if not monster.can_do_action(MOVE_ACTION_COST):
+            return False
+
+        # Calculate new position
+        move_x = monster_tile_x + (1 if dx > 0 else -1) if abs(dx) > abs(dy) else monster_tile_x
+        move_y = monster_tile_y + (1 if dy > 0 else -1) if abs(dx) <= abs(dy) else monster_tile_y
+
+        # Calculate facing direction
+        if abs(dx) > abs(dy):
+            monster.base_rotation = DIRECTION_RIGHT if dx > 0 else DIRECTION_LEFT
+        else:
+            monster.base_rotation = DIRECTION_DOWN if dy > 0 else DIRECTION_UP
+
+        monster.spend_action_points(MOVE_ACTION_COST)
+        return self.move_entity(monster, move_x, move_y)
+
+    def execute_flee(self, monster, dx, dy, monster_tile_x, monster_tile_y):
+        """Execute fleeing movement"""
+        if not monster.can_do_action(MOVE_ACTION_COST):
+            return False
+
+        # Calculate new position (away from player)
+        move_x = monster_tile_x + (-1 if dx > 0 else 1) if abs(dx) > abs(dy) else monster_tile_x
+        move_y = monster_tile_y + (-1 if dy > 0 else 1) if abs(dx) <= abs(dy) else monster_tile_y
+
+        # Calculate facing direction (opposite to player)
+        if abs(dx) > abs(dy):
+            monster.base_rotation = DIRECTION_LEFT if dx > 0 else DIRECTION_RIGHT
+        else:
+            monster.base_rotation = DIRECTION_UP if dy > 0 else DIRECTION_DOWN
+
+        monster.spend_action_points(MOVE_ACTION_COST)
+        return self.move_entity(monster, move_x, move_y)
