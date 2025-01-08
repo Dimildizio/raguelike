@@ -27,8 +27,12 @@ SPRITES = {
     "PLAYER": os.path.join(ASSET_DIR, "player.png"),
     "HERO_FACE": os.path.join(ASSET_DIR, "hero_face.png"),
     "FLOOR": os.path.join(ASSET_DIR, "floor_tile.png"),
-    "NPC": os.path.join(ASSET_DIR, "npc.png"),
-    "NPC_FACE": os.path.join(ASSET_DIR, "villager_face.png"),
+    "NPC_1": os.path.join(ASSET_DIR, "npc_1.png"),
+    "NPC_FACE_1": os.path.join(ASSET_DIR, "villager_face_1.png"),
+    "NPC_2": os.path.join(ASSET_DIR, "npc_2.png"),
+    "NPC_FACE_2": os.path.join(ASSET_DIR, "villager_face_2.png"),
+    "NPC_3": os.path.join(ASSET_DIR, "npc_3.png"),
+    "NPC_FACE_3": os.path.join(ASSET_DIR, "villager_face_3.png"),
     "MONSTER": os.path.join(ASSET_DIR, "monster.png"),
     "OUTLINE_GREEN": os.path.join(ASSET_DIR, "outline_green.png"),
     "OUTLINE_YELLOW": os.path.join(ASSET_DIR, "outline_yellow.png"),
@@ -52,7 +56,7 @@ HEALTH_BAR_WIDTH = 200
 # Entity settings
 PLAYER_START_HP = 100
 PLAYER_START_ARMOR = 10
-PLAYER_BASE_DAMAGE = 10
+PLAYER_BASE_DAMAGE = 25
 BREATHING_SPEED = 0.03
 BREATHING_AMPLITUDE = 3  # degrees
 
@@ -77,7 +81,7 @@ NPC_BASE_ARMOR = 5
 # Monster settings
 MONSTER_BASE_HP = 50
 MONSTER_BASE_ARMOR = 5
-MONSTER_BASE_DAMAGE = 8
+MONSTER_BASE_DAMAGE = 15
 MONSTER_AGGRO_RANGE = 5  # in tiles
 
 # Dialog settings
@@ -108,3 +112,7 @@ ATTACK_ANIMATION_DURATION = 0.5  # seconds
 ATTACK_DISTANCE = 0.5
 SHAKE_AMPLITUDE = 3  # pixels
 SHAKE_FREQUENCY = 30
+
+INITIAL_ACTION_POINTS = 100
+MOVE_ACTION_COST = 10
+ATTACK_ACTION_COST = 35

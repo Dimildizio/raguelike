@@ -6,7 +6,7 @@ from utils.sprite_loader import SpriteLoader
 
 
 class Entity(ABC):
-    def __init__(self, x, y, sprite_path, outline_path=None, hp = 100):
+    def __init__(self, x, y, sprite_path, outline_path=None, hp=100, ap=100):
         self.x = x
         self.y = y
         self.sprite_loader = SpriteLoader(
@@ -35,6 +35,8 @@ class Entity(ABC):
 
         self.max_health = hp
         self.health = hp
+        self.max_action_points = ap
+        self.action_points = ap
         self.armor = 0
 
 
@@ -99,6 +101,14 @@ class Entity(ABC):
 
         if self.health <= 0:
             self.health = 0
-
-
         return actual_damage
+
+
+    def spend_action_points(self, amount):
+        self.action_points = max(0, self.action_points - amount)
+
+    def reset_action_points(self):
+        self.action_points = self.max_action_points
+
+    def can_do_action(self, action_price):
+        return action_price <= self.action_points

@@ -8,12 +8,14 @@ class DialogUI:
     def __init__(self, game_state_manager):
         self.font = pygame.font.Font(None, 32)
         self.input_text = ""
+        self.last_input_text = ""
         self.max_input_length = 100
         self.game_state_manager = game_state_manager
         self.predefined_options = ["Got any quests?", "How are you?", "Bye"]
         self.selected_option = 0
         self.should_exit = False
         self.current_npc = None
+        self.current_response = None
         self.dialogue_processor = DialogueProcessor()
         self.current_response = "Hello traveler! How can I help you today?"
 
@@ -28,6 +30,27 @@ class DialogUI:
         self.INPUT_HEIGHT = 0.06  # 6% of screen height
         self.PADDING = 20
 
+    def start_dialog(self, npc):
+        """Call this when starting dialog with an NPC"""
+        self.current_npc = npc
+        #npc.last_response if hasattr(npc, 'last_response') else
+        self.input_text = ""
+        self.should_exit = False
+        self.streaming_response = ""
+        self.is_streaming = False
+        self.stream = None
+        self.current_response = "Hello traveler! How can I help you today?"
+
+    def clear_dialogue_state(self):
+        """Reset all dialogue-related state"""
+        self.current_response = None
+        self.current_npc = None
+        self.input_text = ""
+        self.streaming_response = ""
+        self.is_streaming = False
+        self.stream = None
+        self.should_exit = False
+
     def is_valid_char(self, char):
         # Allow only letters, numbers, spaces and basic punctuation
         return (char.isalnum() or
@@ -39,9 +62,11 @@ class DialogUI:
             if event.key == pygame.K_RETURN:
                 if self.input_text:
                     self.process_input(self.input_text, self.current_npc)
+                    self.last_input_text = self.input_text
                     self.input_text = ""
                 else:
                     selected_text = self.predefined_options[self.selected_option]
+                    self.last_input_text = selected_text
                     self.process_input(selected_text, self.current_npc)
 
                     # If no input text, use selected predefined option
@@ -67,12 +92,14 @@ class DialogUI:
     def process_input(self, text, npc):
         if text.lower() in ["bye", "goodbye", "see you"]:
             self.should_exit = True
+            self.clear_dialogue_state()  # Clear state when saying goodbye
             return
 
         try:
             response = self.dialogue_processor.process_dialogue(
                 player_input=text,
                 npc_name=npc.name,
+                npc_mood=npc.mood,
                 player_reputation=npc.reputation,
                 active_quests=npc.active_quests,
                 interaction_history=npc.interaction_history
@@ -103,6 +130,7 @@ class DialogUI:
                 if chunk is None:
                     # Stream finished
                     self.is_streaming = False
+                    print("\nFinal JSON response:", self.streaming_response)  # Debug print for final JSON
 
                     # Find the actual response text between markers
                     start_marker = '"text": "'
@@ -111,11 +139,16 @@ class DialogUI:
                     start_idx = self.streaming_response.find(start_marker)
                     if start_idx != -1:
                         start_idx += len(start_marker)  # Move past the marker
-                        end_idx = self.streaming_response.find(end_marker, start_idx)
-                        if end_idx != -1 or '"\n}' != -1 or '" }' != -1:
+                        end_idx = self.streaming_response.find('"}\n') or self.streaming_response.find(
+                            '"}') or self.streaming_response.find('" }') or self.streaming_response.find(
+                            '}```') or self.streaming_response.find('}')
+                        if end_idx:
                             actual_response = self.streaming_response[start_idx:end_idx]
-                            self.current_response = actual_response
-                            self.current_npc.add_to_history(self.input_text, self.current_response)
+                            self.current_response = (actual_response.replace('```', '')
+                                                                    .replace('}', '')
+                                                                    .replace('"', '')
+                                                                    .replace('``', ''))
+                            self.current_npc.add_to_history(self.last_input_text, self.current_response)
 
                             # Check for inappropriate flag in the remaining JSON
                             if '"player_inappropriate_request": true' in self.streaming_response:
@@ -131,7 +164,7 @@ class DialogUI:
                     start_idx = self.streaming_response.find(start_marker)
                     if start_idx != -1:
                         start_idx += len(start_marker)
-                        self.current_response = self.streaming_response[start_idx:]
+                        self.current_response = self.streaming_response[start_idx:].replace('}', '').replace('"', '').replace('```', '')
 
             except Exception as e:
                 print(f"Streaming error: {e}")
@@ -251,6 +284,9 @@ class DialogUI:
 
     def _calculate_text_height(self, text, max_width):
         """Calculate the height needed for the wrapped text"""
+        if text is None:  # Safety check for None
+            text = self.current_response or "Hello traveller!"  # Use current_response if available, empty string if not
+
         words = text.split()
         lines = []
         current_line = []
@@ -270,6 +306,8 @@ class DialogUI:
         return len(lines) * 30 + self.PADDING * 2  # Height per line + padding
 
     def _draw_wrapped_text(self, screen, text_area):
+        if not self.current_response:  # Safety check for None or empty string
+            return
         words = self.current_response.split()
         lines = []
         current_line = []

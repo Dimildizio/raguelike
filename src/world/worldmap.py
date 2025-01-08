@@ -141,27 +141,30 @@ class WorldMap:
                 return self.move_entity(entity, new_tile_x, new_tile_y)  # Retry move after removing
 
             elif isinstance(entity, Character) and isinstance(destination_entity, Monster):
-                print(f"Combat initiated")
-                # Player attacks monster
-                damage = destination_entity.combat_stats.take_damage(entity.combat_stats.damage)
-                print(f"Damage dealt: {damage}")
-                print(f"Monster HP after damage: {destination_entity.combat_stats.current_hp}")
-                print(f"Monster alive after damage: {destination_entity.is_alive}")
+                if entity.can_do_action(ATTACK_ACTION_COST):
+                    entity.spend_action_points(ATTACK_ACTION_COST)
 
-                # Start combat animation
-                if hasattr(self, 'combat_animation'):
-                    self.combat_animation.start_attack(entity, destination_entity)
+                    print(f"Combat initiated")
+                    # Player attacks monster
+                    damage = destination_entity.combat_stats.take_damage(entity.combat_stats.damage)
+                    print(f"Damage dealt: {damage}")
+                    print(f"Monster HP after damage: {destination_entity.combat_stats.current_hp}")
+                    print(f"Monster alive after damage: {destination_entity.is_alive}")
 
-                # If monster died from this attack, remove it
-                if not destination_entity.is_alive:
-                    print(f"Monster died, removing from game")
-                    destination_tile.entity = None
-                    if destination_entity in self.entities:
-                        self.entities.remove(destination_entity)
-                return True
+                    # Start combat animation
+                    if hasattr(self, 'combat_animation'):
+                        self.combat_animation.start_attack(entity, destination_entity)
 
+                    # If monster died from this attack, remove it
+                    if not destination_entity.is_alive:
+                        print(f"Monster died, removing from game")
+                        destination_tile.entity = None
+                        if destination_entity in self.entities:
+                            self.entities.remove(destination_entity)
+                    return True
             return False  # Can't move into occupied tile
-
+        if isinstance(entity, Character) and not entity.can_do_action(MOVE_ACTION_COST):
+            return False
         # Move to empty tile
         old_tile_x = entity.x // self.tile_size
         old_tile_y = entity.y // self.tile_size
@@ -173,8 +176,10 @@ class WorldMap:
         # Update entity position
         entity.x = new_tile_x * self.tile_size
         entity.y = new_tile_y * self.tile_size
-
+        if isinstance(entity, Character):
+            entity.spend_action_points(MOVE_ACTION_COST)
         return True
+
 
     def get_random_empty_position(self):
         """Find a random empty tile position"""

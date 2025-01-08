@@ -41,7 +41,9 @@ class Game:
         self.dialog_ui.should_exit = False  # Reset flag
         self.state_manager.current_npc = None
         self.dialog_ui.current_npc = None
+        self.dialog_ui.clear_dialogue_state()
         self.state_manager.change_state(GameState.PLAYING)
+
 
     def run(self):
         running = True
@@ -59,7 +61,7 @@ class Game:
                     self.state_manager.player.update()
                     self.state_manager.current_map.update()
 
-                    self.update_camera() 
+                    self.update_camera()
             elif self.state_manager.current_state == GameState.COMBAT:
                 self.update_combat()
 
@@ -67,9 +69,8 @@ class Game:
             self.screen.fill(BLACK)
             if self.state_manager.current_state == GameState.PLAYING:
                 if self.state_manager.player:  # Check if player exists
-                    self.state_manager.current_map.draw(self.screen, 
-                                                      self.camera_x, 
-                                                      self.camera_y)
+                    self.state_manager.current_map.draw(self.screen, self.camera_x, self.camera_y)
+                    self.draw_player_ui()
             elif self.state_manager.current_state == GameState.COMBAT:
                 self.draw_combat()
             elif self.state_manager.current_state == GameState.MAIN_MENU:
@@ -108,9 +109,11 @@ class Game:
 
     def handle_combat_input(self, event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:  # Basic attack
-                current_entity = self.state_manager.combat_system.turn_order[
-                    self.state_manager.combat_system.current_turn]
+            current_entity = self.state_manager.combat_system.turn_order[
+                self.state_manager.combat_system.current_turn]
+
+            if event.key == pygame.K_f:  # Basic attack
+                current_entity = self.state_manager.combat_system.turn_order[self.state_manager.combat_system.current_turn]
                 if isinstance(current_entity, Character):  # Player's turn
                     target = self.state_manager.combat_system.current_target
                     if target:
@@ -128,10 +131,16 @@ class Game:
 
     def handle_playing_input(self, event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_F11:  # Or any key you prefer
+            if event.key == pygame.K_F11:
                 self.toggle_fullscreen()
             player_tile_x = self.state_manager.player.x // self.state_manager.current_map.tile_size
             player_tile_y = self.state_manager.player.y // self.state_manager.current_map.tile_size
+
+            if event.key == pygame.K_SPACE:  # End turn
+                self.state_manager.player.reset_action_points()
+                # TODO: Handle NPC/Monster turns here
+                return
+
 
             # Movement
             if event.key == pygame.K_w:  # Up
@@ -182,9 +191,10 @@ class Game:
                     if 0 <= pos_x < self.state_manager.current_map.width and 0 <= pos_y < self.state_manager.current_map.height:
                         tile = self.state_manager.current_map.tiles[pos_y][pos_x]
                         if tile and tile.entity and isinstance(tile.entity, NPC):
+
                             self.dialog_ui.current_npc = tile.entity
                             self.state_manager.current_npc = tile.entity
-
+                            self.dialog_ui.start_dialog(tile.entity)
                             self.state_manager.change_state(GameState.DIALOG)
                             break
 
@@ -237,20 +247,15 @@ class Game:
         for i, option in enumerate(MENU_OPTIONS):
             color = RED if i == self.state_manager.selected_menu_item else WHITE
             text_surface = menu_font.render(option, True, color)
-            text_rect = text_surface.get_rect(
-                centerx=WINDOW_WIDTH // 2,
-                y=MENU_START_Y + i * MENU_SPACING
-            )
+            text_rect = text_surface.get_rect(centerx=WINDOW_WIDTH // 2, y=MENU_START_Y + i * MENU_SPACING)
             self.screen.blit(text_surface, text_rect)
 
 
     def draw_combat(self):
         # Fill background
         self.screen.fill(BLACK)
-
         # Draw combat UI area at bottom of screen
-        combat_ui_rect = pygame.Rect(0, WINDOW_HEIGHT - COMBAT_UI_HEIGHT,
-                                     WINDOW_WIDTH, COMBAT_UI_HEIGHT)
+        combat_ui_rect = pygame.Rect(0, WINDOW_HEIGHT - COMBAT_UI_HEIGHT, WINDOW_WIDTH, COMBAT_UI_HEIGHT)
         pygame.draw.rect(self.screen, (50, 50, 50), combat_ui_rect)
 
         # Draw entities
@@ -269,8 +274,7 @@ class Game:
             current_enemy.draw(self.screen, enemy_x - current_enemy.x, enemy_y - current_enemy.y)
 
         # Draw health bars
-        self.draw_health_bar(self.screen, player, COMBAT_UI_PADDING,
-                             WINDOW_HEIGHT - COMBAT_UI_HEIGHT + COMBAT_UI_PADDING)
+        self.draw_health_bar(self.screen, player, COMBAT_UI_PADDING, WINDOW_HEIGHT - COMBAT_UI_HEIGHT + COMBAT_UI_PADDING)
         if current_enemy:
             self.draw_health_bar(self.screen, current_enemy,
                                  WINDOW_WIDTH // 2 + COMBAT_UI_PADDING,
@@ -278,8 +282,7 @@ class Game:
 
         # Draw turn indicator
         font = pygame.font.Font(None, 36)
-        current_entity = self.state_manager.combat_system.turn_order[
-            self.state_manager.combat_system.current_turn]
+        current_entity = self.state_manager.combat_system.turn_order[self.state_manager.combat_system.current_turn]
         turn_text = f"Current Turn: {current_entity.__class__.__name__}"
         text_surface = font.render(turn_text, True, WHITE)
         text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, 50))
@@ -301,20 +304,60 @@ class Game:
         font = pygame.font.Font(None, 24)
         health_text = f"HP: {entity.health}"
         text_surface = font.render(health_text, True, WHITE)
-        text_rect = text_surface.get_rect(
-            centerx=x + HEALTH_BAR_WIDTH // 2,
-            centery=y + HEALTH_BAR_HEIGHT // 2
-        )
+        text_rect = text_surface.get_rect(centerx=x + HEALTH_BAR_WIDTH // 2, centery=y + HEALTH_BAR_HEIGHT // 2)
         screen.blit(text_surface, text_rect)
 
         # Draw entity name
         name_text = entity.__class__.__name__
         name_surface = font.render(name_text, True, WHITE)
-        name_rect = name_surface.get_rect(
-            centerx=x + HEALTH_BAR_WIDTH // 2,
-            bottom=y - 5
-        )
+        name_rect = name_surface.get_rect(centerx=x + HEALTH_BAR_WIDTH // 2, bottom=y - 5)
         screen.blit(name_surface, name_rect)
+
+    def draw_player_ui(self):
+        # Calculate UI dimensions based on screen size
+        padding = int(WINDOW_HEIGHT * 0.01)
+        bar_width = int(WINDOW_WIDTH * 0.15)
+        bar_height = int(WINDOW_HEIGHT * 0.03)
+        font_size = int(WINDOW_HEIGHT * 0.025)
+        font = pygame.font.Font(None, font_size)
+
+        # Create a surface for the health bar with alpha channel
+        health_surface = pygame.Surface((bar_width, bar_height), pygame.SRCALPHA)
+        # Draw background with alpha (R, G, B, A) - A=128 means 50% transparent
+        pygame.draw.rect(health_surface, (255, 0, 0, 180), (0, 0, bar_width, bar_height))
+
+        # Draw current health with alpha
+        health_percentage = self.state_manager.player.health / PLAYER_START_HP
+        health_width = int(bar_width * health_percentage)
+        pygame.draw.rect(health_surface, (0, 255, 0, 180), (0, 0, health_width, bar_height))
+
+        # Blit the health surface to the screen
+        self.screen.blit(health_surface, (padding, padding))
+
+        # Health text
+        health_text = f"HP: {self.state_manager.player.health}/{PLAYER_START_HP}"
+        health_text_surface = font.render(health_text, True, WHITE)
+        text_y_offset = (bar_height - health_text_surface.get_height()) // 2
+        self.screen.blit(health_text_surface, (padding + 5, padding + text_y_offset))
+
+        # Create a surface for the AP bar with alpha channel
+        ap_y = padding * 2 + bar_height
+        ap_surface = pygame.Surface((bar_width, bar_height), pygame.SRCALPHA)
+        # Draw background with alpha
+        pygame.draw.rect(ap_surface, (50, 50, 150, 180), (0, 0, bar_width, bar_height))
+
+        # Draw current AP with alpha
+        ap_percentage = self.state_manager.player.action_points / self.state_manager.player.max_action_points
+        ap_width = int(bar_width * ap_percentage)
+        pygame.draw.rect(ap_surface, (100, 100, 255, 180), (0, 0, ap_width, bar_height))
+
+        # Blit the AP surface to the screen
+        self.screen.blit(ap_surface, (padding, ap_y))
+
+        # AP text
+        ap_text = f"AP: {self.state_manager.player.action_points}/{self.state_manager.player.max_action_points}"
+        ap_text_surface = font.render(ap_text, True, WHITE)
+        self.screen.blit(ap_text_surface, (padding + 5, ap_y + text_y_offset))
 
 
 if __name__ == "__main__":

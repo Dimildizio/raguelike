@@ -6,8 +6,8 @@ import random
 
 
 class Monster(Entity):
-    def __init__(self, x, y, sprite_path=SPRITES["MONSTER"]):
-        super().__init__(x, y, sprite_path, SPRITES["OUTLINE_RED"])
+    def __init__(self, x, y, sprite_path="MONSTER"):
+        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"])
         self.combat_stats = CombatStats(
             base_hp=MONSTER_BASE_HP,
             base_armor=MONSTER_BASE_ARMOR,
@@ -23,10 +23,10 @@ class Monster(Entity):
         
     def attack(self, target):
         # Basic attack with random variation
-        base_damage = self.combat_stats.base_damage * random.uniform(0.8, 1.2)
+        base_damage = self.combat_stats.damage * random.uniform(0.8, 1.2)
         if random.random() < CRITICAL_HIT_CHANCE:
             base_damage *= 2
         
-        actual_damage = max(0, base_damage - target.combat_stats.base_armor)
+        actual_damage = max(0, base_damage - target.combat_stats.armor)
         target.health -= actual_damage
         return actual_damage
