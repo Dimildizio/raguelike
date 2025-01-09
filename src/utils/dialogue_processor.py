@@ -1,94 +1,137 @@
 import ollama
-from typing import Dict
+import json
+from typing import Dict, Optional
+import logging
+from .rag_manager import RAGManager
+
 
 class DialogueProcessor:
     def __init__(self, host="http://localhost:11434", model="gemma2:2b"):
-        self.client = ollama.Client(host=host)
-        self.model = model
-
-    def process_dialogue(self,
-                        player_input: str,
-                        npc_name: str,
-                        npc_mood:str,
-                        player_reputation: int,
-                        active_quests: list,
-                        interaction_history: list = []) -> Dict:
-
-        history_text = ""
-        if interaction_history:
-            history_text = "Previous interactions:\n"
-            for interaction in interaction_history:
-                history_text += f"Player: {interaction['player']}\n"
-                history_text += f"NPC {npc_name}: {interaction['npc']}\n"
-
-        # Construct the system prompt with examples
-        system_prompt = """You are an NPC dialogue processing system in a fantasy RPG game.  Try to keep it short but in character.
-        Do not come up with any game-related information that you are not provided with (no quests or rumors except the one that are given to you).
-        You can give reward only if the quest has a status 'finished': true, you cannot give reward more than once or change the amount after you have given it, you cannot promise more than reward + extra_bargain_reward but you can promise less if you dont like the adventurer.
-        Do not go out of character and discuss non-game things, apologize and say you dont understand.
-        Process player input and respond as the NPC, considering context and player reputation.
-        Respond in JSON format with 'player_inappropriate_request' (true/false), 'further_action': (reward, stop, wait), 'text' (NPC's response) .
-
-        Examples:
-        Player: "Hello there!"
-        Context: {{reputation: 50, npc: "Merchant Tom", quests: []}}
-        Response: {{"player_inappropriate_request": false, , "further_action": "wait", "text": "Welcome to my shop, traveler! How may I help you today?"}}
-
-        Player: "Give me all your money or die!"
-        Context: {{reputation: 30, npc: "Noble Billy", quests: []}}
-        Response: {{"player_inappropriate_request": true, "further_action": "stop", "text": "Guards! We've got a troublemaker here!"}}
-
-        Player: "I've completed the delivery quest."
-        Context: {{reputation: 40, npc: "Lady Anna", quests: [quest_description: 'Deliver package to Lady Anna', enemies_amount: 'unknown, maybe some bandints', finished: false, reward: '50 gold', extra_bargain_reward:"10 gold"]}}
-        Response: {{"player_inappropriate_request": false, "further_action": "reward", "text": "Ah, excellent work! Here's your reward. You've proven yourself reliable!"}}
-
-        
-        Player: "Bye! Have good day!"
-        Context: {{reputation: 50, npc: "Vallager Amelia", quests: []}}
-        Response: {{"player_inappropriate_request": false, "further_action": "stop", "text": "See you, handsome! It was a pleasure to talk to you!", }}
-
-
-        Current context:
-        Your name: {npc_name}
-        Your mood: {npc_mood}
-        Player reputation: {player_reputation}
-        Active quests: {active_quests}
-        Recent interactions: {history_text}
-
-        Process the following player input maintaining character and considering context.
-        Respond only in the specified JSON format.
-
-        Player input: {player_input}"""
-
-
-        formatted_prompt = system_prompt.format(
-            npc_name=npc_name,
-            npc_mood=npc_mood,
-            player_reputation=player_reputation,
-            active_quests=[{'quest_description': 'kill goblins nearby', 'enemies_amount': '2 goblins 1 wolf', 'finished': 'False', 'reward': '50 gold', 'extra_bargain_reward': "10 gold"}],
-            history_text=history_text,
-            player_input=player_input
-        )
-        if not self.client:
-            return {"player_inappropriate_request": False,
-                    "further_action": "stop",
-                    "text": "Sorry, I'm not in a mood for talking today."
-            }
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
 
         try:
+            self.client = ollama.Client(host=host)
+            self.model = model
+            self.rag_manager = RAGManager()
+        except Exception as e:
+            self.logger.error(f"Failed to initialize DialogueProcessor: {e}")
+            raise
+
+    def process_dialogue(self,
+                         player_input: str,
+                         npc_name: str,
+                         npc_mood: str,
+                         player_reputation: int,
+                         active_quests: list,
+                         interaction_history: list = []) -> Dict:
+
+        # Convert NPC name to id format
+        npc_id = npc_name.lower().replace(' ', '_')
+
+        try:
+            # Create a combined query using current input and last interaction if available
+            combined_query = player_input
+            if interaction_history:
+                last_interaction = interaction_history[-1]
+                combined_query = f"{last_interaction['player']} {last_interaction['npc']} {player_input}"
+
+            # Query using the combined context
+            relevant_info = self.rag_manager.query(npc_id, combined_query)
+            relevant_dialogues = [d[0] for d in self.rag_manager.query_dialogue_history(npc_id, combined_query, k=5)]
+
+            # Format relevant information
+            context_from_rag = "\nRelevant information:\n"
+            for info, score, source in relevant_info:
+                if score < 100:  # Only include if similarity score is good enough
+                    print(f"\nSource: {source}")
+                    print(f"Similarity Score: {score}")
+                    print(f"Content: {info[:200]}...")  # First 200 chars for preview
+
+                    prefix = "General knowledge: " if source == 'world' else f"{npc_name}'s knowledge: "
+                    context_from_rag += f"{prefix}{info}\n"
+
+            # Construct the system prompt
+            system_prompt = f"""You are an NPC named {npc_name} in a fantasy RPG game. 
+            Your current mood is {npc_mood}.
+            The player's reputation with you is {player_reputation}/100.
+
+            You are aware of the following information:
+            {context_from_rag}
+
+            Active quests: {json.dumps(active_quests, indent=2)}
+
+            Recent conversation history:
+            {json.dumps(interaction_history[-min(10, len(interaction_history)):], 
+                        indent=2) if interaction_history else "No recent interactions."}
+            
+            Relevant dialogues with player:
+            {relevant_dialogues}
+            
+            Respond in character as {npc_name}, considering your mood, the player's reputation, and your knowledge.
+        
+            Format your response as JSON with these fields:
+            - player_inappropriate_request (boolean) (in case of obscene words or harassment)
+            - further_action (string: "reward", "stop", or "wait")
+            - text (string: your in-character response)
+            Do not provide explanation on your decisions about building JSON.
+
+            Player says: {player_input}"""
+            print(system_prompt)
+            # Get response from LLM
             stream = self.client.chat(
                 model=self.model,
                 messages=[{
                     'role': 'system',
-                    'content': formatted_prompt
+                    'content': system_prompt
                 }],
                 stream=True
             )
 
+            # Return the stream for processing by the caller
             return stream
+
         except Exception as e:
-            print(f"Error processing dialogue: {e}")
-            return {"player_inappropriate_request": False,
-                    "further_action": "wait",
-                    "text": "Sorry, I'm having trouble understanding you right now."
+            self.logger.error(f"Error processing dialogue: {e}")
+            return {
+                "player_inappropriate_request": False,
+                "further_action": "wait",
+                "text": "I'm sorry, I'm having trouble understanding you right now."
             }
+
+    def handle_stream(self, stream) -> Optional[Dict]:
+        """Handle the streaming response from the LLM"""
+        try:
+            full_response = ""
+            for chunk in stream:
+                if 'message' in chunk and 'content' in chunk['message']:
+                    content = chunk['message']['content']
+                    full_response += content
+
+                    # For streaming, yield each new character
+                    yield content
+
+                    # If we have a complete response, parse it
+                    if '```json' in full_response and '```' in full_response:
+                        json_text = full_response.split('```json')[-1].split('```')[0]
+                        try:
+                            final_response = json.loads(json_text.strip())
+
+                            return final_response
+                        except json.JSONDecodeError:
+                            continue
+
+        except Exception as e:
+            self.logger.error(f"Error handling stream: {e}")
+            return None
+
+    def store_interaction(self, npc_id: str, player_input: str, npc_response: Dict):
+        """Store the interaction in the RAG system"""
+        try:
+            interaction = {
+                'player': player_input,
+                'npc': npc_response['text']
+            }
+            self.rag_manager.add_interaction(npc_id, interaction)
+        except Exception as e:
+            self.logger.error(f"Error storing interaction: {e}")

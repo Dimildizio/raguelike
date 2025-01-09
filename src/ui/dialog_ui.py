@@ -33,7 +33,7 @@ class DialogUI:
     def start_dialog(self, npc):
         """Call this when starting dialog with an NPC"""
         self.current_npc = npc
-        #npc.last_response if hasattr(npc, 'last_response') else
+        # npc.last_response if hasattr(npc, 'last_response') else
         self.input_text = ""
         self.should_exit = False
         self.streaming_response = ""
@@ -61,9 +61,12 @@ class DialogUI:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 if self.input_text:
-                    self.process_input(self.input_text, self.current_npc)
-                    self.last_input_text = self.input_text
-                    self.input_text = ""
+                    if self.input_text.lower() in ["bye", "goodbye", "see you"]:
+                        self.should_exit = True
+                    else:
+                        self.process_input(self.input_text, self.current_npc)
+                        self.last_input_text = self.input_text
+                        self.input_text = ""
                 else:
                     selected_text = self.predefined_options[self.selected_option]
                     self.last_input_text = selected_text
@@ -89,7 +92,7 @@ class DialogUI:
                   len(self.input_text) < self.max_input_length):
                 self.input_text += event.unicode
 
-    def process_input(self, text, npc):
+    def process_input1(self, text, npc):
         if text.lower() in ["bye", "goodbye", "see you"]:
             self.should_exit = True
             self.clear_dialogue_state()  # Clear state when saying goodbye
@@ -120,7 +123,7 @@ class DialogUI:
             print(f"Unexpected error: {e}")  # Debug print
             self.current_response = "Sorry, I didn't quite understand that."
 
-    def update(self):
+    def update1(self):
         """Call this in your game loop"""
         if self.is_streaming and self.stream:
             try:
@@ -134,7 +137,7 @@ class DialogUI:
 
                     # Find the actual response text between markers
                     start_marker = '"text": "'
-                    end_marker = '"}'
+                    # end_marker = '"}'
 
                     start_idx = self.streaming_response.find(start_marker)
                     if start_idx != -1:
@@ -164,11 +167,125 @@ class DialogUI:
                     start_idx = self.streaming_response.find(start_marker)
                     if start_idx != -1:
                         start_idx += len(start_marker)
-                        self.current_response = self.streaming_response[start_idx:].replace('}', '').replace('"', '').replace('```', '')
+                        self.current_response = (self.streaming_response[start_idx:].replace('}', '')
+                                                 .replace('"', '').replace('```', ''))
 
             except Exception as e:
                 print(f"Streaming error: {e}")
                 self.is_streaming = False
+
+    def process_input(self, text, npc):
+        """Process player input and get NPC response"""
+        if text.lower() in ["bye", "goodbye", "see you"]:
+            self.should_exit = True
+            self.clear_dialogue_state()
+            return
+
+        try:
+            # Get the response stream
+            self.stream = self.dialogue_processor.process_dialogue(
+                player_input=text,
+                npc_name=npc.name,
+                npc_mood=npc.mood,
+                player_reputation=npc.reputation,
+                active_quests=npc.active_quests,
+                interaction_history=npc.interaction_history
+            )
+
+            # Initialize streaming
+            self.streaming_response = ""
+            self.is_streaming = True
+            self.current_response = ""  # Clear current response while streaming
+
+        except Exception as e:
+            print(f"Error in process_input: {e}")
+            self.current_response = "Sorry, I didn't quite understand that."
+
+    def update2(self):
+        """Update dialogue state"""
+        if self.is_streaming and self.stream:
+            try:
+                # Process next chunk of the stream
+                response = next(self.dialogue_processor.handle_stream(self.stream))
+                if response:
+                    self.streaming_response += response
+
+                    # Try to extract the actual response text
+                    try:
+                        response_dict = json.loads(self.streaming_response)
+                        self.current_response = response_dict.get('text', '')
+
+                        # Handle response actions
+                        if response_dict.get('further_action') == 'stop':
+                            self.should_exit = True
+                            self.clear_dialogue_state()
+
+                        # Update NPC state if needed
+                        if response_dict.get('player_inappropriate_request'):
+                            self.current_npc.reputation = max(0, self.current_npc.reputation - 10)
+
+                        # Store the interaction
+                        if self.current_npc:
+                            self.current_npc.add_to_history(self.last_input_text, self.current_response)
+
+                    except json.JSONDecodeError:
+                        # Still streaming, show partial response
+                        self.current_response = self.streaming_response
+
+            except StopIteration:
+                # Stream is complete
+                self.is_streaming = False
+                self.stream = None
+
+    def update(self):
+        """Update dialogue state"""
+        if self.is_streaming and self.stream:
+            try:
+                # Process next chunk of the stream
+                chunk = next(self.dialogue_processor.handle_stream(self.stream))
+                if chunk:  # Streaming chunk
+                    self.streaming_response += chunk
+
+                    # Extract text between markers, similar to update1
+                    start_marker = '"text": "'
+                    if start_marker in self.streaming_response:
+                        start_idx = self.streaming_response.find(start_marker) + len(start_marker)
+                        # Show everything after the start marker, cleaning up JSON artifacts
+                        partial_response = self.streaming_response[start_idx:]
+                        self.current_response = (partial_response.replace('```', '')
+                                                 .replace('}', '')
+                                                 .replace('"', '')
+                                                 .replace('``', ''))
+
+            except StopIteration:
+                # Stream is complete
+                try:
+                    # Find the JSON part between ```json and ```
+                    json_parts = self.streaming_response.split('```json')
+                    if len(json_parts) > 1:
+                        json_text = json_parts[-1].split('```')[0]
+                        final_response = json.loads(json_text.strip())
+
+                        # Update response and handle actions
+                        self.current_response = final_response.get('text', '')
+                        if final_response.get('further_action') == 'stop':
+                            self.should_exit = True
+                        if final_response.get('player_inappropriate_request') and self.current_npc:
+                            self.current_npc.reputation = max(0, self.current_npc.reputation - 1)
+
+                        # Save dialogue history
+                        if self.current_npc:
+                            self.current_npc.add_to_history(self.last_input_text, self.current_response)
+                            self.dialogue_processor.store_interaction(
+                                npc_id=self.current_npc.name.lower().replace(' ', '_'),
+                                player_input=self.last_input_text,
+                                npc_response=final_response
+                            )
+                except json.JSONDecodeError as e:
+                    print(f"Failed to parse final JSON: {e}")
+
+                self.is_streaming = False
+                self.stream = None
 
     def draw(self, screen, npc):
         screen_width = screen.get_width()

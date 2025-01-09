@@ -3,24 +3,23 @@ import sys
 import time
 from game_state import GameStateManager, GameState
 from entities.character import Character
-from world.worldmap import WorldMap  
 from constants import *
 from entities.monster import Monster
 from entities.npc import NPC
 from ui.dialog_ui import DialogUI
 
 
-
 class Game:
     def __init__(self):
         pygame.init()
-        #self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN)
+        # self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN)
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption(GAME_TITLE)
         self.clock = pygame.time.Clock()
         self.state_manager = GameStateManager()
         self.dialog_ui = DialogUI(self.state_manager)
         self.monsters_queue = None
+        self.update_camera()
 
     def update_camera(self):
         # Center camera on player
@@ -37,14 +36,12 @@ class Game:
             self.camera_x = max(0, min(self.camera_x, max_camera_x))
             self.camera_y = max(0, min(self.camera_y, max_camera_y))
 
-
     def exit_dialogue(self):
         self.dialog_ui.should_exit = False  # Reset flag
         self.state_manager.current_npc = None
         self.dialog_ui.current_npc = None
         self.dialog_ui.clear_dialogue_state()
         self.state_manager.change_state(GameState.PLAYING)
-
 
     def run(self):
         running = True
@@ -54,7 +51,7 @@ class Game:
                     running = False
                 self.handle_input(event)
 
-            if (self.state_manager.current_state == GameState.DIALOG and self.dialog_ui.should_exit):
+            if self.state_manager.current_state == GameState.DIALOG and self.dialog_ui.should_exit:
                 self.exit_dialogue()
             # Updates
             if self.state_manager.current_state == GameState.PLAYING:
@@ -155,11 +152,11 @@ class Game:
 
     def handle_combat_input(self, event):
         if event.type == pygame.KEYDOWN:
-            current_entity = self.state_manager.combat_system.turn_order[
-                self.state_manager.combat_system.current_turn]
+            current_entity = self.state_manager.combat_system.turn_order[self.state_manager.combat_system.current_turn]
 
             if event.key == pygame.K_f:  # Basic attack
-                current_entity = self.state_manager.combat_system.turn_order[self.state_manager.combat_system.current_turn]
+                current_entity = self.state_manager.combat_system.turn_order[
+                                    self.state_manager.combat_system.current_turn]
                 if isinstance(current_entity, Character):  # Player's turn
                     target = self.state_manager.combat_system.current_target
                     if target:
@@ -233,7 +230,8 @@ class Game:
                 ]
 
                 for pos_x, pos_y in adjacent_positions:
-                    if 0 <= pos_x < self.state_manager.current_map.width and 0 <= pos_y < self.state_manager.current_map.height:
+                    if 0 <= pos_x < self.state_manager.current_map.width and (
+                            0 <= pos_y < self.state_manager.current_map.height):
                         tile = self.state_manager.current_map.tiles[pos_y][pos_x]
                         if tile and tile.entity and isinstance(tile.entity, NPC):
 
@@ -248,7 +246,6 @@ class Game:
                 self.state_manager.change_state(GameState.INVENTORY)
             elif event.key == pygame.K_ESCAPE:  # Menu
                 self.state_manager.change_state(GameState.MAIN_MENU)
-
 
     def handle_menu_input(self, event):
         if event.type == pygame.KEYDOWN:
@@ -265,6 +262,7 @@ class Game:
     def handle_menu_selection(self):
         selected_option = MENU_OPTIONS[self.state_manager.selected_menu_item]
         if selected_option == "New Game":
+            self.dialog_ui.dialogue_processor.rag_manager.clear_knowledge_base()  # Clean db
             self.state_manager.start_new_game()  # Initialize player and entities
             self.state_manager.change_state(GameState.PLAYING)
         elif selected_option == "Load Game":
@@ -295,7 +293,6 @@ class Game:
             text_rect = text_surface.get_rect(centerx=WINDOW_WIDTH // 2, y=MENU_START_Y + i * MENU_SPACING)
             self.screen.blit(text_surface, text_rect)
 
-
     def draw_combat(self):
         # Fill background
         self.screen.fill(BLACK)
@@ -319,7 +316,8 @@ class Game:
             current_enemy.draw(self.screen, enemy_x - current_enemy.x, enemy_y - current_enemy.y)
 
         # Draw health bars
-        self.draw_health_bar(self.screen, player, COMBAT_UI_PADDING, WINDOW_HEIGHT - COMBAT_UI_HEIGHT + COMBAT_UI_PADDING)
+        self.draw_health_bar(self.screen, player, COMBAT_UI_PADDING,
+                             WINDOW_HEIGHT - COMBAT_UI_HEIGHT + COMBAT_UI_PADDING)
         if current_enemy:
             self.draw_health_bar(self.screen, current_enemy,
                                  WINDOW_WIDTH // 2 + COMBAT_UI_PADDING,
@@ -332,7 +330,6 @@ class Game:
         text_surface = font.render(turn_text, True, WHITE)
         text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, 50))
         self.screen.blit(text_surface, text_rect)
-
 
     def draw_health_bar(self, screen, entity, x, y):
         # Draw health bar background
