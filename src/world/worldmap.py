@@ -126,7 +126,6 @@ class WorldMap:
         destination_tile = self.tiles[new_tile_y][new_tile_x]
         destination_entity = destination_tile.entity
 
-        # Debug prints
         if destination_entity:
             print(f"Found entity at destination: {type(destination_entity)}")
             print(f"Entity HP: {destination_entity.combat_stats.current_hp}")
@@ -148,7 +147,7 @@ class WorldMap:
 
                     print(f"Combat initiated")
                     # Player attacks monster
-                    damage = destination_entity.combat_stats.take_damage(entity.combat_stats.damage)
+                    damage = destination_entity.take_damage(entity.combat_stats.damage)
                     print(f"Damage dealt: {damage}")
                     print(f"Monster HP after damage: {destination_entity.combat_stats.current_hp}")
                     print(f"Monster alive after damage: {destination_entity.is_alive}")

@@ -1,8 +1,8 @@
 import pygame
 import sys
 import time
+import gc
 from game_state import GameStateManager, GameState
-from entities.character import Character
 from constants import *
 from entities.monster import Monster
 from entities.npc import NPC
@@ -50,7 +50,6 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
                 self.handle_input(event)
-
             if self.state_manager.current_state == GameState.DIALOG and self.dialog_ui.should_exit:
                 self.exit_dialogue()
             # Updates
@@ -62,8 +61,6 @@ class Game:
                     self.update_camera()
                     if hasattr(self, 'monsters_queue') and self.monsters_queue:
                         self.process_next_monster()
-            elif self.state_manager.current_state == GameState.COMBAT:
-                self.update_combat()
 
             # Draw
             self.screen.fill(BLACK)
@@ -71,8 +68,6 @@ class Game:
                 if self.state_manager.player:  # Check if player exists
                     self.state_manager.current_map.draw(self.screen, self.camera_x, self.camera_y)
                     self.draw_player_ui()
-            elif self.state_manager.current_state == GameState.COMBAT:
-                self.draw_combat()
             elif self.state_manager.current_state == GameState.MAIN_MENU:
                 self.draw_menu()
             elif self.state_manager.current_state == GameState.DIALOG:
@@ -81,26 +76,17 @@ class Game:
 
             pygame.display.flip()
             self.clock.tick(FPS)
-
+            gc.collect()
         pygame.quit()
 
-    def update_combat(self):
-        if self.state_manager.combat_system.is_combat_active:
-            current_entity = self.state_manager.combat_system.turn_order[
-                self.state_manager.combat_system.current_turn]
-            if isinstance(current_entity, Monster):
-                # AI turn
-                self.handle_monster_turn(current_entity)
 
     def handle_monster_turns(self):
         # Get all monsters from the current map
         self.monsters_queue = [entity for entity in self.state_manager.current_map.entities
                                if isinstance(entity, Monster) and entity.is_alive]
-
         # Reset action points for all monsters
         for monster in self.monsters_queue:
             monster.reset_action_points()
-
         # Start processing the first monster
         self.process_next_monster()
 
@@ -134,34 +120,15 @@ class Game:
         if not action_result:
             self.monsters_queue.pop(0)
 
-    def handle_monster_turn(self, monster):
-        # Simple AI: attack player
-        damage = self.state_manager.combat_system.process_attack(monster, self.state_manager.player)
-        print('monster damage:', damage)
-        self.state_manager.combat_system.next_turn()
 
     def handle_input(self, event):
         if self.state_manager.current_state == GameState.PLAYING:
             self.handle_playing_input(event)
-        elif self.state_manager.current_state == GameState.COMBAT:
-            self.handle_combat_input(event)
         elif self.state_manager.current_state == GameState.MAIN_MENU:
             self.handle_menu_input(event)
         elif self.state_manager.current_state == GameState.DIALOG:
             self.dialog_ui.handle_input(event)
 
-    def handle_combat_input(self, event):
-        if event.type == pygame.KEYDOWN:
-            current_entity = self.state_manager.combat_system.turn_order[self.state_manager.combat_system.current_turn]
-
-            if event.key == pygame.K_f:  # Basic attack
-                current_entity = self.state_manager.combat_system.turn_order[
-                                    self.state_manager.combat_system.current_turn]
-                if isinstance(current_entity, Character):  # Player's turn
-                    target = self.state_manager.combat_system.current_target
-                    if target:
-                        damage = self.state_manager.combat_system.process_attack(current_entity, target)
-                        self.state_manager.combat_system.next_turn()
 
     def toggle_fullscreen(self):
         is_fullscreen = bool(self.screen.get_flags() & pygame.FULLSCREEN)
@@ -187,34 +154,20 @@ class Game:
             # Movement
             if event.key == pygame.K_w:  # Up
                 self.state_manager.player.set_facing(DIRECTION_UP)
-                self.state_manager.current_map.move_entity(
-                    self.state_manager.player,
-                    player_tile_x,
-                    player_tile_y - 1
-                )
+                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x, player_tile_y - 1)
             elif event.key == pygame.K_s:  # Down
-
                 self.state_manager.player.set_facing(DIRECTION_DOWN)
-                self.state_manager.current_map.move_entity(
-                    self.state_manager.player,
-                    player_tile_x,
-                    player_tile_y + 1
-                )
+                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x, player_tile_y + 1)
             elif event.key == pygame.K_a:  # Left
-
                 self.state_manager.player.set_facing(DIRECTION_LEFT)
-                self.state_manager.current_map.move_entity(
-                    self.state_manager.player,
-                    player_tile_x - 1,
-                    player_tile_y
-                )
+                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x - 1, player_tile_y)
             elif event.key == pygame.K_d:  # Right
                 self.state_manager.player.set_facing(DIRECTION_RIGHT)
-                self.state_manager.current_map.move_entity(
-                    self.state_manager.player,
-                    player_tile_x + 1,
-                    player_tile_y
-                )
+                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x + 1, player_tile_y)
+
+            if event.key == pygame.K_j:  # View quest journal
+                quest_status = self.state_manager.quest_manager.format_all_quests_status()
+                print("\n" + quest_status + "\n")
 
             # Interaction
             if event.key == pygame.K_e:  # Interact
@@ -228,10 +181,9 @@ class Game:
                     (player_tile_x, player_tile_y + 1),
                     (player_tile_x, player_tile_y - 1)
                 ]
-
                 for pos_x, pos_y in adjacent_positions:
                     if 0 <= pos_x < self.state_manager.current_map.width and (
-                            0 <= pos_y < self.state_manager.current_map.height):
+                       0 <= pos_y < self.state_manager.current_map.height):
                         tile = self.state_manager.current_map.tiles[pos_y][pos_x]
                         if tile and tile.entity and isinstance(tile.entity, NPC):
 
@@ -240,7 +192,6 @@ class Game:
                             self.dialog_ui.start_dialog(tile.entity)
                             self.state_manager.change_state(GameState.DIALOG)
                             break
-
             # Menu controls
             elif event.key == pygame.K_i:  # Inventory
                 self.state_manager.change_state(GameState.INVENTORY)
@@ -293,67 +244,6 @@ class Game:
             text_rect = text_surface.get_rect(centerx=WINDOW_WIDTH // 2, y=MENU_START_Y + i * MENU_SPACING)
             self.screen.blit(text_surface, text_rect)
 
-    def draw_combat(self):
-        # Fill background
-        self.screen.fill(BLACK)
-        # Draw combat UI area at bottom of screen
-        combat_ui_rect = pygame.Rect(0, WINDOW_HEIGHT - COMBAT_UI_HEIGHT, WINDOW_WIDTH, COMBAT_UI_HEIGHT)
-        pygame.draw.rect(self.screen, (50, 50, 50), combat_ui_rect)
-
-        # Draw entities
-        player = self.state_manager.player
-        current_enemy = self.state_manager.combat_system.current_target
-
-        # Draw player on left side
-        player_x = WINDOW_WIDTH // 4
-        player_y = WINDOW_HEIGHT // 2
-        player.draw(self.screen, player_x - player.x, player_y - player.y)
-
-        # Draw enemy on right side
-        if current_enemy:
-            enemy_x = (WINDOW_WIDTH * 3) // 4
-            enemy_y = WINDOW_HEIGHT // 2
-            current_enemy.draw(self.screen, enemy_x - current_enemy.x, enemy_y - current_enemy.y)
-
-        # Draw health bars
-        self.draw_health_bar(self.screen, player, COMBAT_UI_PADDING,
-                             WINDOW_HEIGHT - COMBAT_UI_HEIGHT + COMBAT_UI_PADDING)
-        if current_enemy:
-            self.draw_health_bar(self.screen, current_enemy,
-                                 WINDOW_WIDTH // 2 + COMBAT_UI_PADDING,
-                                 WINDOW_HEIGHT - COMBAT_UI_HEIGHT + COMBAT_UI_PADDING)
-
-        # Draw turn indicator
-        font = pygame.font.Font(None, 36)
-        current_entity = self.state_manager.combat_system.turn_order[self.state_manager.combat_system.current_turn]
-        turn_text = f"Current Turn: {current_entity.__class__.__name__}"
-        text_surface = font.render(turn_text, True, WHITE)
-        text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, 50))
-        self.screen.blit(text_surface, text_rect)
-
-    def draw_health_bar(self, screen, entity, x, y):
-        # Draw health bar background
-        bar_bg_rect = pygame.Rect(x, y, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)
-        pygame.draw.rect(screen, RED, bar_bg_rect)
-
-        # Draw current health
-        health_percentage = int(entity.health // PLAYER_START_HP)
-        health_width = int(HEALTH_BAR_WIDTH * health_percentage)
-        health_rect = pygame.Rect(x, y, health_width, HEALTH_BAR_HEIGHT)
-        pygame.draw.rect(screen, GREEN, health_rect)
-
-        # Draw health text
-        font = pygame.font.Font(None, 24)
-        health_text = f"HP: {int(entity.health)}"
-        text_surface = font.render(health_text, True, WHITE)
-        text_rect = text_surface.get_rect(centerx=x + HEALTH_BAR_WIDTH // 2, centery=y + HEALTH_BAR_HEIGHT // 2)
-        screen.blit(text_surface, text_rect)
-
-        # Draw entity name
-        name_text = entity.__class__.__name__
-        name_surface = font.render(name_text, True, WHITE)
-        name_rect = name_surface.get_rect(centerx=x + HEALTH_BAR_WIDTH // 2, bottom=y - 5)
-        screen.blit(name_surface, name_rect)
 
     def draw_player_ui(self):
         # Calculate UI dimensions based on screen size

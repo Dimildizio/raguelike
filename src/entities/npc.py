@@ -7,8 +7,9 @@ from systems.combat_stats import CombatStats
 
 
 class NPC(Entity):
-    def __init__(self, x, y, sprite_path="NPC_1", face_path ='NPC_FACE_1', name="Villager Amelia", mood='playful'):
-        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_YELLOW"])
+    def __init__(self, x, y, sprite_path="NPC_1", face_path ='NPC_FACE_1', name="Villager Amelia", mood='playful',
+                 game_state=None):
+        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_YELLOW"], game_state=game_state)
         self.last_response = "Hello traveler! How can I help you today?"
         self.name = name
         self.mood = mood  # Possible values: 'playful', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly

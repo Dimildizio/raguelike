@@ -1,8 +1,9 @@
 import ollama
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import logging
 from .rag_manager import RAGManager
+
 
 
 class DialogueProcessor:
@@ -23,7 +24,7 @@ class DialogueProcessor:
                          npc_name: str,
                          npc_mood: str,
                          player_reputation: int,
-                         active_quests: list,
+                         game_state: Any,
                          interaction_history: list = []) -> Dict:
 
         # Convert NPC name to id format
@@ -51,6 +52,8 @@ class DialogueProcessor:
                     prefix = "General knowledge: " if source == 'world' else f"{npc_name}'s knowledge: "
                     context_from_rag += f"{prefix}{info}\n"
 
+            quest_info = game_state.quest_manager.format_quest_status(npc_id)
+
             # Construct the system prompt
             system_prompt = f"""You are an NPC named {npc_name} in a fantasy RPG game. 
             Your current mood is {npc_mood}.
@@ -59,21 +62,30 @@ class DialogueProcessor:
             You are aware of the following information:
             {context_from_rag}
 
-            Active quests: {json.dumps(active_quests, indent=2)}
+            {quest_info}
 
             Recent conversation history:
-            {json.dumps(interaction_history[-min(10, len(interaction_history)):], 
+            {json.dumps(interaction_history[-min(5, len(interaction_history)):], 
                         indent=2) if interaction_history else "No recent interactions."}
             
             Relevant dialogues with player:
             {relevant_dialogues}
             
             Respond in character as {npc_name}, considering your mood, the player's reputation, and your knowledge.
-        
+                    
             Format your response as JSON with these fields:
-            - player_inappropriate_request (boolean) (in case of obscene words or harassment)
-            - further_action (string: "reward", "stop", or "wait")
+            - player_inappropriate_request (boolean)
+            - further_action (string: "give_quest", "reward", "stop", or "wait")
+            - quest_id (string, only if further_action is "give_quest", must be one of the available quest IDs listed above)
             - text (string: your in-character response)
+            
+            Quest giving rules:
+            - You cannot give any quests that are not listed in avaliable quests. You can't give anything if no quest available.
+            - Only use "give_quest" as further_action when the player explicitly agrees to take on the quest only after clear player acceptance like "I'll do it", "I accept", etc.
+            - If player just asks about available quests, describe them but use "wait" as further_action
+            - If player shows interest but hasn't explicitly agreed, describe quest details, reward itself, but use "wait"
+            - If the player reports completing a quest and meets conditions, use "reward" as further_action.
+
             Do not provide explanation on your decisions about building JSON.
 
             Player says: {player_input}"""
@@ -128,6 +140,8 @@ class DialogueProcessor:
     def store_interaction(self, npc_id: str, player_input: str, npc_response: Dict):
         """Store the interaction in the RAG system"""
         try:
+            print(f"action: {npc_response['further_action']}, "
+                  f"inapropriate: {npc_response['player_inappropriate_request']}")
             interaction = {
                 'player': player_input,
                 'npc': npc_response['text']

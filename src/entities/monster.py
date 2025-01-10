@@ -6,9 +6,10 @@ import random
 
 
 class Monster(Entity):
-    def __init__(self, x, y, sprite_path="MONSTER", name='Monster'):
-        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=60)
+    def __init__(self, x, y, sprite_path="MONSTER", name='Goblin', monster_type='goblin', game_state=None):
+        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=60, game_state=game_state)
         self.name = name
+        self.monster_type = monster_type
         # Choose a personality type
         self.personality = random.choice(MONSTER_PERSONALITY_TYPES)
         dmg = MONSTER_BASE_DAMAGE
@@ -31,7 +32,6 @@ class Monster(Entity):
             self.aggression = random.uniform(1.2, 1.5)  # Very aggressive when close
             self.bravery = random.uniform(0.7, 0.9)  # Stands ground well
             hp *= 1.2
-
         self.combat_stats = CombatStats(base_hp=hp, base_armor=armor, base_damage=dmg)
 
     def attack(self, target):
@@ -50,6 +50,15 @@ class Monster(Entity):
         target.health -= actual_damage
         return actual_damage
 
+
+    def take_damage(self, amount):
+        actual_damage = self.combat_stats.take_damage(amount)
+        print('take_damage quest')
+        if not self.is_alive:
+            self.update_quest_progress()
+        return actual_damage
+
+
     def should_flee(self):
         # More brave monsters will fight at lower health
         return (self.health / self.max_health) < self.bravery
@@ -60,3 +69,15 @@ class Monster(Entity):
 
     def update(self):
         self.update_breathing()
+
+    def update_quest_progress(self):
+        """Update all relevant quest conditions when this monster dies"""
+        if not self.game_state:
+            return
+        active_quests = self.game_state.quest_manager.get_active_quests()
+        for quest in active_quests:
+            for condition in quest.completion_conditions:
+                if self.monster_type in condition.monster_tags:
+                    print(
+                        f"Monster {self.monster_type} killed, updating condition {condition.type} for quest {quest.quest_id}")
+                    condition.current_value += 1

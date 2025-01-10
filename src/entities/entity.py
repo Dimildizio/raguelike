@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
-import pygame
 import random
 from constants import *
 from utils.sprite_loader import SpriteLoader
 
 
 class Entity(ABC):
-    def __init__(self, x, y, sprite_path, outline_path=None, hp=100, ap=100):
+    def __init__(self, x, y, sprite_path, outline_path=None, hp=100, ap=100, game_state=None):
         self.x = x
         self.y = y
+        self.game_state = game_state
         self.sprite_loader = SpriteLoader(
             ORIGINAL_SPRITE_SIZE,
             PREPROCESSED_TILE_SIZE,
