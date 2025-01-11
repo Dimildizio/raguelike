@@ -288,12 +288,13 @@ class WorldMap:
 
     def execute_attack(self, monster, player):
         """Execute attack action"""
+        animation = False
         if not monster.can_do_action(ATTACK_ACTION_COST):
             return False
-        animation = True
+
         monster.spend_action_points(ATTACK_ACTION_COST)
 
-        # Calculate angle to face target
+        # Calculate and set rotation BEFORE starting animation
         dx = player.x - monster.x
         dy = player.y - monster.y
         angle = math.degrees(math.atan2(-dy, dx)) + 90

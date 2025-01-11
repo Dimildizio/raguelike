@@ -18,7 +18,7 @@ class CombatAnimation:
         self.attacker = None
         self.target = None
         self.original_pos = (0, 0)
-        self.original_target_rotation = 0
+        #self.original_target_rotation = 0
         self.shake_offset = (0, 0)  # Store shake offset separately
 
     def start_attack(self, attacker, target):
@@ -27,14 +27,16 @@ class CombatAnimation:
         self.attacker = attacker
         self.target = target
         self.original_pos = (attacker.x, attacker.y)
-        self.original_target_rotation = target.rotation
+        #self.original_target_rotation = target.rotation
         self.shake_offset = (0, 0)
 
-        # Calculate angle to face attacker
+        # Calculate and set target rotation immediately
         dx = attacker.x - target.x
         dy = attacker.y - target.y
         angle = math.degrees(math.atan2(-dy, dx)) + 90
-        self.target.base_rotation = angle
+        target.base_rotation = angle
+
+        return True
 
     def update(self):
         if not self.is_playing:
@@ -47,7 +49,7 @@ class CombatAnimation:
             # Animation finished
             self.is_playing = False
             self.attacker.x, self.attacker.y = self.original_pos
-            self.target.rotation = self.original_target_rotation
+            #self.target.rotation = self.original_target_rotation
             self.shake_offset = (0, 0)
             return
 

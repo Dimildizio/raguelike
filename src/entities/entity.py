@@ -39,27 +39,22 @@ class Entity(ABC):
         self.action_points = ap
         self.armor = 0
 
-
     def update_breathing(self):
         # Move current angle towards target angle
         if self.is_breathing_in:
             self.current_angle += self.breath_speed
             if self.current_angle >= self.target_angle:
-                # Reached target, start breathing out
                 self.is_breathing_in = False
-                # Choose new random speed for variety
                 self.breath_speed = random.uniform(0.5, 1.5) * BREATHING_SPEED
         else:
             self.current_angle -= self.breath_speed
             if self.current_angle <= -self.target_angle:
-                # Reached opposite point, start breathing in
                 self.is_breathing_in = True
-                # Choose new random target and speed
                 self.target_angle = random.uniform(-BREATHING_AMPLITUDE, BREATHING_AMPLITUDE)
                 self.breath_speed = random.uniform(0.5, 1.5) * BREATHING_SPEED
 
-        # Set rotation directly from current_angle
-        self.rotation = self.base_rotation + self.current_angle
+        # Calculate total rotation (base + breathing)
+        self.rotation = (self.base_rotation + self.current_angle) % 360
 
 
     def draw(self, screen, offset_x=0, offset_y=0):
@@ -81,9 +76,9 @@ class Entity(ABC):
                 ))
                 screen.blit(rotated_surface, sprite_rect)
 
-    @abstractmethod
     def update(self):
-        pass
+        """Base update method that includes breathing animation"""
+        self.update_breathing()
 
     @property
     def is_alive(self):
