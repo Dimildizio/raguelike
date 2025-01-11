@@ -22,7 +22,6 @@ INITIAL_KNOWLEDGE = {
         "The wolf seems to be working with the goblins, unusual behavior.",
         "Two goblins and a wolf have been spotted near the village.",
         "Tom doesn't give reward on dealing with the goblins, Amelia does, adventurer should talk to her about reward on goblins.",
-        "The wolf seems to be leading the goblins, which is strange.",
         "The goblins have stolen goods from recent merchant shipments."
     ],
 
@@ -32,13 +31,13 @@ INITIAL_KNOWLEDGE = {
         "Amelia has seen the goblins and wolf near her home.",
         "Amelia is worried about the safety of her herb garden.",
         "Amelia knows most of the villagers by name.",
-        "Amilia knows an old man Merchant Tom"
+        "Amilia knows an old man Merchant Tom",
         "Amelia makes healing potions from her herbs.",
         "Amelia has lived in the village her whole life.",
         # Quest knowledge
         "Amelia doesn't know how many goblins are there",
         "The goblins are getting bolder, coming closer to the houses.",
         "The goblins have been stealing herbs from the garden.",
-        "The reward for dealing with goblins is 50 gold, with possible 10 gold extra if adventurer brings that wolf pelt."
+        "There is reward for dealing with goblins, with possible 10 gold extra if adventurer brings that wolf pelt."
     ]
 }

@@ -21,14 +21,13 @@ class DialogueProcessor:
 
     def process_dialogue(self,
                          player_input: str,
-                         npc_name: str,
-                         npc_mood: str,
+                         npc: Any,
                          player_reputation: int,
                          game_state: Any,
                          interaction_history: list = []) -> Dict:
 
         # Convert NPC name to id format
-        npc_id = npc_name.lower().replace(' ', '_')
+        npc_id = npc.name.lower().replace(' ', '_')
 
         try:
             # Create a combined query using current input and last interaction if available
@@ -49,21 +48,24 @@ class DialogueProcessor:
                     print(f"Similarity Score: {score}")
                     print(f"Content: {info[:200]}...")  # First 200 chars for preview
 
-                    prefix = "General knowledge: " if source == 'world' else f"{npc_name}'s knowledge: "
+                    prefix = "General knowledge: " if source == 'world' else f"{npc.name}'s knowledge: "
                     context_from_rag += f"{prefix}{info}\n"
 
             quest_info = game_state.quest_manager.format_quest_status(npc_id)
 
             # Construct the system prompt
-            system_prompt = f"""You are an NPC named {npc_name} in a fantasy RPG game. 
-            Your current mood is {npc_mood}.
+            system_prompt = f"""You are an NPC named {npc.name} in a fantasy RPG game. 
+            Your current mood is {npc.mood}.
             The player's reputation with you is {player_reputation}/100.
 
             You are aware of the following information:
             {context_from_rag}
 
             {quest_info}
+            {npc.negotiate_reward_prompt()}
+            You currently have {npc.money} gold."
 
+            
             Recent conversation history:
             {json.dumps(interaction_history[-min(5, len(interaction_history)):], 
                         indent=2) if interaction_history else "No recent interactions."}
@@ -71,20 +73,29 @@ class DialogueProcessor:
             Relevant dialogues with player:
             {relevant_dialogues}
             
-            Respond in character as {npc_name}, considering your mood, the player's reputation, and your knowledge.
+            Respond in character as {npc.name}, {npc.description}, considering your mood, the player's reputation, and your knowledge.
                     
             Format your response as JSON with these fields:
             - player_inappropriate_request (boolean)
-            - further_action (string: "give_quest", "reward", "stop", or "wait")
+            - further_action (string: "give_quest", "reward", "stop", "negotiate_reward", or "wait")
             - quest_id (string, only if further_action is "give_quest", must be one of the available quest IDs listed above)
+            - negotiated_amount (integer, only if further_action is "negotiate_reward", acoont be more than max_reward gold amount)
             - text (string: your in-character response)
             
             Quest giving rules:
-            - You cannot give any quests that are not listed in avaliable quests. You can't give anything if no quest available.
-            - Only use "give_quest" as further_action when the player explicitly agrees to take on the quest only after clear player acceptance like "I'll do it", "I accept", etc.
-            - If player just asks about available quests, describe them but use "wait" as further_action
-            - If player shows interest but hasn't explicitly agreed, describe quest details, reward itself, but use "wait"
-            - If the player reports completing a quest and meets conditions, use "reward" as further_action.
+            
+            - You cannot give any quests that are not listed in available quests. You can't give quests if there are no quest available.
+            - Only use "give_quest" when the player explicitly agrees to take on the quest
+            - If player asks about available quests, describe them but use "wait" as further_action
+            - If player shows interest but hasn't agreed, describe quest details and use "wait"
+            - You can offer less reward for the quest when you give the quest
+            - If player tries to negotiate quest reward:
+              * Use "negotiate_reward" as further_action
+              * Set negotiated_amount to the agreed amount (must be less than or equal to original reward)
+              * You cannot promise more gold than you currently have or the quest max_reward: 'gold' 'amount' indicates but you can try to negotiate less
+              * Consider player's reputation in negotiation
+            - If player reports completing a quest and meets conditions, use "reward"
+            - You can only negotiate rewards for quests that haven't been negotiated yet
 
             Do not provide explanation on your decisions about building JSON.
 
@@ -149,3 +160,5 @@ class DialogueProcessor:
             self.rag_manager.add_interaction(npc_id, interaction)
         except Exception as e:
             self.logger.error(f"Error storing interaction: {e}")
+
+

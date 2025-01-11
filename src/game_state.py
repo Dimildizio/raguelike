@@ -39,13 +39,14 @@ class GameStateManager:
         ]
 
         # Create NPCs
-        npc_imgs = [{'name': 'Villager Amelia', 'sprite': 'NPC_1', 'face': 'NPC_FACE_1'},
-                    {'name': 'Merchant Tom', 'sprite': 'NPC_2', 'face': 'NPC_FACE_2'},
-                    {'name': 'Elara the Elara', 'sprite': 'NPC_3', 'face': 'NPC_FACE_3'},]
+        npc_imgs = [{'name': 'Villager Amelia', 'sprite': 'NPC_1', 'face': 'NPC_FACE_1', 'description': 'young girl'},
+                    {'name': 'Merchant Tom', 'sprite': 'NPC_2', 'face': 'NPC_FACE_2', 'description': 'old tired merchant'},
+                    {'name': 'Elara the Elara', 'sprite': 'NPC_3', 'face': 'NPC_FACE_3', 'description': 'middle aged half ork woman'},]
         moods = ['playful', 'happy', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
         npcs = [
             NPC(0, 0, npc_imgs[n]['sprite'], face_path=npc_imgs[n]['face'], name=npc_imgs[n]['name'],
-                mood=random.choice(moods), game_state=self) for n in range(NUM_NPCS)]
+                mood=random.choice(moods), game_state=self, description=npc_imgs[n]['description']
+                ) for n in range(NUM_NPCS)]
 
         # Create and setup map
         self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
@@ -66,7 +67,7 @@ class GameStateManager:
     def complete_quest(self, quest_id: str):
         """Handle quest completion through the game state"""
         if self.player:
-            rewards = self.quest_manager.check_quest_completion(quest_id, self.player)
+            rewards = self.quest_manager.check_quest_completion(quest_id, self.player, self.current_npc)
             if rewards:
                 self.player.complete_quest(quest_id)
                 return rewards
@@ -99,9 +100,6 @@ class GameStateManager:
             return
         # Update quest progress based on monster type
         print(f"{monster.monster_type} dies")
-        if monster.monster_type == "goblin":
-            self.update_quest_progress("kill_goblins")
-        elif monster.monster_type == "wolf":
-            self.update_quest_progress("kill_wolf")
-            # Add wolf pelt to player inventory
+        self.update_quest_progress(f"kill_{monster.monster_type}s")
+        if monster.monster_type == "wolf":
             self.player.inventory.append("wolf_pelt")

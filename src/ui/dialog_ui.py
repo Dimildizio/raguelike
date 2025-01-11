@@ -104,8 +104,7 @@ class DialogUI:
             # Get the response stream
             self.stream = self.dialogue_processor.process_dialogue(
                 player_input=text,
-                npc_name=npc.name,
-                npc_mood=npc.mood,
+                npc=npc,
                 player_reputation=npc.reputation,
                 game_state=self.game_state_manager,
                 interaction_history=npc.interaction_history
@@ -146,41 +145,70 @@ class DialogUI:
                     # Find the JSON part between ```json and ```
                     json_parts = self.streaming_response.split('```json')
                     if len(json_parts) > 1:
-                        json_text = json_parts[-1].split('```')[0]
-                        final_response = json.loads(json_text.strip())
+                        json_text = json_parts[1].split('```')[0]
+                        final_response = json.loads(json_text)
+                        print(final_response)
 
-                        # Update response and handle actions
-                        self.current_response = final_response.get('text', '')
-
-                        if final_response.get('further_action') == 'give_quest':
-
-                            quest_id = final_response.get('quest_id')
-                            print('the quest is given', quest_id)
-                            if quest_id:
-                                self.game_state_manager.accept_quest(quest_id)
-                        if final_response.get('further_action') == 'reward':
-                            quest_id = final_response.get('quest_id')
-                            print('the reward is given', quest_id)
-                            if quest_id:
-                                rewards = self.game_state_manager.complete_quest(quest_id)
-                                if rewards:
-                                    print(rewards)
-                                    pass
-                        if final_response.get('further_action') == 'stop':
-                            self.should_exit = True
-                        if final_response.get('player_inappropriate_request') and self.current_npc:
-                            self.current_npc.reputation = max(0, self.current_npc.reputation - 1)
-
-                        # Save dialogue history
+                        # Update NPC's last response
                         if self.current_npc:
-                            self.current_npc.add_to_history(self.last_input_text, self.current_response)
-                            self.dialogue_processor.store_interaction(
-                                npc_id=self.current_npc.name.lower().replace(' ', '_'),
-                                player_input=self.last_input_text,
-                                npc_response=final_response
+                            self.current_npc.last_response = final_response.get('text', '')
+
+                            # Handle quest-related actions
+                            if final_response.get('further_action') == 'give_quest':
+                                quest_id = final_response.get('quest_id')
+                                print('give quest', quest_id)
+                                if quest_id:
+                                    if self.game_state_manager.accept_quest(quest_id):
+                                        self.current_response += "\nQuest accepted!"
+                                    else:
+                                        self.current_response += "\nCouldn't accept the quest."
+
+                            # Handle reward negotiation
+                            elif final_response.get('further_action') == 'negotiate_reward':
+                                quest_id = final_response.get('quest_id')
+                                negotiated_amount = final_response.get('negotiated_amount')
+                                if quest_id and negotiated_amount:
+                                    if self.current_npc.negotiate_reward(quest_id, negotiated_amount):
+                                        self.current_response += f"\nAlright, I agree to pay you {negotiated_amount} gold upon completion."
+                                    else:
+                                        self.current_response += "\nI'm sorry, but I can't afford to pay that much."
+
+                            # Handle quest completion and reward payment
+                            elif final_response.get('further_action') == 'reward':
+                                quest_id = final_response.get('quest_id')
+                                if quest_id:
+                                    rewards = self.game_state_manager.complete_quest(quest_id)
+                                    if rewards:
+                                        total_received = 0
+                                        reward_texts = []
+                                        for reward in rewards:
+                                            if reward['type'] == 'gold':
+                                                amount = reward['amount']
+                                                # Add the gold to player's inventory
+                                                received = self.game_state_manager.player.add_gold(amount)
+                                                total_received += received
+                                                reward_texts.append(f"{received} gold")
+
+                                        if total_received > 0:
+                                            self.current_response += f"\nReceived: {', '.join(reward_texts)}"
+                                            if total_received < sum(
+                                                    r['amount'] for r in rewards if r['type'] == 'gold'):
+                                                self.current_response += "\n(That's all I could afford right now)"
+                                        else:
+                                            self.current_response += "\nI'm sorry, but I don't have any money to pay you right now."
+                                    else:
+                                        self.current_response += "\nI'm sorry, but I can't pay you right now."
+
+                            # Update interaction history
+                            self.current_npc.add_to_history(
+                                self.last_input_text,
+                                final_response.get('text', '')
                             )
+
                 except json.JSONDecodeError as e:
-                    print(f"Failed to parse final JSON: {e}, {json_parts}")
+                    print(f"Error decoding JSON: {e}")
+                except Exception as e:
+                    print(f"Error processing dialogue: {e}")
 
                 self.is_streaming = False
                 self.stream = None

@@ -52,3 +52,15 @@ class Character(Entity):
     def has_completed_quest(self, quest_id: str) -> bool:
         """Check if a specific quest is completed"""
         return quest_id in self.completed_quests
+
+    def add_gold(self, amount):
+        """Add money to character's purse"""
+        self.gold += amount
+        return self.gold
+
+    def spend_gold(self, amount):
+        """Try to spend money, return True if successful"""
+        if self.gold >= amount:
+            self.gold -= amount
+            return True
+        return False

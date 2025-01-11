@@ -153,6 +153,15 @@ class RAGManager:
     def query_dialogue_history(self, npc_id: str, query: str, k: int = 3) -> List[Tuple[str, float]]:
         """Query only dialogue history"""
         try:
+            dialogue_texts = self.texts.get(f"{npc_id}_dialogues", [])
+
+            if not dialogue_texts:
+                return []
+            k = min(k, len(dialogue_texts))
+            if npc_id not in self.dialogue_indices:
+                self.dialogue_indices[npc_id] = faiss.IndexFlatL2(self.embedding_dim)
+                return []
+
             query_embedding = self.encoder.encode([query])
             query_vector = np.array(query_embedding).astype('float32')
 

@@ -161,6 +161,7 @@ class Game:
             if event.key == pygame.K_j:  # View quest journal
                 quest_status = self.state_manager.quest_manager.format_all_quests_status()
                 print("\n" + quest_status + "\n")
+                print('money:', self.state_manager.player.gold)
 
             # Interaction
             if event.key == pygame.K_e:  # Interact
@@ -168,29 +169,7 @@ class Game:
                 facing_pos = self.state_manager.current_map.get_facing_tile_position(self.state_manager.player)
                 if facing_pos:
                     self.try_interact_with_npc(facing_pos[0], facing_pos[1])
-                '''
-                adjacent_positions = [
-                    (player_tile_x + 1, player_tile_y),
-                    (player_tile_x - 1, player_tile_y),
-                    (player_tile_x, player_tile_y + 1),
-                    (player_tile_x, player_tile_y - 1)
-                ]
-                for pos_x, pos_y in adjacent_positions:
-                    if 0 <= pos_x < self.state_manager.current_map.width and (
-                       0 <= pos_y < self.state_manager.current_map.height):
-                        tile = self.state_manager.current_map.tiles[pos_y][pos_x]
-                        if tile:
-                            tostop = False
-                            for entity in tile.entities:
-                                if entity and isinstance(entity, NPC):
-                                    self.dialog_ui.current_npc = entity
-                                    self.state_manager.current_npc = entity
-                                    self.dialog_ui.start_dialog(entity)
-                                    self.state_manager.change_state(GameState.DIALOG)
-                                    tostop = True
-                                    break
-                            if tostop:
-                                break'''
+
             # Menu controls
             elif event.key == pygame.K_i:  # Inventory
                 self.state_manager.change_state(GameState.INVENTORY)
@@ -296,7 +275,7 @@ class Game:
                  pygame.K_s: {'direction': DIRECTION_DOWN, 'tile_x': player_tile_x, 'tile_y': player_tile_y + 1},
                  pygame.K_a: {'direction': DIRECTION_LEFT, 'tile_x': player_tile_x - 1, 'tile_y': player_tile_y},
                  pygame.K_d: {'direction': DIRECTION_RIGHT, 'tile_x': player_tile_x + 1, 'tile_y': player_tile_y}}
-        return moves[key]['direction'], moves[key]['tile_x'], moves[key]['tile_y']
+        return moves[key]['direction'], int(moves[key]['tile_x']), int(moves[key]['tile_y'])
 
     def try_interact_with_npc(self, tile_x, tile_y):
         """Try to interact with an NPC at the given tile position"""

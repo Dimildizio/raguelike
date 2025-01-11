@@ -106,15 +106,15 @@ class QuestManager:
         goblin_quest = Quest(
             quest_id="goblin_threat",
             title="The Goblin Threat",
-            description="Deal with the goblins threatening the village. Kill two goblins and their wolf leader.",
+            description="Deal with the goblins threatening the village. Kill two goblins and their wolf.",
             giver_npc="villager_amelia",
             completion_conditions=[
                 QuestCondition("kill_goblins", 2, monster_tags=["goblin"]),
-                QuestCondition("kill_wolf", 1, monster_tags=["wolf"]),
+                #QuestCondition("kill_wolfs", 1, monster_tags=["wolf"]),
             ],
             reward_conditions=[
                 {"type": "gold", "amount": 50},
-                {"type": "conditional", "condition": "has_wolf_pelt", "reward": {"gold": 10}, "consume_item": "wolf_pelt"}
+                #{"type": "conditional", "condition": "has_wolf_pelt", "reward": {"gold": 10}, "consume_item": "wolf_pelt"}
             ]
         )
         self.quests[goblin_quest.quest_id] = goblin_quest
@@ -175,6 +175,47 @@ class QuestManager:
         quest.status = QuestStatus.COMPLETED
         return rewards
 
+    def check_quest_completion(self, quest_id: str, player, npc=None) -> Optional[List[Dict]]:
+        """Check if quest is complete and return rewards if conditions are met"""
+        if quest_id not in self.quests:
+            return None
+
+        quest = self.quests[quest_id]
+        if quest.status != QuestStatus.IN_PROGRESS or not quest.is_completed():
+            return None
+
+        # Verify NPC can pay rewards
+        if npc is None:
+            self.logger.warning(f"No NPC provided for quest completion: {quest_id}")
+            return None
+
+        rewards = []
+        for reward_condition in quest.reward_conditions:
+            if reward_condition["type"] == "gold":
+                # Get actual reward from NPC
+                actual_reward = npc.pay_reward(quest_id, reward_condition)
+                if actual_reward["amount"] > 0:
+                    rewards.append(actual_reward)
+
+            elif reward_condition["type"] == "conditional":
+                if reward_condition["condition"] == "has_wolf_pelt" and "wolf_pelt" in player.inventory:
+                    # Handle conditional rewards through NPC as well
+                    bonus_reward = npc.pay_reward(quest_id + "_bonus",
+                                                  {"amount": reward_condition["reward"]["gold"]})
+                    if bonus_reward["amount"] > 0:
+                        rewards.append(bonus_reward)
+                        if reward_condition.get("consume_item"):
+                            player.inventory.remove(reward_condition["consume_item"])
+
+            self.logger.info(f"Quest reward {rewards} given")
+
+        if rewards:
+            quest.status = QuestStatus.COMPLETED
+            return rewards
+        else:
+            self.logger.warning(f"Quest {quest_id} completed but no rewards could be given")
+            return None
+
     def save_quests(self) -> Dict:
         """Save all quests to dictionary"""
         return {quest_id: quest.to_dict() for quest_id, quest in self.quests.items()}
@@ -199,6 +240,7 @@ class QuestManager:
                     "quest_id": quest.quest_id,
                     "title": quest.title,
                     "description": quest.description,
+                    'reward_conditions': quest.reward_conditions,
                     "conditions": [
                         {
                             "type": condition.type,
@@ -223,7 +265,7 @@ class QuestManager:
         if quest_status[status]:
             quest_info.append(f"{status} quests:")
             for quest in quest_status[status]:
-                quest_info.append(f"- {quest['quest_id']}: {quest['title']}")
+                quest_info.append(f"- {quest['quest_id']}: {quest['title']}, max_reward: {quest['reward_conditions']}")
         return quest_info
 
     def format_quest_status(self, npc_id: str) -> str:
@@ -274,7 +316,7 @@ class QuestManager:
         if status_groups["NOT_STARTED"]:
             quest_info.append("\nAVAILABLE QUESTS:")
             for quest in status_groups["NOT_STARTED"]:
-                quest_info.append(f"- {quest.title} (from {quest.giver_npc})")
+                quest_info.append(f"- {quest.title} (from {quest.giver_npc}  max reward: {quest.reward_conditions})")
 
         # Completed quests
         if status_groups["COMPLETED"]:
