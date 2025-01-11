@@ -152,18 +152,11 @@ class Game:
                 return
 
             # Movement
-            if event.key == pygame.K_w:  # Up
-                self.state_manager.player.set_facing(DIRECTION_UP)
-                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x, player_tile_y - 1)
-            elif event.key == pygame.K_s:  # Down
-                self.state_manager.player.set_facing(DIRECTION_DOWN)
-                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x, player_tile_y + 1)
-            elif event.key == pygame.K_a:  # Left
-                self.state_manager.player.set_facing(DIRECTION_LEFT)
-                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x - 1, player_tile_y)
-            elif event.key == pygame.K_d:  # Right
-                self.state_manager.player.set_facing(DIRECTION_RIGHT)
-                self.state_manager.current_map.move_entity(self.state_manager.player, player_tile_x + 1, player_tile_y)
+            if event.key in (pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d):
+                direction, tile_x, tile_y = self.get_move_direction(event.key, player_tile_x, player_tile_y)
+                self.state_manager.player.set_facing(direction)
+                if not self.try_interact_with_npc(tile_x, tile_y):
+                    self.state_manager.current_map.move_entity(self.state_manager.player, tile_x, tile_y)
 
             if event.key == pygame.K_j:  # View quest journal
                 quest_status = self.state_manager.quest_manager.format_all_quests_status()
@@ -172,9 +165,10 @@ class Game:
             # Interaction
             if event.key == pygame.K_e:  # Interact
                 # Check adjacent tiles for NPCs
-                player_tile_x = int(self.state_manager.player.x // self.state_manager.current_map.tile_size)
-                player_tile_y = int(self.state_manager.player.y // self.state_manager.current_map.tile_size)
-
+                facing_pos = self.state_manager.current_map.get_facing_tile_position(self.state_manager.player)
+                if facing_pos:
+                    self.try_interact_with_npc(facing_pos[0], facing_pos[1])
+                '''
                 adjacent_positions = [
                     (player_tile_x + 1, player_tile_y),
                     (player_tile_x - 1, player_tile_y),
@@ -185,13 +179,18 @@ class Game:
                     if 0 <= pos_x < self.state_manager.current_map.width and (
                        0 <= pos_y < self.state_manager.current_map.height):
                         tile = self.state_manager.current_map.tiles[pos_y][pos_x]
-                        if tile and tile.entity and isinstance(tile.entity, NPC):
-
-                            self.dialog_ui.current_npc = tile.entity
-                            self.state_manager.current_npc = tile.entity
-                            self.dialog_ui.start_dialog(tile.entity)
-                            self.state_manager.change_state(GameState.DIALOG)
-                            break
+                        if tile:
+                            tostop = False
+                            for entity in tile.entities:
+                                if entity and isinstance(entity, NPC):
+                                    self.dialog_ui.current_npc = entity
+                                    self.state_manager.current_npc = entity
+                                    self.dialog_ui.start_dialog(entity)
+                                    self.state_manager.change_state(GameState.DIALOG)
+                                    tostop = True
+                                    break
+                            if tostop:
+                                break'''
             # Menu controls
             elif event.key == pygame.K_i:  # Inventory
                 self.state_manager.change_state(GameState.INVENTORY)
@@ -290,6 +289,30 @@ class Game:
         ap_text = f"AP: {self.state_manager.player.action_points}/{self.state_manager.player.max_action_points}"
         ap_text_surface = font.render(ap_text, True, WHITE)
         self.screen.blit(ap_text_surface, (padding + 5, ap_y + text_y_offset))
+
+    @staticmethod
+    def get_move_direction(key, player_tile_x, player_tile_y):
+        moves = {pygame.K_w: {'direction': DIRECTION_UP, 'tile_x': player_tile_x, 'tile_y': player_tile_y - 1},
+                 pygame.K_s: {'direction': DIRECTION_DOWN, 'tile_x': player_tile_x, 'tile_y': player_tile_y + 1},
+                 pygame.K_a: {'direction': DIRECTION_LEFT, 'tile_x': player_tile_x - 1, 'tile_y': player_tile_y},
+                 pygame.K_d: {'direction': DIRECTION_RIGHT, 'tile_x': player_tile_x + 1, 'tile_y': player_tile_y}}
+        return moves[key]['direction'], moves[key]['tile_x'], moves[key]['tile_y']
+
+    def try_interact_with_npc(self, tile_x, tile_y):
+        """Try to interact with an NPC at the given tile position"""
+        if not (0 <= tile_x < self.state_manager.current_map.width and
+                0 <= tile_y < self.state_manager.current_map.height):
+            return False
+
+        tile = self.state_manager.current_map.tiles[tile_y][tile_x]
+        for entity in tile.entities:
+            if isinstance(entity, NPC):
+                self.dialog_ui.current_npc = entity
+                self.state_manager.current_npc = entity
+                self.dialog_ui.start_dialog(entity)
+                self.state_manager.change_state(GameState.DIALOG)
+                return True
+        return False
 
 
 if __name__ == "__main__":

@@ -1,18 +1,3 @@
-import pygame
-import random
-from utils.sprite_loader import SpriteLoader
-from constants import *
-
-import pygame
-import random
-from utils.sprite_loader import SpriteLoader
-from constants import *
-
-import pygame
-from utils.sprite_loader import SpriteLoader
-from constants import *
-
-import pygame
 import random
 from utils.sprite_loader import SpriteLoader
 from constants import *
@@ -30,7 +15,7 @@ class Tile:
         # Unpack the tuple returned by load_sprite
         self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
         self.rotation = random.choice([0, 90, 180, 270])
-        self.entity = None
+        self.entities = []
 
     def draw(self, screen, offset_x=0, offset_y=0):
         if self.pil_sprite:
@@ -41,3 +26,20 @@ class Tile:
         else:
             # Fallback to regular surface if PIL sprite isn't available
             screen.blit(self.surface, (self.x + offset_x, self.y + offset_y))
+
+    def add_entity(self, entity):
+        """Add an entity to this tile"""
+        if entity not in self.entities:
+            self.entities.append(entity)
+
+    def remove_entity(self, entity):
+        """Remove an entity from this tile"""
+        if entity in self.entities:
+            self.entities.remove(entity)
+
+    def get_blocking_entity(self):
+        """Return the first non-passable entity on this tile, or None if tile is passable"""
+        for entity in self.entities:
+            if not entity.is_passable:
+                return entity
+        return None

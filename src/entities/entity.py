@@ -16,6 +16,7 @@ class Entity(ABC):
         )
         self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
         self.outline = None
+        self.is_passable = False
 
         self.pil_outline = None
         if outline_path:

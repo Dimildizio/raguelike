@@ -98,15 +98,20 @@ class WorldMap:
         if hasattr(self, 'combat_animation'):
             self.combat_animation.draw(screen, camera_x, camera_y)
 
-    
-    def remove_entity(self, entity):
-        if entity in self.entities:
-            # Find and clear tile's entity reference
-            tile_x = entity.x // self.tile_size
-            tile_y = entity.y // self.tile_size
-            self.tiles[tile_y][tile_x].entity = None
-            self.entities.remove(entity)
-    
+    def get_facing_tile_position(self, player):
+        """Get the tile position that the player is facing"""
+        player_tile_x = int(player.x // self.tile_size)
+        player_tile_y = int(player.y // self.tile_size)
+        if player.facing == DIRECTION_UP:
+            return (player_tile_x, player_tile_y - 1)
+        elif player.facing == DIRECTION_DOWN:
+            return (player_tile_x, player_tile_y + 1)
+        elif player.facing == DIRECTION_LEFT:
+            return (player_tile_x - 1, player_tile_y)
+        elif player.facing == DIRECTION_RIGHT:
+            return (player_tile_x + 1, player_tile_y)
+        return None
+
     def get_tile_at(self, tile_x, tile_y):
         if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
             return self.tiles[tile_y][tile_x]
@@ -116,63 +121,50 @@ class WorldMap:
         new_tile_x = int(new_tile_x)
         new_tile_y = int(new_tile_y)
         if hasattr(self, 'combat_animation') and self.combat_animation.is_playing:
-            return False  # Don't allow movement/attack during animation
+            return False
 
         # Check if movement is valid
         if not (0 <= new_tile_x < self.width and 0 <= new_tile_y < self.height):
             return False
 
-        # Get entity at destination tile
+        # Get destination tile and blocking entity
         destination_tile = self.tiles[new_tile_y][new_tile_x]
-        destination_entity = destination_tile.entity
+        blocking_entity = destination_tile.get_blocking_entity()
 
-        if destination_entity:
-            print(f"Found entity at destination: {type(destination_entity)}")
-            print(f"Entity HP: {destination_entity.combat_stats.current_hp}")
-            print(f"Is alive: {destination_entity.is_alive}")
+        if blocking_entity:
+            if not blocking_entity.is_alive:
+                # Remove dead entity and allow movement
+                destination_tile.remove_entity(blocking_entity)
+                if blocking_entity in self.entities:
+                    self.entities.remove(blocking_entity)
+                return self.move_entity(entity, new_tile_x, new_tile_y)
 
-        # Check if destination has a living entity
-        if destination_entity is not None:
-            if not destination_entity.is_alive:
-                print(f"Removing dead entity from tile {new_tile_x}, {new_tile_y}")
-                # Remove dead entity and allow movement to its tile
-                destination_tile.entity = None
-                if destination_entity in self.entities:
-                    self.entities.remove(destination_entity)
-                return self.move_entity(entity, new_tile_x, new_tile_y)  # Retry move after removing
-
-            elif isinstance(entity, Character) and isinstance(destination_entity, Monster):
+            elif isinstance(entity, Character) and isinstance(blocking_entity, Monster):
                 if entity.can_do_action(ATTACK_ACTION_COST):
+                    # Handle combat
                     entity.spend_action_points(ATTACK_ACTION_COST)
+                    damage = blocking_entity.take_damage(entity.combat_stats.damage)
 
-                    print(f"Combat initiated")
-                    # Player attacks monster
-                    damage = destination_entity.take_damage(entity.combat_stats.damage)
-                    print(f"Damage dealt: {damage}")
-                    print(f"Monster HP after damage: {destination_entity.combat_stats.current_hp}")
-                    print(f"Monster alive after damage: {destination_entity.is_alive}")
-
-                    # Start combat animation
                     if hasattr(self, 'combat_animation'):
-                        self.combat_animation.start_attack(entity, destination_entity)
+                        self.combat_animation.start_attack(entity, blocking_entity)
 
-                    # If monster died from this attack, remove it
-                    if not destination_entity.is_alive:
-                        print(f"Monster died, removing from game")
-                        destination_tile.entity = None
-                        if destination_entity in self.entities:
-                            self.entities.remove(destination_entity)
+                    if not blocking_entity.is_alive:
+                        destination_tile.remove_entity(blocking_entity)
+                        if blocking_entity in self.entities:
+                            self.entities.remove(blocking_entity)
                     return True
-            return False  # Can't move into occupied tile
+            return False
+
         if isinstance(entity, Character) and not entity.can_do_action(MOVE_ACTION_COST):
             return False
-        # Move to empty tile
+
+        # Move to new tile
         old_tile_x = entity.x // self.tile_size
         old_tile_y = entity.y // self.tile_size
 
         # Update tiles
-        self.tiles[old_tile_y][old_tile_x].entity = None
-        destination_tile.entity = entity
+        self.tiles[old_tile_y][old_tile_x].remove_entity(entity)
+        destination_tile.add_entity(entity)
 
         # Update entity position
         entity.x = new_tile_x * self.tile_size
@@ -181,27 +173,35 @@ class WorldMap:
             entity.spend_action_points(MOVE_ACTION_COST)
         return True
 
+    def remove_entity(self, entity):
+        if entity in self.entities:
+            # Remove from tile's entity list
+            tile_x = entity.x // self.tile_size
+            tile_y = entity.y // self.tile_size
+            self.tiles[tile_y][tile_x].remove_entity(entity)
+            self.entities.remove(entity)
+
 
     def get_random_empty_position(self):
         """Find a random empty tile position"""
         while True:
             x = random.randint(0, self.width - 1)
             y = random.randint(0, self.height - 1)
-            
-            # Check if tile exists and is empty
-            if (0 <= y < len(self.tiles) and 
-                0 <= x < len(self.tiles[y]) and 
-                self.tiles[y][x] is not None and 
-                self.tiles[y][x].entity is None):
+
+            # Check if tile exists and has no blocking entities
+            if (0 <= y < len(self.tiles) and
+                    0 <= x < len(self.tiles[y]) and
+                    self.tiles[y][x] is not None and
+                    not self.tiles[y][x].get_blocking_entity()):
                 return (x, y)
 
     def add_entity(self, entity, tile_x, tile_y):
-        # Check if position is within bounds and tile is empty
+        # Check if position is within bounds and no blocking entities
         if (0 <= tile_x < self.width and
                 0 <= tile_y < self.height and
-                self.tiles[tile_y][tile_x].entity is None):
+                not self.tiles[tile_y][tile_x].get_blocking_entity()):
             # Place entity
-            self.tiles[tile_y][tile_x].entity = entity
+            self.tiles[tile_y][tile_x].add_entity(entity)
             entity.x = tile_x * self.tile_size
             entity.y = tile_y * self.tile_size
             self.entities.append(entity)
@@ -321,7 +321,7 @@ class WorldMap:
         if not (0 <= x < self.width and 0 <= y < self.height):
             return False
         tile = self.tiles[y][x]
-        return tile and (tile.entity is None or not tile.entity.is_alive)
+        return tile and (tile.get_blocking_entity() is None)
 
     def manhattan_distance(self, x1, y1, x2, y2):
         """Calculate Manhattan distance between two points"""

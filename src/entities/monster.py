@@ -53,7 +53,6 @@ class Monster(Entity):
 
     def take_damage(self, amount):
         actual_damage = self.combat_stats.take_damage(amount)
-        print('take_damage quest')
         if not self.is_alive:
             self.update_quest_progress()
         return actual_damage
