@@ -45,7 +45,7 @@ class GameStateManager:
         moods = ['playful', 'happy', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
         npcs = [
             NPC(0, 0, npc_imgs[n]['sprite'], face_path=npc_imgs[n]['face'], name=npc_imgs[n]['name'],
-                mood=random.choice(moods), game_state=self, description=npc_imgs[n]['description']
+                mood=random.choice(moods), game_state=self, description=npc_imgs[n]['description'],
                 ) for n in range(NUM_NPCS)]
 
         # Create and setup map

@@ -94,31 +94,40 @@ class Game:
         # If there are no more monsters to process, we're done
         if not self.monsters_queue:
             return
-
         # Get the next monster
         monster = self.monsters_queue[0]
 
-        # If there's an animation playing, wait
-        if hasattr(self.state_manager.current_map, 'combat_animation') and \
-                self.state_manager.current_map.combat_animation.is_playing:
-            return
-
-        # Add a pause between actions
-        current_time = time.time()
-        if not hasattr(self, 'last_action_time'):
-            self.last_action_time = 0
-
-        # Wait for MOVEMENT_DELAY seconds between actions
-        if current_time - self.last_action_time < MOVEMENT_DELAY:
-            return
-
-        # Process the monster's turn
-        action_result = self.state_manager.current_map.handle_monster_turn(monster)
-        self.last_action_time = current_time
-
-        # Only remove monster from queue if it can't take any more actions
-        if not action_result:
+        if monster.try_initiate_dialog((self.state_manager.player.x, self.state_manager.player.y)):
+            # Monster wants to talk - switch to dialog state
+            self.dialog_ui.current_npc = monster
+            self.state_manager.current_npc = monster
+            self.dialog_ui.start_dialog(monster)
+            self.state_manager.change_state(GameState.DIALOG)
             self.monsters_queue.pop(0)
+
+            # If no dialog initiated, proceed with normal monster turn
+        elif monster.is_hostile:
+            # If there's an animation playing, wait
+            if hasattr(self.state_manager.current_map, 'combat_animation') and \
+                    self.state_manager.current_map.combat_animation.is_playing:
+                return
+
+            # Add a pause between actions
+            current_time = time.time()
+            if not hasattr(self, 'last_action_time'):
+                self.last_action_time = 0
+
+            # Wait for MOVEMENT_DELAY seconds between actions
+            if current_time - self.last_action_time < MOVEMENT_DELAY:
+                return
+
+            # Process the monster's turn
+            action_result = self.state_manager.current_map.handle_monster_turn(monster)
+            self.last_action_time = current_time
+
+            # Only remove monster from queue if it can't take any more actions
+            if not action_result:
+                self.monsters_queue.pop(0)
 
 
     def handle_input(self, event):

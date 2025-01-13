@@ -64,3 +64,11 @@ class Character(Entity):
             self.gold -= amount
             return True
         return False
+
+
+    def get_dialogue_context(self):
+
+        context = {
+            "player_health": self.combat_stats.get_status(),
+        }
+        return context

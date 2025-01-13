@@ -17,3 +17,16 @@ class CombatStats:
     @property
     def is_alive(self):
         return self.current_hp > 0
+
+    def get_status(self):
+        hperc = self.current_hp / self.max_hp
+        if hperc > .99:
+            return 'unharmed'
+        elif hperc > .75:
+            return 'light wounds'
+        elif hperc > .50:
+            return 'moderate wounds'
+        elif hperc > .25:
+            return 'heavy wounds'
+        else:
+            return 'mortal wounds'

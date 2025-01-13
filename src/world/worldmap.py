@@ -222,6 +222,7 @@ class WorldMap:
     def handle_monster_turn(self, monster):
         if not monster.is_alive:
             return False
+        monster.count_dialogue_turns()
 
         # Get positions and calculate distance
         monster_tile_x = monster.x // self.tile_size

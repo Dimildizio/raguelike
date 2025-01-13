@@ -91,6 +91,8 @@ MONSTER_PERSONALITY_TYPES = [
     "cowardly",      # Flees at higher health, attacks less often
     "territorial"    # Only aggressive when player is very close
 ]
+DIALOGUE_COOLDOWN = 3
+DIALOGUE_DISTANCE = 3
 
 # Dialog settings
 DIALOG_FONT_SIZE = 16
