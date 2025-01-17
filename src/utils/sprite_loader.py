@@ -38,7 +38,8 @@ class SpriteLoader:
             surface.fill((255, 0, 255))  # Magenta for missing textures
             return surface, None
 
-    def rotate_sprite(self, pil_image, angle):
+    @staticmethod
+    def rotate_sprite(pil_image, angle):
         """Rotate a PIL image and return a pygame surface without caching"""
         if pil_image is None:
             return None

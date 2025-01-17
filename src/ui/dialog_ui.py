@@ -62,7 +62,8 @@ class DialogUI:
         self.stream = None
         self.should_exit = False
 
-    def is_valid_char(self, char):
+    @staticmethod
+    def is_valid_char(char):
         # Allow only letters, numbers, spaces and basic punctuation
         return (char.isalnum() or
                 char.isspace() or

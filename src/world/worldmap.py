@@ -1,13 +1,14 @@
 import pygame
-from .tile import Tile
 import random
 import math
 import heapq
+from queue import PriorityQueue
+
+from .tile import Tile
 from constants import *
 from entities.character import Character
 from entities.monster import Monster
 from entities.npc import NPC
-from constants import SPRITES
 from utils.sprite_loader import SpriteLoader
 from systems.combat_animation import CombatAnimation
 
@@ -103,13 +104,13 @@ class WorldMap:
         player_tile_x = int(player.x // self.tile_size)
         player_tile_y = int(player.y // self.tile_size)
         if player.facing == DIRECTION_UP:
-            return (player_tile_x, player_tile_y - 1)
+            return player_tile_x, player_tile_y - 1
         elif player.facing == DIRECTION_DOWN:
-            return (player_tile_x, player_tile_y + 1)
+            return player_tile_x, player_tile_y + 1
         elif player.facing == DIRECTION_LEFT:
-            return (player_tile_x - 1, player_tile_y)
+            return player_tile_x - 1, player_tile_y
         elif player.facing == DIRECTION_RIGHT:
-            return (player_tile_x + 1, player_tile_y)
+            return player_tile_x + 1, player_tile_y
         return None
 
     def get_tile_at(self, tile_x, tile_y):
@@ -235,7 +236,7 @@ class WorldMap:
         dy = player_tile_y - monster_tile_y
         distance = abs(dx) + abs(dy)
 
-        # DECISION MAKING PHASE
+        # DECISION-MAKING PHASE
         decision = self.decide_monster_action(monster, distance)
 
         # ACTION EXECUTION PHASE
@@ -324,20 +325,18 @@ class WorldMap:
         tile = self.tiles[y][x]
         return tile and (tile.get_blocking_entity() is None)
 
-    def manhattan_distance(self, x1, y1, x2, y2):
+    @staticmethod
+    def manhattan_distance(x1, y1, x2, y2):
         """Calculate Manhattan distance between two points"""
         return abs(x1 - x2) + abs(y1 - y2)
 
     def find_path_to_target(self, start_x, start_y, target_x, target_y):
-        """A* pathfinding to find best path to target"""
-        from queue import PriorityQueue
-
-        # Initialize data structures
+        """A* pathfinding to find the best path to target"""
         frontier = PriorityQueue()
         frontier.put((0, (start_x, start_y)))
         came_from = {(start_x, start_y): None}
         cost_so_far = {(start_x, start_y): 0}
-
+        current = None
         while not frontier.empty():
             current = frontier.get()[1]
 
