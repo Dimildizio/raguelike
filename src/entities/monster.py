@@ -92,7 +92,8 @@ class Monster(Entity):
         """Change monster's hostility status"""
         self.is_hostile = is_hostile
         # Update outline color based on hostility
-        self.outline = SPRITES["OUTLINE_RED"] if is_hostile else SPRITES["OUTLINE_YELLOW"]
+        self.outline, self.pil_outline = self.sprite_loader.load_sprite(SPRITES["OUTLINE_RED"] if is_hostile else SPRITES["OUTLINE_YELLOW"])
+
 
     def get_dialogue_context(self):
         """Get context for dialog based on monster's state"""
@@ -148,6 +149,7 @@ class Monster(Entity):
         self.interaction_history.append(interaction)
         if len(self.interaction_history) > 10:
             self.interaction_history.pop(0)
+
 
     def detect_nearby_monsters(self, current_map, radius=5):
         """

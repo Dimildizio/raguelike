@@ -37,6 +37,7 @@ class Game:
             self.camera_y = max(0, min(self.camera_y, max_camera_y))
 
     def exit_dialogue(self):
+        print('EXITING DIALOGUE')
         self.dialog_ui.should_exit = False  # Reset flag
         self.state_manager.current_npc = None
         self.dialog_ui.current_npc = None
@@ -128,6 +129,8 @@ class Game:
             # Only remove monster from queue if it can't take any more actions
             if not action_result:
                 self.monsters_queue.pop(0)
+        else:
+            self.monsters_queue.pop(0)
 
 
     def handle_input(self, event):

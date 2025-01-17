@@ -170,16 +170,13 @@ class DialogueProcessor:
             #                                                                          game_state.current_map)]}
 
             # Construct the system prompt
-            system_prompt = f"""You are a monster {npc.monster_type} named {npc.name} in a fantasy RPG game. 
-            Your personality is {npc.personality}. You need to reply as dnd {npc.monster_type} would.
+            system_prompt = f"""You are a desperate monster {npc.monster_type} named {npc.name} in a fantasy RPG game. 
+            Your personality is a bit {npc.personality}. You need to reply as dnd {npc.monster_type} trying to offer money in exchange of your life would.
             
             You are aware of the following information:
             - You are an average status member of your race.
-            - You have decided to beg the adventurer for mercy. Nad if he agrees you will stop attacking him.
-            - You want to live so you need to use any negotiation tricks, lies and manipulations. 
-            - You hate the adventurer you are talking but you have no other choice but to communicate.
-            - If player decides to continue fighting you will fight for your life. 
-            - If you cannot negotiate your way out with your words you can try to buy your life with gold.
+            - You have decided to beg the adventurer for mercy. And if he agrees you will stop attacking him.
+            - You want to live so you need to use any negotiation tricks, lies, manipulations and bribery. 
             
             You currently have {npc.money} gold."
             
@@ -194,14 +191,13 @@ class DialogueProcessor:
             {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                         indent=2) if npc.interaction_history else "No recent interactions."}
 
-            Respond in character as {npc.name}, {npc.description}, considering your personality {npc.personality} your knowledge.
-            You are cocky, foul-mouthed, evil who hates everyone, bullies the weak and kowtows before the strong. 
-            You are more than happy to offend and abuse the adventurer but you cannot use obscene language, 
-            Be creative in epithets you describe the player with (usually adjective + noun or adj + noun + who + verb phrase). 
+            Respond in character as a desperate {npc.name}, {npc.description}, considering your knowledge and your will to survive this situation.
+            You are foul-mouthed, evil but kowtows before the stronger and if your opponent is stronger you offer money.
+            You are willing to give money, you don't want to take players money unless he offers.
             
             Format your response as JSON with these fields:
             - player_friendly (boolean: True if player decided to spare your life, False otherwise) 
-            - give_money (integer: only if you decided to buy your life with money you will give this amount to player otherwise 0)
+            - give_money (integer: only if you decided to buy your life with money. You will give this amount of money to player otherwise 0)
             - text (string: your in-character response)
             
             Do not provide explanation on your decisions about building JSON.

@@ -48,7 +48,8 @@ class DialogUI:
         self.streaming_response = ""
         self.is_streaming = False
         self.stream = None
-        self.current_response = "Hello traveler! How can I help you today?" if not isinstance(npc, Monster) else ""
+        self.current_response = "Hello traveler! How can I help you today?" if not isinstance(
+                                npc, Monster) else "Hey you! We need talk!"
         self.selected_option = 0  # Reset selection
 
 
@@ -61,6 +62,8 @@ class DialogUI:
         self.is_streaming = False
         self.stream = None
         self.should_exit = False
+        if self.game_state_manager:
+            self.game_state_manager.current_npc = None
 
     @staticmethod
     def is_valid_char(char):
@@ -109,7 +112,7 @@ class DialogUI:
         """Process player input and get NPC response"""
         if text.lower() in ["bye", "goodbye", "see you"]:
             self.should_exit = True
-            self.clear_dialogue_state()
+            #self.clear_dialogue_state()
             return
 
         try:
@@ -215,23 +218,25 @@ class DialogUI:
                                                 self.current_response += "\nI'm sorry, but I don't have any money to pay you right now."
                                         else:
                                             self.current_response += "\nI'm sorry, but I can't pay you right now."
-                        else:
-                            if int(final_response.get('give_money', 0)) > 0:
-                                give_money = final_response['give_money']
-                                if give_money > self.current_npc.money:
-                                    self.current_response += (f"\nHere ya {give_money}...Ehh Me dont 'ave that many "
-                                                              f"gold, me give ya {self.current_npc.money}! "
-                                                              f"(Paid {self.current_npc.money}) gold")
-                                    give_money = self.current_npc.money
-                                else:
-                                    self.current_response += f"(Paid {give_money} gold)"
-                                received = self.game_state_manager.player.add_gold(give_money)
-                            if final_response.get('player_friendly'):
-                                self.current_npc.is_hostile = False
+                            else:
+                                print('FINAL', final_response)
+                                if int(final_response.get('give_money', 0)) > 0:
+                                    give_money = final_response['give_money']
+                                    if give_money > self.current_npc.money:
+                                        self.current_response += (f"\nHere ya {give_money}...Ehh Me dont 'ave that many "
+                                                                  f"gold, me give ya {self.current_npc.money}! "
+                                                                  f"(Paid {self.current_npc.money} gold)")
+                                        give_money = self.current_npc.money
+                                        self.current_npc.set_hostility(False)
 
+                                    else:
+                                        self.current_response += f"(Paid {give_money} gold)"
+                                    received = self.game_state_manager.player.add_gold(give_money)
+                                if final_response.get('player_friendly'):
+                                    self.current_npc.set_hostility(False)
 
-                        # Update interaction history
-                        self.current_npc.add_to_history(self.last_input_text, final_response.get('text', ''))
+                            # Update interaction history
+                            self.current_npc.add_to_history(self.last_input_text, final_response.get('text', ''))
 
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON: {e}")
