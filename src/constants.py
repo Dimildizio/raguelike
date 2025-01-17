@@ -15,8 +15,8 @@ PREPROCESSED_TILE_SIZE = 256
 DISPLAY_TILE_SIZE = 128
 
 # Map settings
-MAP_WIDTH = 10  # in tiles
-MAP_HEIGHT = 10  # in tiles
+MAP_WIDTH = 20  # in tiles
+MAP_HEIGHT = 20  # in tiles
 
 NUM_MONSTERS = 3
 NUM_NPCS = 2
@@ -38,8 +38,60 @@ SPRITES = {
     "OUTLINE_YELLOW": os.path.join(ASSET_DIR, "outline_yellow.png"),
     "OUTLINE_RED": os.path.join(ASSET_DIR, "outline_red.png"),
     "SLASH": os.path.join(ASSET_DIR, "slash.png"),
-
+    "GRASS_0": os.path.join(ASSET_DIR, "grass_0.png"),
+    "GRASS_1": os.path.join(ASSET_DIR, "grass_1.png"),
+    "GRASS_2": os.path.join(ASSET_DIR, "grass_2.png"),
 }
+
+SPRITES.update({
+    # Top row
+    "HOUSE_1_TOP_TOP": os.path.join(ASSET_DIR, "house/house1_top_top.png"),
+    "HOUSE_1_TOP_TOP2": os.path.join(ASSET_DIR, "house/house1_top_top2.png"),
+    "HOUSE_1_TOP_MID": os.path.join(ASSET_DIR, "house/house1_top_mid.png"),
+    "HOUSE_1_TOP_MID2": os.path.join(ASSET_DIR, "house/house1_top_mid2.png"),
+    "HOUSE_1_TOP_BOT": os.path.join(ASSET_DIR, "house/house1_top_bot.png"),
+    "HOUSE_1_TOP_BOT2": os.path.join(ASSET_DIR, "house/house1_top_bot2.png"),
+
+    # Top2 row
+    "HOUSE_1_TOP2_TOP": os.path.join(ASSET_DIR, "house/house1_top2_top.png"),
+    "HOUSE_1_TOP2_TOP2": os.path.join(ASSET_DIR, "house/house1_top2_top2.png"),
+    "HOUSE_1_TOP2_MID": os.path.join(ASSET_DIR, "house/house1_top2_mid.png"),
+    "HOUSE_1_TOP2_MID2": os.path.join(ASSET_DIR, "house/house1_top2_mid2.png"),
+    "HOUSE_1_TOP2_BOT": os.path.join(ASSET_DIR, "house/house1_top2_bot.png"),
+    "HOUSE_1_TOP2_BOT2": os.path.join(ASSET_DIR, "house/house1_top2_bot2.png"),
+
+    # Mid row
+    "HOUSE_1_MID_TOP": os.path.join(ASSET_DIR, "house/house1_mid_top.png"),
+    "HOUSE_1_MID_TOP2": os.path.join(ASSET_DIR, "house/house1_mid_top2.png"),
+    "HOUSE_1_MID_MID": os.path.join(ASSET_DIR, "house/house1_mid_mid.png"),
+    "HOUSE_1_MID_MID2": os.path.join(ASSET_DIR, "house/house1_mid_mid2.png"),
+    "HOUSE_1_MID_BOT": os.path.join(ASSET_DIR, "house/house1_mid_bot.png"),
+    "HOUSE_1_MID_BOT2": os.path.join(ASSET_DIR, "house/house1_mid_bot2.png"),
+
+    # Mid2 row
+    "HOUSE_1_MID2_TOP": os.path.join(ASSET_DIR, "house/house1_mid2_top.png"),
+    "HOUSE_1_MID2_TOP2": os.path.join(ASSET_DIR, "house/house1_mid2_top2.png"),
+    "HOUSE_1_MID2_MID": os.path.join(ASSET_DIR, "house/house1_mid2_mid.png"),
+    "HOUSE_1_MID2_MID2": os.path.join(ASSET_DIR, "house/house1_mid2_mid2.png"),
+    "HOUSE_1_MID2_BOT": os.path.join(ASSET_DIR, "house/house1_mid2_bot.png"),
+    "HOUSE_1_MID2_BOT2": os.path.join(ASSET_DIR, "house/house1_mid2_bot2.png"),
+
+    # Bot row
+    "HOUSE_1_BOT_TOP": os.path.join(ASSET_DIR, "house/house1_bot_top.png"),
+    "HOUSE_1_BOT_TOP2": os.path.join(ASSET_DIR, "house/house1_bot_top2.png"),
+    "HOUSE_1_BOT_MID": os.path.join(ASSET_DIR, "house/house1_bot_mid.png"),
+    "HOUSE_1_BOT_MID2": os.path.join(ASSET_DIR, "house/house1_bot_mid2.png"),
+    "HOUSE_1_BOT_BOT": os.path.join(ASSET_DIR, "house/house1_bot_bot.png"),
+    "HOUSE_1_BOT_BOT2": os.path.join(ASSET_DIR, "house/house1_bot_bot2.png"),
+
+    # Bot2 row
+    "HOUSE_1_BOT2_TOP": os.path.join(ASSET_DIR, "house/house1_bot2_top.png"),
+    "HOUSE_1_BOT2_TOP2": os.path.join(ASSET_DIR, "house/house1_bot2_top2.png"),
+    "HOUSE_1_BOT2_MID": os.path.join(ASSET_DIR, "house/house1_bot2_mid.png"),
+    "HOUSE_1_BOT2_MID2": os.path.join(ASSET_DIR, "house/house1_bot2_mid2.png"),
+    "HOUSE_1_BOT2_BOT": os.path.join(ASSET_DIR, "house/house1_bot2_bot.png"),
+    "HOUSE_1_BOT2_BOT2": os.path.join(ASSET_DIR, "house/house1_bot2_bot2.png"),
+})
 
 
 COMBAT_TURN_TIMEOUT = 30  # seconds

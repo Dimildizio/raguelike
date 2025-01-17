@@ -32,7 +32,7 @@ class WorldMap:
         self.entities = []
         
         # Generate the map
-        self.generate_map()
+        #self.generate_map()
     
     def generate_map(self):
         # Create a grid of tiles
@@ -125,7 +125,8 @@ class WorldMap:
             return False
 
         # Check if movement is valid
-        if not (0 <= new_tile_x < self.width and 0 <= new_tile_y < self.height):
+        if not (0 <= new_tile_x < self.width and 0 <= new_tile_y < self.height) or (
+                not self.tiles[new_tile_y][new_tile_x].passable):
             return False
 
         # Get destination tile and blocking entity
@@ -193,6 +194,7 @@ class WorldMap:
             if (0 <= y < len(self.tiles) and
                     0 <= x < len(self.tiles[y]) and
                     self.tiles[y][x] is not None and
+                    self.tiles[y][x].passable and
                     not self.tiles[y][x].get_blocking_entity()):
                 return (x, y)
 
@@ -200,6 +202,7 @@ class WorldMap:
         # Check if position is within bounds and no blocking entities
         if (0 <= tile_x < self.width and
                 0 <= tile_y < self.height and
+                self.tiles[tile_y][tile_x].passable and
                 not self.tiles[tile_y][tile_x].get_blocking_entity()):
             # Place entity
             self.tiles[tile_y][tile_x].add_entity(entity)
@@ -218,7 +221,10 @@ class WorldMap:
             while not placed:
                 x = random.randint(0, self.width - 1)
                 y = random.randint(0, self.height - 1)
-                placed = self.add_entity(entity, x, y)
+
+                if self.tiles[y][x].passable:
+                    print('npc_place_entity', entity, 'x', x, 'y', y)
+                    placed = self.add_entity(entity, x, y)
 
     def handle_monster_turn(self, monster):
         if not monster.is_alive:
@@ -320,9 +326,10 @@ class WorldMap:
 
     def is_tile_walkable(self, x, y):
         """Check if a tile can be walked on"""
-        if not (0 <= x < self.width and 0 <= y < self.height):
+        if not (0 <= x < self.width and 0 <= y < self.height) or not self.tiles[y][x].passable:
             return False
         tile = self.tiles[y][x]
+
         return tile and (tile.get_blocking_entity() is None)
 
     @staticmethod
@@ -346,6 +353,11 @@ class WorldMap:
 
             # Check all neighbors
             for next_tile in self.get_neighbors(current[0], current[1]):
+                # Skip if tile is not passable or has blocking entity
+                if (not self.tiles[next_tile[1]][next_tile[0]].passable or
+                        self.tiles[next_tile[1]][next_tile[0]].get_blocking_entity()):
+                    continue
+
                 new_cost = cost_so_far[current] + 1
 
                 if next_tile not in cost_so_far or new_cost < cost_so_far[next_tile]:
@@ -426,4 +438,23 @@ class WorldMap:
         if self.move_entity(monster, move_x, move_y):
             monster.spend_action_points(MOVE_ACTION_COST)
             return True
+        return False
+
+    def get_valid_positions(self, count):
+        """Get list of valid positions for entities"""
+        valid_positions = []
+        for y in range(self.height):
+            for x in range(self.width):
+                # Check if tile is walkable and doesn't have entities
+                if not self.tiles[y][x].entities and self.tiles[y][x].passable:
+                    valid_positions.append((x, y))
+
+        # Shuffle and return requested number of positions
+        random.shuffle(valid_positions)
+        return valid_positions[:count]
+
+    def is_valid_move(self, x, y):
+        """Check if position is valid for movement"""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.tiles[y][x].passable
         return False

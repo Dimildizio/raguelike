@@ -21,7 +21,6 @@ class SpriteLoader:
 
             # Preprocess to tile size
             pil_image = pil_image.resize((self.tile_size, self.tile_size), Image.Resampling.LANCZOS)
-
             # Scale down to display size
             pil_image = pil_image.resize((self.display_scale, self.display_scale), Image.Resampling.LANCZOS)
 

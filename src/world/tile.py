@@ -4,7 +4,7 @@ from constants import *
 
 
 class Tile:
-    def __init__(self, x, y, sprite_path):
+    def __init__(self, x, y, sprite_path, passable=True, rotate=True):
         self.x = x
         self.y = y
         self.sprite_loader = SpriteLoader(
@@ -14,8 +14,9 @@ class Tile:
         )
         # Unpack the tuple returned by load_sprite
         self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
-        self.rotation = random.choice([0, 90, 180, 270])
+        self.rotation = random.choice([0, 90, 180, 270]) if rotate else 0
         self.entities = []
+        self.passable = passable
 
     def draw(self, screen, offset_x=0, offset_y=0):
         if self.pil_sprite:

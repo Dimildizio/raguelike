@@ -28,26 +28,26 @@ class Monster(Entity):
         # Set personality-based traits
         personalities = {'aggressive': {'aggression': random.uniform(1.0, 1.6),
                                         'bravery': random.uniform(0.75, 1.0),
-                                        'dialogue_chance': 0.1,
+                                        'dialogue_chance': 0.01,
                                         'dmg': 1.2, 'armor': 1, 'hp': 1},
                          'cautious': {'aggression': random.uniform(0.8, 1.4),
                                       'bravery': random.uniform(0.6, 0.8),
-                                      'dialogue_chance': 0.3,
+                                      'dialogue_chance': 0.05,
                                       'dmg': 1, 'armor': 1.2, 'hp': 1},
                          'territorial': {'aggression': random.uniform(1.2, 1.5),
                                          'bravery': random.uniform(0.7, 0.9),
-                                         'dialogue_chance': 0.2,
+                                         'dialogue_chance': 0.02,
                                          'dmg': 1, 'armor': 1, 'hp': 1},
                          'cowardly': {'aggression': random.uniform(0.7, 1.3),
                                       'bravery': random.uniform(0.4, 0.6),
-                                      'dialogue_chance': 0.4,
+                                      'dialogue_chance': 0.1,
                                       'dmg': 1, 'armor': 1, 'hp': 1.2}}
 
         self.personality = random.choice(personality_types)
         perc = personalities[self.personality]
         self.aggression = perc['aggression']
         self.bravery = perc['bravery']
-        self.dialogue_chance = 1  # perc['dialogue_chance']
+        self.dialogue_chance = perc['dialogue_chance']
         self.combat_stats = CombatStats(base_hp=hp * perc['hp'],
                                         base_armor=armor * perc['armor'],
                                         base_damage=dmg * perc['dmg'])
@@ -121,7 +121,10 @@ class Monster(Entity):
             distance = math.sqrt(dx * dx + dy * dy)
 
             if distance <= DIALOGUE_DISTANCE * DISPLAY_TILE_SIZE:  # and self.should_flee():
-                if random.random() < self.dialogue_chance:
+                rand = random.random()
+                if rand < self.dialogue_chance:
+                    print(rand, self.dialogue_chance)
+
                     self.dialog_cooldown = 0
 
                     return True
