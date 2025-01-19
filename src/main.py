@@ -177,6 +177,8 @@ class Game:
                 quest_status = self.state_manager.quest_manager.format_all_quests_status()
                 print("\n" + quest_status + "\n")
                 print('money:', self.state_manager.player.gold)
+            if event.key == pygame.K_h:
+                self.state_manager.player.heal_self()
 
             # Interaction
             if event.key == pygame.K_e:  # Interact

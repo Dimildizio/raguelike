@@ -70,6 +70,12 @@ class Character(Entity):
             return True
         return False
 
+    def heal_self(self, amount=0, ap_cost=10):
+        if self.action_points >= ap_cost:
+            self.action_points -= ap_cost
+            amount = amount or self.combat_stats.max_hp
+            self.combat_stats.get_healed(amount)
+
 
     def get_dialogue_context(self):
 

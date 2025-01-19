@@ -5,6 +5,10 @@ class CombatStats:
         self.armor = base_armor
         self.damage = base_damage
 
+    def get_healed(self, amount=0):
+        amount = self.current_hp + amount if amount else self.max_hp
+        self.current_hp = min(self.max_hp, amount)
+
     def take_damage(self, amount):
         if self.current_hp <= 0:
             return 0
