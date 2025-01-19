@@ -14,7 +14,6 @@ class MapCreator:
         self.height = MAP_HEIGHT
         self.tiles = [[None for _ in range(self.width)] for _ in range(self.height)]
 
-
     def create_base_terrain(self):
         """Create grass terrain with random rotation"""
         grass_sprites = [SPRITES["GRASS_0"], SPRITES["GRASS_2"]]
@@ -84,8 +83,44 @@ class MapCreator:
 
         # Position for Merchant Tom
         positions.append((self.width // 2 + 3, self.height // 2 + 5))
-
         return positions
+
+    def is_grass_tile(self, x, y):
+        """Check if the tile at (x,y) is a grass tile"""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            tile = self.tiles[y][x]
+            return tile and (tile.sprite_path in [SPRITES["GRASS_0"], SPRITES["GRASS_2"]])
+        return False
+
+    def can_place_tree(self, x, y):
+        """Check if we can place a tree at this position"""
+        # Check if it's a grass tile
+        if not self.is_grass_tile(x, y):
+            return False
+        road_x = self.width // 2
+        road_y = self.height // 2
+        min_road_distance = 1
+        if self.tiles[y][x].passable and (abs(x - road_x) <= min_road_distance or abs(y - road_y) <= min_road_distance):
+            return False
+        return True
+
+    def calculate_tree_positions(self):
+        """Calculate positions for trees without creating them"""
+        tree_positions = []
+
+        # Calculate dense forest positions at the left edge
+        for y in range(self.height):
+            for x in range(FOREST_EDGE_THICKNESS):
+                if self.can_place_tree(x, y):
+                    tree_positions.append((x, y))
+
+        # Calculate random tree positions throughout the map
+        for y in range(self.height):
+            for x in range(self.width):
+                if (random.random() < RANDOM_TREE_CHANCE and
+                        self.can_place_tree(x, y)):
+                    tree_positions.append((x, y))
+        return tree_positions
 
     def create_map(self):
         """Create complete map with all elements"""
@@ -93,4 +128,5 @@ class MapCreator:
         self.create_road()
         self.place_house()
         npc_positions = self.get_npc_positions()
-        return self.tiles, npc_positions
+        tree_positions = self.calculate_tree_positions()
+        return self.tiles, npc_positions, tree_positions

@@ -4,6 +4,7 @@ from world.worldmap import WorldMap
 from entities.character import Character
 from systems.quest import QuestManager
 from entities.monster import Monster
+from entities.entity import Tree
 from entities.npc import NPC
 from constants import *
 import random
@@ -87,7 +88,7 @@ class GameStateManager:
         # Create and setup map with MapCreator
         self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
         map_creator = MapCreator(self.current_map.sprite_loader)
-        tiles, npc_positions = map_creator.create_map()
+        tiles, npc_positions, tree_positions = map_creator.create_map()
         self.current_map.tiles = tiles
 
         # Place NPCs at their designated positions from MapCreator
@@ -95,6 +96,9 @@ class GameStateManager:
             x, y = position
             print('npc_start', npc.name, 'x', x, 'y', y)
             self.current_map.add_entity(npc, x, y)
+        for x, y in tree_positions:
+            tree = Tree(x, y, random.choice([SPRITES["TREE_1"], SPRITES["TREE_2"], SPRITES["TREE_3"]]))
+            self.current_map.add_entity(tree, x, y)
 
         # Place player and monsters in random valid positions
         valid_positions = self.current_map.get_valid_positions(len(monsters) + 1)

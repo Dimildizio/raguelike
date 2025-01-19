@@ -1,6 +1,6 @@
 import math
 import pygame as pg
-from .entity import Entity
+from .entity import Entity, Remains
 from constants import *
 from systems.combat_stats import CombatStats
 import random
@@ -70,16 +70,20 @@ class Monster(Entity):
     def take_damage(self, amount):
         actual_damage = self.combat_stats.take_damage(amount)
         if not self.is_alive:
-            self.update_quest_progress()
+            self.on_death()
         return actual_damage
+
+    def on_death(self):
+        dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.monster_type.upper()}"], name=f"Dead {self.monster_type}",
+                       description=f"The remains of a {self.monster_type} {self.name}",game_state=self.game_state)
+        print('created', type(dead))
+        self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
+        self.update_quest_progress()
 
     def should_flee(self):
         # More brave monsters will fight at lower health
-        return (self.health / self.max_health) < self.bravery
+        return self.combat_stats.get_hp_perc < self.bravery
 
-    def wants_to_attack(self, distance):
-        # More aggressive monsters will attack from further away
-        return distance <= (MONSTER_AGGRO_RANGE * self.aggression)
 
     def count_dialogue_turns(self):
         self.dialog_cooldown += 1

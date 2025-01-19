@@ -5,10 +5,7 @@ from enum import Enum
 WINDOW_WIDTH = 1024
 WINDOW_HEIGHT = 768
 FPS = 60
-GAME_TITLE = "RPG Game"
-
-# Map settings
-#TILE_SIZE = 32
+GAME_TITLE = "RAGuelike"
 
 # Sprite settings
 ORIGINAL_SPRITE_SIZE = 512
@@ -42,7 +39,16 @@ SPRITES = {
     "GRASS_0": os.path.join(ASSET_DIR, "grass_0.png"),
     "GRASS_1": os.path.join(ASSET_DIR, "grass_1.png"),
     "GRASS_2": os.path.join(ASSET_DIR, "grass_2.png"),
+    "DEAD_GOBLIN": os.path.join(ASSET_DIR, "goblin_dead1.png"),
+    "TREE_1": os.path.join(ASSET_DIR, "trees/tree_1.png"),
+    "TREE_2": os.path.join(ASSET_DIR, "trees/tree_2.png"),
+    "TREE_3": os.path.join(ASSET_DIR, "trees/tree_3.png"),
 }
+
+# Forest generation settings
+FOREST_EDGE_THICKNESS = 1
+FOREST_EDGE_WIDTH = 4
+RANDOM_TREE_CHANCE = 0.05
 
 SPRITES.update({
     # Top row
@@ -125,8 +131,6 @@ TURN_TIMEOUT = 30  # seconds
 CRITICAL_HIT_CHANCE = 0.1
 DODGE_CHANCE = 0.05
 
-# Add these to your constants.py file
-
 # NPC settings
 NPC_BASE_HP = 50
 NPC_BASE_ARMOR = 5
@@ -156,7 +160,6 @@ DIALOG_BG_COLOR = (50, 50, 50, 200)  # RGB + Alpha
 MAX_INVENTORY_SLOTS = 20
 MAX_STACK_SIZE = 99
 
-
 # Menu settings
 MENU_OPTIONS = ["New Game", "Load Game", "Settings", "Quit"]
 MENU_FONT_SIZE = 36
@@ -169,7 +172,6 @@ DIRECTION_LEFT = 270
 DIRECTION_UP = 180
 DIRECTION_RIGHT = 90
 DIRECTION_PLAYER_START = DIRECTION_DOWN
-
 
 ATTACK_ANIMATION_DURATION = 0.5  # seconds
 ATTACK_DISTANCE = 0.5

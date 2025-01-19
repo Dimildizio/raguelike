@@ -7,7 +7,7 @@ from .tile import Tile
 from constants import *
 from entities.character import Character
 from entities.monster import Monster
-from entities.npc import NPC
+from entities.entity import Remains
 from utils.sprite_loader import SpriteLoader
 from systems.combat_animation import CombatAnimation
 
@@ -76,6 +76,8 @@ class WorldMap:
         # Draw combat animation effects
         if hasattr(self, 'combat_animation'):
             self.combat_animation.draw(screen, camera_x, camera_y)
+
+
 
     def get_facing_tile_position(self, player):
         """Get the tile position that the player is facing"""
@@ -178,16 +180,18 @@ class WorldMap:
 
     def add_entity(self, entity, tile_x, tile_y):
         # Check if position is within bounds and no blocking entities
-        if (0 <= tile_x < self.width and
-                0 <= tile_y < self.height and
-                self.tiles[tile_y][tile_x].passable and
-                not self.tiles[tile_y][tile_x].get_blocking_entity()):
-            # Place entity
-            self.tiles[tile_y][tile_x].add_entity(entity)
-            entity.x = tile_x * self.tile_size
-            entity.y = tile_y * self.tile_size
-            self.entities.append(entity)
-            return True
+        print(f'adding {entity} to worldmap', tile_x, tile_y)
+        if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
+            if isinstance(entity, Remains):
+                self.tiles[tile_y][tile_x].add_item(entity)
+                return True
+            if self.tiles[tile_y][tile_x].passable and not self.tiles[tile_y][tile_x].get_blocking_entity():
+                # Place entity
+                self.tiles[tile_y][tile_x].add_entity(entity)
+                entity.x = tile_x * self.tile_size
+                entity.y = tile_y * self.tile_size
+                self.entities.append(entity)
+                return True
         return False
 
     def place_entities(self, player, monsters, npcs):

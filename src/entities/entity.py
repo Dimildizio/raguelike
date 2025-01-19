@@ -15,6 +15,7 @@ class Entity(ABC):
             PREPROCESSED_TILE_SIZE,
             DISPLAY_TILE_SIZE
         )
+        self.name = 'No name'
         self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
         self.outline = None
         self.is_passable = False
@@ -36,6 +37,10 @@ class Entity(ABC):
         self.max_action_points = ap
         self.action_points = ap
         self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10)
+
+
+    def __repr__(self):
+        return self.name
 
     def update_breathing(self):
         # Move current angle towards target angle
@@ -95,3 +100,23 @@ class Entity(ABC):
 
     def can_do_action(self, action_price):
         return action_price <= self.action_points
+
+class Remains(Entity):
+    def __init__(self, x, y, sprite_path, name="remains", description="", game_state=None):
+        super().__init__(x, y, sprite_path, None, game_state=game_state)  # No outline for remains
+        self.name = name
+        self.description = description
+        self.is_passable = True  # Can walk over remains
+        self.rotation = 0  # Remains don't rotate with breathing
+
+    def update(self):
+        pass
+
+class Tree(Entity):
+    def __init__(self, x, y, sprite_path, game_state=None, name='tree'):
+        super().__init__(x, y, sprite_path, None, game_state=game_state)
+        self.is_passable = False
+        self.name= name
+
+    def update(self):
+        pass
