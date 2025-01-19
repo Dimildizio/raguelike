@@ -96,6 +96,10 @@ class DialogUI:
                         self.should_exit = True
                     else:
                         print(f"Player chose: {selected_text}")
+                        if isinstance(self.current_npc, House):
+                            self.should_exit = True
+
+
             elif event.key == pygame.K_BACKSPACE:
                 self.input_text = self.input_text[:-1]
             elif event.key == pygame.K_UP:
@@ -120,8 +124,10 @@ class DialogUI:
 
         try:
             if isinstance(npc, House):
+                print('this is house', text)
                 if text.lower() in ['sleep', 'rent a bed']:
                     self.game_state_manager.pass_night(npc.fee)
+
                     return
             elif isinstance(npc, Monster):
                 self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
@@ -422,12 +428,12 @@ class DialogUI:
     def start_house_dialog(self, house):
         """Initialize dialogue UI for house interaction"""
         self.current_npc = house
-        self.current_response = house.description
+        self.current_response = house.description + f'(Rent is {house.fee} gold)'
         self.selected_option = 0
         self.should_exit = False
 
     def draw_house_dialogue(self, screen):
-        """Draw house dialogue in the same style as NPC dialogue"""
+        """Draw house dialogue with house portrait at top and player at bottom"""
         screen_width = screen.get_width()
         screen_height = screen.get_height()
 
@@ -463,6 +469,27 @@ class DialogUI:
                 center=(house_panel.centerx, house_panel.centery + self.PADDING)
             )
             screen.blit(self.current_npc.face_surface, face_rect)
+
+        # Player section (bottom-left)
+        player = self.game_state_manager.player
+        player_panel = pygame.Rect(
+            self.PADDING,  # Same x as house panel
+            screen_height - portrait_size - self.PADDING * 3,  # Position at bottom
+            side_panel_width,
+            portrait_size + self.PADDING * 2
+        )
+        pygame.draw.rect(screen, (70, 70, 70), player_panel)
+
+        # Player name
+        player_name_text = self.font.render(player.name, True, WHITE)
+        screen.blit(player_name_text, (player_panel.x + self.PADDING, player_panel.y + self.PADDING))
+
+        # Player face/image
+        if player.face_surface:
+            player_face_rect = player.face_surface.get_rect(
+                center=(player_panel.centerx, player_panel.centery + self.PADDING)
+            )
+            screen.blit(player.face_surface, player_face_rect)
 
         # Dialog text area (description)
         dialog_text_area = pygame.Rect(

@@ -171,9 +171,11 @@ class GameStateManager:
     def pass_night(self, fee=0):
         """Handle night passing effects"""
         # Check if player can afford lodging
-        if not self.player or not self.player.spend_gold(fee):
-            return False
 
+        if not self.player or not self.player.spend_gold(fee):
+            print('not enough money')
+            return False
+        print('night has passed')
         # Heal all entities with combat stats
         self.player.heal_self()
         self.player.action_points = self.player.max_action_points

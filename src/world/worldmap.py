@@ -260,7 +260,7 @@ class WorldMap:
         if distance <= MONSTER_AGGRO_RANGE:
             # Aggressive monsters are more likely to approach
             result = random.random()
-            print(f'Lets attack: {result} vs {monster.aggression}. flee: {monster.bravery}')
+            print(f'Lets attack: {result:.2f} vs {monster.aggression:.2f}. flee: {result:.2f} vs {monster.bravery:.2f}')
             if result < monster.aggression:
                 return "approach"
         return "none"

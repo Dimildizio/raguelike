@@ -16,7 +16,7 @@ class Character(Entity):
         self.active_quests = []
         self.completed_quests = []
         self.inventory = []
-        self.gold = 0
+        self.gold = 25
 
     def update(self):
         self.update_breathing()
