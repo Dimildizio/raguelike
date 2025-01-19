@@ -1,6 +1,6 @@
 import math
 import pygame as pg
-from .entity import Entity, Remains
+from .entity import Entity, Remains, Tree
 from constants import *
 from systems.combat_stats import CombatStats
 import random
@@ -13,6 +13,7 @@ class Monster(Entity):
         self.name = name
         self.monster_type = monster_type
         self.is_hostile = True
+        self.is_fleeing = False
         self.can_talk = can_talk
         self.description = description
         self.dialog_cooldown = DIALOGUE_COOLDOWN
@@ -84,6 +85,18 @@ class Monster(Entity):
         # More brave monsters will fight at lower health
         return self.combat_stats.get_hp_perc < self.bravery
 
+    def lost_resolve(self):
+        if(self.should_flee() and random.random() > self.bravery) or self.is_fleeing:
+            if random.random() < self.bravery * 0.05 and self.is_fleeing:  # chance to regain it
+                if self.is_fleeing:
+                    self.bravery += 0.1
+                    self.is_fleeing = False
+                    print(self.name, 'routed')
+
+            else:
+                self.is_fleeing = True
+                print(self.name, 'is fleeing')
+            return self.is_fleeing
 
     def count_dialogue_turns(self):
         self.dialog_cooldown += 1
@@ -190,3 +203,58 @@ class Monster(Entity):
                    nearby_monsters, key=lambda x: x[1])] if nearby_monsters else ('', 'None')
         print(result)
         return result
+
+    def find_nearest_edge_tree(self, current_map):
+        """Find coordinates of nearest tree at map edge"""
+        monster_x = self.x // DISPLAY_TILE_SIZE
+        monster_y = self.y // DISPLAY_TILE_SIZE
+
+        # Get all edge tiles with trees
+        edge_trees = []
+
+        # Check top and bottom edges
+        for x in range(current_map.width):
+            for y in [0, current_map.height - 1]:
+                tile = current_map.tiles[y][x]
+                if any(isinstance(entity, Tree) for entity in tile.entities):
+                    distance = abs(monster_x - x) + abs(monster_y - y)
+                    edge_trees.append((x, y, distance))
+
+        # Check left and right edges
+        for y in range(current_map.height):
+            for x in [0, current_map.width - 1]:
+                tile = current_map.tiles[y][x]
+                if any(isinstance(entity, Tree) for entity in tile.entities):
+                    distance = abs(monster_x - x) + abs(monster_y - y)
+                    edge_trees.append((x, y, distance))
+
+        # Return closest tree coordinates or None if no trees found
+        if edge_trees:
+            edge_trees.sort(key=lambda x: x[2])  # Sort by distance
+            return edge_trees[0][0], edge_trees[0][1]
+        return None
+
+    def is_at_edge_tree(self, current_map):
+        """Check if monster is next to a tree at the map edge"""
+        monster_x = self.x // DISPLAY_TILE_SIZE
+        monster_y = self.y // DISPLAY_TILE_SIZE
+
+        # Check if at map edge
+        is_at_edge = (monster_x == 0 or monster_x == current_map.width - 1 or
+                      monster_y == 0 or monster_y == current_map.height - 1)
+
+        if not is_at_edge:
+            return False
+
+        # Check adjacent tiles for trees
+        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            check_x = monster_x + dx
+            check_y = monster_y + dy
+
+            if (0 <= check_x < current_map.width and
+                    0 <= check_y < current_map.height):
+                tile = current_map.tiles[check_y][check_x]
+                if any(isinstance(entity, Tree) for entity in tile.entities):
+                    return True
+
+        return False

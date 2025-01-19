@@ -246,20 +246,9 @@ class WorldMap:
 
     def decide_monster_action(self, monster, distance):
         """Decide what action the monster should take based on its personality and situation"""
-        # Check if player is too far
-        if distance > MONSTER_AGGRO_RANGE:
-            print('small aggro distance')
-            return "none"
-
-        # Get monster's current state
-        health_percentage = monster.combat_stats.get_hp_perc
         # Should we flee?
-        if health_percentage < MONSTER_FLEE_HEALTH:
-            # Brave monsters might still fight
-            if random.random() > monster.bravery:
-                print('flee')
+        if monster.lost_resolve():
                 return "flee"
-
         # Should we attack?
         if distance == 1:  # Adjacent to player
             # Aggressive monsters are more likely to attack
@@ -404,12 +393,29 @@ class WorldMap:
         """Execute fleeing movement"""
         if not monster.can_do_action(MOVE_ACTION_COST):
             return False
+        # Check if monster is next to edge tree
+        if monster.is_at_edge_tree(self):
+            # Remove monster from game
+            self.remove_entity(monster)
+            return True
 
-        # Calculate new position (away from player)
-        move_x = monster_tile_x + (-1 if dx > 0 else 1) if abs(dx) > abs(dy) else monster_tile_x
-        move_y = monster_tile_y + (-1 if dy > 0 else 1) if abs(dx) <= abs(dy) else monster_tile_y
+        # Find nearest edge tree
+        target = monster.find_nearest_edge_tree(self)
+        if not target:
+            # No edge trees found, use old fleeing behavior
+            move_x = monster_tile_x + (-1 if dx > 0 else 1) if abs(dx) > abs(dy) else monster_tile_x
+            move_y = monster_tile_y + (-1 if dy > 0 else 1) if abs(dx) <= abs(dy) else monster_tile_y
+        else:
+            # Use pathfinding to get to edge tree
+            target_x, target_y = target
+            path = self.find_path_to_target(monster_tile_x, monster_tile_y, target_x, target_y)
+            if not path:
+                return False
 
-        # Calculate facing direction (opposite to player)
+            # Get next step in path
+            move_x, move_y = path[0]
+
+        # Calculate facing direction
         if abs(dx) > abs(dy):
             monster.base_rotation = DIRECTION_LEFT if dx > 0 else DIRECTION_RIGHT
         else:
