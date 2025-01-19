@@ -121,7 +121,7 @@ class DialogUI:
         try:
             if isinstance(npc, House):
                 if text.lower() in ['sleep', 'rent a bed']:
-                    self.game_state_manager.pass_night()
+                    self.game_state_manager.pass_night(npc.fee)
                     return
             elif isinstance(npc, Monster):
                 self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)

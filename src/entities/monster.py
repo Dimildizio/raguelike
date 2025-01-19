@@ -74,6 +74,13 @@ class Monster(Entity):
             self.on_death()
         return actual_damage
 
+    def heal_self(self, amount=0, ap_cost=10):
+        if self.action_points >= ap_cost:
+            self.action_points -= ap_cost
+            amount = amount or self.combat_stats.max_hp
+            self.combat_stats.get_healed(amount)
+
+
     def on_death(self):
         dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.monster_type.upper()}"], name=f"Dead {self.monster_type}",
                        description=f"The remains of a {self.monster_type} {self.name}",game_state=self.game_state)
@@ -87,7 +94,9 @@ class Monster(Entity):
 
     def lost_resolve(self):
         if(self.should_flee() and random.random() > self.bravery) or self.is_fleeing:
-            if random.random() < self.bravery * 0.05 and self.is_fleeing:  # chance to regain it
+            num = random.random()
+            print(num, 'vs', self.bravery)
+            if num < self.bravery * 0.05 and self.is_fleeing:  # chance to regain it
                 if self.is_fleeing:
                     self.bravery += 0.1
                     self.is_fleeing = False
@@ -238,11 +247,10 @@ class Monster(Entity):
         """Check if monster is next to a tree at the map edge"""
         monster_x = self.x // DISPLAY_TILE_SIZE
         monster_y = self.y // DISPLAY_TILE_SIZE
-
+        print(monster_x, monster_y)
         # Check if at map edge
-        is_at_edge = (monster_x == 0 or monster_x == current_map.width - 1 or
-                      monster_y == 0 or monster_y == current_map.height - 1)
-
+        is_at_edge = (monster_x <= 1 or monster_x >= current_map.width - 2 or
+                      monster_y <= 1 or monster_y >= current_map.height - 2)
         if not is_at_edge:
             return False
 
@@ -250,11 +258,8 @@ class Monster(Entity):
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             check_x = monster_x + dx
             check_y = monster_y + dy
-
-            if (0 <= check_x < current_map.width and
-                    0 <= check_y < current_map.height):
+            if 0 <= check_x < current_map.width and 0 <= check_y < current_map.height:
                 tile = current_map.tiles[check_y][check_x]
                 if any(isinstance(entity, Tree) for entity in tile.entities):
                     return True
-
         return False

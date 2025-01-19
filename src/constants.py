@@ -135,7 +135,7 @@ DODGE_CHANCE = 0.05
 NPC_BASE_HP = 50
 NPC_BASE_ARMOR = 5
 
-NPC_MOOD = ['playful', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
+NPC_MOOD = ['playful', 'drunk', 'happy', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
 
 # Monster settings
 MONSTER_BASE_HP = 50
@@ -152,6 +152,8 @@ MONSTER_PERSONALITY_TYPES = [
 ]
 DIALOGUE_COOLDOWN = 3
 DIALOGUE_DISTANCE = 3
+SPAWN_DISTANCE = 5
+SLEEP_FEE = 5
 
 # Dialog settings
 DIALOG_FONT_SIZE = 16

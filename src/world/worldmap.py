@@ -241,7 +241,6 @@ class WorldMap:
         # If monster still has AP and made a successful action, it can act again next frame
         if monster.action_points > 0 and result:
             return True
-
         # If monster couldn't act or is out of AP, it's done
         return False
 
@@ -261,7 +260,7 @@ class WorldMap:
         if distance <= MONSTER_AGGRO_RANGE:
             # Aggressive monsters are more likely to approach
             result = random.random()
-            print(f'Lets attack: {result} vs {monster.aggression}')
+            print(f'Lets attack: {result} vs {monster.aggression}. flee: {monster.bravery}')
             if result < monster.aggression:
                 return "approach"
         return "none"
@@ -397,10 +396,10 @@ class WorldMap:
             return False
         # Check if monster is next to edge tree
         if monster.is_at_edge_tree(self):
-            # Remove monster from game
             self.remove_entity(monster)
-            return True
-
+            monster.combat_stats.hp = 0
+            monster.action_points = 0
+            return False
         # Find nearest edge tree
         target = monster.find_nearest_edge_tree(self)
         if not target:
@@ -447,3 +446,25 @@ class WorldMap:
         if 0 <= x < self.width and 0 <= y < self.height:
             return self.tiles[y][x].passable
         return False
+
+    def get_all_entities(self):
+        """Get list of all entities on the map"""
+        entities = []
+        for row in self.tiles:
+            for tile in row:
+                entities.extend(tile.entities)
+        return entities
+
+    def move_entity_to(self, entity, new_x, new_y):
+        """Move entity to specific tile coordinates"""
+        # Remove from current position
+        old_x = entity.x // DISPLAY_TILE_SIZE
+        old_y = entity.y // DISPLAY_TILE_SIZE
+        self.tiles[old_y][old_x].remove_entity(entity)
+
+        # Update entity position
+        entity.x = new_x * DISPLAY_TILE_SIZE
+        entity.y = new_y * DISPLAY_TILE_SIZE
+
+        # Add to new position
+        self.tiles[new_y][new_x].add_entity(entity)

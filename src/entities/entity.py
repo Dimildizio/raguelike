@@ -83,6 +83,9 @@ class Entity(ABC):
         """Base update method that includes breathing animation"""
         self.update_breathing()
 
+    def heal_self(self):
+        pass
+
     @property
     def is_alive(self):
         return self.combat_stats and self.combat_stats.current_hp > 0  # Explicitly check current HP
@@ -132,6 +135,7 @@ class House(Entity):
         self.is_passable = False
         self.monster_type = 'house'
         self.last_response = None
+        self.fee = SLEEP_FEE
         face_path = SPRITES["NPC_FACE_3"]
         self.face_surface = pg.image.load(face_path).convert_alpha()
         self.face_surface = pg.transform.scale(self.face_surface, (256, 256))

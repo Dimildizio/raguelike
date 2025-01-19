@@ -36,10 +36,9 @@ class GameStateManager:
         npc_imgs = [{'name': 'Villager Amelia', 'sprite': 'NPC_1', 'face': 'NPC_FACE_1', 'description': 'young girl'},
                     {'name': 'Merchant Tom', 'sprite': 'NPC_2', 'face': 'NPC_FACE_2', 'description': 'old tired merchant'},
                     {'name': 'Elara the Elara', 'sprite': 'NPC_3', 'face': 'NPC_FACE_3', 'description': 'middle aged half ork woman'},]
-        moods = ['playful', 'happy', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
         npcs = [
             NPC(0, 0, npc_imgs[n]['sprite'], face_path=npc_imgs[n]['face'], name=npc_imgs[n]['name'],
-                mood=random.choice(moods), game_state=self, description=npc_imgs[n]['description'],
+                mood=random.choice(NPC_MOOD), game_state=self, description=npc_imgs[n]['description'],
                 ) for n in range(NUM_NPCS)]
 
         # Create and setup map
@@ -169,5 +168,51 @@ class GameStateManager:
         if monster.monster_type == "wolf":
             self.player.inventory.append("wolf_pelt")
 
-    def pass_night(self):
-        print('night passed')
+    def pass_night(self, fee=0):
+        """Handle night passing effects"""
+        # Check if player can afford lodging
+        if not self.player or not self.player.spend_gold(fee):
+            return False
+
+        # Heal all entities with combat stats
+        self.player.heal_self()
+        self.player.action_points = self.player.max_action_points
+
+        # Heal NPCs and change their moods
+        for entity in self.current_map.get_all_entities():
+            if hasattr(entity, 'combat_stats'):
+                if isinstance(entity, NPC):
+                    entity.mood = random.choice(NPC_MOOD)
+                    entity.heal_self()
+                elif isinstance(entity, Monster):
+                    entity.heal_self()
+
+        # Get player position
+        player_x = self.player.x // DISPLAY_TILE_SIZE
+        player_y = self.player.y // DISPLAY_TILE_SIZE
+
+        # Get valid positions for monsters (5+ tiles away from player)
+        valid_positions = []
+        for y in range(self.current_map.height):
+            for x in range(self.current_map.width):
+                dist_to_player = abs(x - player_x) + abs(y - player_y)
+
+                if (dist_to_player >= SPAWN_DISTANCE and self.current_map.tiles[y][x].passable and
+                        not self.current_map.tiles[y][x].entities):
+                    valid_positions.append((x, y))
+        if not valid_positions:
+            return True
+        for entity in self.current_map.get_all_entities():
+            if isinstance(entity, Monster):
+                if valid_positions:
+                    new_pos = random.choice(valid_positions)
+                    valid_positions.remove(new_pos)
+                    self.current_map.move_entity_to(entity, new_pos[0], new_pos[1])
+
+        # Spawn new goblin if positions available
+        if valid_positions:
+            spawn_pos = random.choice(valid_positions)
+            new_goblin = Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
+                sprite_path="MONSTER", name='Unknown Goblin', monster_type='goblin', game_state=self)
+            self.current_map.add_entity(new_goblin, spawn_pos[0], spawn_pos[1])
+        return True
