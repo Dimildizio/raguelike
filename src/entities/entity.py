@@ -136,7 +136,7 @@ class House(Entity):
         self.monster_type = 'house'
         self.last_response = None
         self.fee = SLEEP_FEE
-        face_path = SPRITES["NPC_FACE_3"]
+        face_path = SPRITES["HOUSE_FACE"]
         self.face_surface = pg.image.load(face_path).convert_alpha()
         self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
 

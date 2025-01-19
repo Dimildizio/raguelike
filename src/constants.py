@@ -51,6 +51,8 @@ FOREST_EDGE_WIDTH = 4
 RANDOM_TREE_CHANCE = 0.05
 
 SPRITES.update({
+
+    "HOUSE_FACE": os.path.join(ASSET_DIR, "house/house_face.png"),
     # Top row
     "HOUSE_1_TOP_TOP": os.path.join(ASSET_DIR, "house/house1_top_top.png"),
     "HOUSE_1_TOP_TOP2": os.path.join(ASSET_DIR, "house/house1_top_top2.png"),
