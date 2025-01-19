@@ -7,7 +7,7 @@ from .tile import Tile
 from constants import *
 from entities.character import Character
 from entities.monster import Monster
-from entities.entity import Remains
+from entities.entity import Remains, House
 from utils.sprite_loader import SpriteLoader
 from systems.combat_animation import CombatAnimation
 
@@ -185,6 +185,8 @@ class WorldMap:
             if isinstance(entity, Remains):
                 self.tiles[tile_y][tile_x].add_item(entity)
                 return True
+            if isinstance(entity, House):
+                self.tiles[tile_y][tile_x].add_entity(entity)
             if self.tiles[tile_y][tile_x].passable and not self.tiles[tile_y][tile_x].get_blocking_entity():
                 # Place entity
                 self.tiles[tile_y][tile_x].add_entity(entity)

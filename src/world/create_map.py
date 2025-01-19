@@ -62,6 +62,7 @@ class MapCreator:
                 house_pieces.append([(col_idx, row_idx), SPRITES[sprite_key]])
 
         # Place each piece
+        pos = []
         for (dx, dy), sprite_path in house_pieces:
             tile_x = house_x + dx
             tile_y = house_y + dy
@@ -73,6 +74,8 @@ class MapCreator:
                 passable=False,
                 rotate=False  # Prevent rotation for house pieces
             )
+            pos.append((tile_x, tile_y))
+        return pos
 
     def get_npc_positions(self):
         """Get designated positions for NPCs"""
@@ -126,7 +129,7 @@ class MapCreator:
         """Create complete map with all elements"""
         self.create_base_terrain()
         self.create_road()
-        self.place_house()
+        house_pos = self.place_house()
         npc_positions = self.get_npc_positions()
         tree_positions = self.calculate_tree_positions()
-        return self.tiles, npc_positions, tree_positions
+        return self.tiles, house_pos, npc_positions, tree_positions

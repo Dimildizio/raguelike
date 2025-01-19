@@ -4,7 +4,7 @@ from world.worldmap import WorldMap
 from entities.character import Character
 from systems.quest import QuestManager
 from entities.monster import Monster
-from entities.entity import Tree
+from entities.entity import Tree, House
 from entities.npc import NPC
 from constants import *
 import random
@@ -88,9 +88,12 @@ class GameStateManager:
         # Create and setup map with MapCreator
         self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
         map_creator = MapCreator(self.current_map.sprite_loader)
-        tiles, npc_positions, tree_positions = map_creator.create_map()
+        tiles, house_pos, npc_positions, tree_positions = map_creator.create_map()
         self.current_map.tiles = tiles
 
+        # Place house at random valid position from MapCreator
+        for (h_x, h_y) in house_pos:
+            self.current_map.add_entity(House(h_x, h_y), h_x, h_y)
         # Place NPCs at their designated positions from MapCreator
         for npc, position in zip(npcs, npc_positions):
             x, y = position
@@ -165,3 +168,6 @@ class GameStateManager:
         self.update_quest_progress(f"kill_{monster.monster_type}s")
         if monster.monster_type == "wolf":
             self.player.inventory.append("wolf_pelt")
+
+    def pass_night(self):
+        print('night passed')

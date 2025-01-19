@@ -44,6 +44,7 @@ class Tile:
         """Add an entity to this tile"""
         if entity not in self.entities:
             self.entities.append(entity)
+        print('current entities:', self.entities)
 
     def remove_entity(self, entity):
         """Remove an entity from this tile"""

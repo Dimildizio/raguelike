@@ -135,6 +135,8 @@ DODGE_CHANCE = 0.05
 NPC_BASE_HP = 50
 NPC_BASE_ARMOR = 5
 
+NPC_MOOD = ['playful', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
+
 # Monster settings
 MONSTER_BASE_HP = 50
 MONSTER_BASE_ARMOR = 5

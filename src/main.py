@@ -4,6 +4,8 @@ import time
 import gc
 from game_state import GameStateManager
 from constants import *
+
+from entities.entity import House
 from entities.monster import Monster
 from entities.npc import NPC
 from ui.dialog_ui import DialogUI
@@ -313,6 +315,12 @@ class Game:
                 self.dialog_ui.current_npc = entity
                 self.state_manager.current_npc = entity
                 self.dialog_ui.start_dialog(entity)
+                self.state_manager.change_state(GameState.DIALOG)
+                return True
+            elif isinstance(entity, House):
+                self.dialog_ui.current_npc = entity  # Reuse NPC dialogue UI for house
+                self.state_manager.current_npc = entity
+                self.dialog_ui.start_house_dialog(entity)  # New method for house dialogue
                 self.state_manager.change_state(GameState.DIALOG)
                 return True
         return False

@@ -1,5 +1,6 @@
 from abc import ABC
 import random
+import pygame as pg
 from constants import *
 from utils.sprite_loader import SpriteLoader
 from systems.combat_stats import CombatStats
@@ -119,4 +120,23 @@ class Tree(Entity):
         self.name= name
 
     def update(self):
+        pass
+
+
+class House(Entity):
+    def __init__(self, x, y, name="Village House",
+                 description="A cozy village house promises warmth and a bed for a night"):
+        super().__init__(x, y, None)  # No sprite needed since tiles has visualization
+        self.name = name
+        self.description = description
+        self.is_passable = False
+        self.monster_type = 'house'
+        self.last_response = None
+        face_path = SPRITES["NPC_FACE_3"]
+        self.face_surface = pg.image.load(face_path).convert_alpha()
+        self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
+
+
+    def draw(self, screen, offset_x=0, offset_y=0):
+        # No draw implementation needed since house tiles has visualization
         pass

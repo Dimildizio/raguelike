@@ -2,6 +2,7 @@ import pygame
 from constants import *
 from utils.dialogue_processor import DialogueProcessor
 from entities.monster import Monster
+from entities.entity import House
 import json
 
 
@@ -35,6 +36,8 @@ class DialogUI:
     def predefined_options(self):
         if isinstance(self.current_npc, Monster):
             return ['Wut you want?', 'Bye']
+        elif isinstance(self.current_npc, House):
+            return ['Rent a bed', 'Leave']
         else:
             return ["Got any quests?", "How are you?", "Bye"]
 
@@ -76,7 +79,7 @@ class DialogUI:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 if self.input_text:
-                    if self.input_text.lower() in ["bye", "goodbye", "see you"]:
+                    if self.input_text.lower() in ["bye", "goodbye", "see you", "leave"]:
                         self.should_exit = True
                     else:
                         self.process_input(self.input_text, self.current_npc)
@@ -110,13 +113,17 @@ class DialogUI:
 
     def process_input(self, text, npc):
         """Process player input and get NPC response"""
-        if text.lower() in ["bye", "goodbye", "see you"]:
+        if text.lower() in ["bye", "goodbye", "see you", 'leave']:
             self.should_exit = True
             #self.clear_dialogue_state()
             return
 
         try:
-            if isinstance(npc, Monster):
+            if isinstance(npc, House):
+                if text.lower() in ['sleep', 'rent a bed']:
+                    self.game_state_manager.pass_night()
+                    return
+            elif isinstance(npc, Monster):
                 self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
             else:
 
@@ -141,6 +148,8 @@ class DialogUI:
 
     def update(self):
         """Update dialogue state"""
+        if isinstance(self.current_npc, House):
+            self.current_response = self.current_npc.description
         if self.is_streaming and self.stream:
             try:
                 # Process next chunk of the stream
@@ -249,114 +258,117 @@ class DialogUI:
     def draw(self, screen, npc):
         screen_width = screen.get_width()
         screen_height = screen.get_height()
+        if isinstance(npc, House):
+            self.draw_house_dialogue(screen)
+        else:
 
-        # Calculate dimensions
-        side_panel_width = int(screen_width * self.SIDE_PANEL_WIDTH)
-        portrait_size = int(screen_height * self.PORTRAIT_SIZE)
-        top_margin = int(screen_height * self.TOP_MARGIN)
+            # Calculate dimensions
+            side_panel_width = int(screen_width * self.SIDE_PANEL_WIDTH)
+            portrait_size = int(screen_height * self.PORTRAIT_SIZE)
+            top_margin = int(screen_height * self.TOP_MARGIN)
 
-        # Calculate text area width and height
-        text_area_width = screen_width - (side_panel_width * 2) - (self.PADDING * 4)
-        required_height = self._calculate_text_height(self.current_response, text_area_width - self.PADDING * 2)
-        text_area_height = max(int(screen_height * self.TEXT_AREA_HEIGHT), required_height)
+            # Calculate text area width and height
+            text_area_width = screen_width - (side_panel_width * 2) - (self.PADDING * 4)
+            required_height = self._calculate_text_height(self.current_response, text_area_width - self.PADDING * 2)
+            text_area_height = max(int(screen_height * self.TEXT_AREA_HEIGHT), required_height)
 
-        # Draw dialog background
-        pygame.draw.rect(screen, (50, 50, 50), (0, 0, screen_width, screen_height))
+            # Draw dialog background
+            pygame.draw.rect(screen, (50, 50, 50), (0, 0, screen_width, screen_height))
 
-        # NPC section (top-left)
-        npc_panel = pygame.Rect(
-            self.PADDING,
-            top_margin,
-            side_panel_width,
-            portrait_size + self.PADDING * 2
-        )
-        pygame.draw.rect(screen, (70, 70, 70), npc_panel)
+            # NPC section (top-left)
+            npc_panel = pygame.Rect(
+                self.PADDING,
+                top_margin,
+                side_panel_width,
+                portrait_size + self.PADDING * 2
+            )
+            pygame.draw.rect(screen, (70, 70, 70), npc_panel)
 
-        # NPC name
-        name_text = self.font.render(npc.name, True, WHITE)
-        screen.blit(name_text, (npc_panel.x + self.PADDING, npc_panel.y + self.PADDING))
+            # NPC name
+            name_text = self.font.render(npc.name, True, WHITE)
+            screen.blit(name_text, (npc_panel.x + self.PADDING, npc_panel.y + self.PADDING))
 
-        # NPC face
-        face_rect = npc.face_surface.get_rect(
-            center=(npc_panel.centerx, npc_panel.centery + self.PADDING)
-        )
-        screen.blit(npc.face_surface, face_rect)
+            # NPC face
+            face_rect = npc.face_surface.get_rect(
+                center=(npc_panel.centerx, npc_panel.centery + self.PADDING)
+            )
+            screen.blit(npc.face_surface, face_rect)
 
-        # Dialog text area (top-middle)
-        dialog_text_area = pygame.Rect(
-            side_panel_width + self.PADDING * 2,
-            top_margin,
-            text_area_width,
-            text_area_height
-        )
-        pygame.draw.rect(screen, (40, 40, 40), dialog_text_area)
-        pygame.draw.rect(screen, WHITE, dialog_text_area, 2)
+            # Dialog text area (top-middle)
+            dialog_text_area = pygame.Rect(
+                side_panel_width + self.PADDING * 2,
+                top_margin,
+                text_area_width,
+                text_area_height
+            )
+            pygame.draw.rect(screen, (40, 40, 40), dialog_text_area)
+            pygame.draw.rect(screen, WHITE, dialog_text_area, 2)
 
-        # Draw the wrapped text
-        self._draw_wrapped_text(screen, dialog_text_area)
+            # Draw the wrapped text
+            self._draw_wrapped_text(screen, dialog_text_area)
 
-        # Player section (bottom-left)
-        player_panel = pygame.Rect(
-            self.PADDING,
-            screen_height - portrait_size - self.PADDING * 3 - int(screen_height * self.INPUT_HEIGHT),
-            side_panel_width,
-            portrait_size + self.PADDING * 2
-        )
-        pygame.draw.rect(screen, (70, 70, 70), player_panel)
+            # Player section (bottom-left)
+            player_panel = pygame.Rect(
+                self.PADDING,
+                screen_height - portrait_size - self.PADDING * 3 - int(screen_height * self.INPUT_HEIGHT),
+                side_panel_width,
+                portrait_size + self.PADDING * 2
+            )
+            pygame.draw.rect(screen, (70, 70, 70), player_panel)
 
-        # Player name
-        player_name_text = self.font.render("Ready_Player_1", True, WHITE)
-        screen.blit(player_name_text, (player_panel.x + self.PADDING, player_panel.y + self.PADDING))
+            # Player name
+            player_name_text = self.font.render("Ready_Player_1", True, WHITE)
+            screen.blit(player_name_text, (player_panel.x + self.PADDING, player_panel.y + self.PADDING))
 
-        # Player face
-        player_face_rect = self.game_state_manager.player.face_surface.get_rect(
-            center=(player_panel.centerx, player_panel.centery + self.PADDING)
-        )
-        screen.blit(self.game_state_manager.player.face_surface, player_face_rect)
+            # Player face
+            player_face_rect = self.game_state_manager.player.face_surface.get_rect(
+                center=(player_panel.centerx, player_panel.centery + self.PADDING)
+            )
+            screen.blit(self.game_state_manager.player.face_surface, player_face_rect)
 
-        # Options panel (to the right of player)
-        options_panel = pygame.Rect(
-            side_panel_width + self.PADDING * 2,
-            screen_height - portrait_size - self.PADDING * 3 - int(screen_height * self.INPUT_HEIGHT),
-            side_panel_width * 3,  # Made wider for options
-            portrait_size + self.PADDING * 2  # Made taller to match player panel
-        )
-        pygame.draw.rect(screen, (40, 40, 40), options_panel)
-        pygame.draw.rect(screen, WHITE, options_panel, 2)
+            # Options panel (to the right of player)
+            options_panel = pygame.Rect(
+                side_panel_width + self.PADDING * 2,
+                screen_height - portrait_size - self.PADDING * 3 - int(screen_height * self.INPUT_HEIGHT),
+                side_panel_width * 3,  # Made wider for options
+                portrait_size + self.PADDING * 2  # Made taller to match player panel
+            )
+            pygame.draw.rect(screen, (40, 40, 40), options_panel)
+            pygame.draw.rect(screen, WHITE, options_panel, 2)
 
-        # Draw options
-        for i, option in enumerate(self.predefined_options):
-            color = RED if i == self.selected_option else WHITE
-            option_text = self.font.render(option, True, color)
-            screen.blit(option_text, (
-                options_panel.x + self.PADDING,
-                options_panel.y + self.PADDING + i * 40
-            ))
+            # Draw options
+            for i, option in enumerate(self.predefined_options):
+                color = RED if i == self.selected_option else WHITE
+                option_text = self.font.render(option, True, color)
+                screen.blit(option_text, (
+                    options_panel.x + self.PADDING,
+                    options_panel.y + self.PADDING + i * 40
+                ))
 
-        # Input field (starting from right of player panel)
-        input_rect = pygame.Rect(
-            player_panel.right + self.PADDING,
-            screen_height - self.PADDING - int(screen_height * self.INPUT_HEIGHT),
-            screen_width - player_panel.right - self.PADDING * 2,
-            int(screen_height * self.INPUT_HEIGHT)
-        )
-        pygame.draw.rect(screen, (40, 40, 40), input_rect)
-        pygame.draw.rect(screen, WHITE, input_rect, 2)
+            # Input field (starting from right of player panel)
+            input_rect = pygame.Rect(
+                player_panel.right + self.PADDING,
+                screen_height - self.PADDING - int(screen_height * self.INPUT_HEIGHT),
+                screen_width - player_panel.right - self.PADDING * 2,
+                int(screen_height * self.INPUT_HEIGHT)
+            )
+            pygame.draw.rect(screen, (40, 40, 40), input_rect)
+            pygame.draw.rect(screen, WHITE, input_rect, 2)
 
-        # Input text
-        if self.input_text:
-            text_surface = self.font.render(self.input_text, True, WHITE)
-            screen.blit(text_surface, (
-                input_rect.x + self.PADDING,
-                input_rect.centery - text_surface.get_height() // 2
-            ))
+            # Input text
+            if self.input_text:
+                text_surface = self.font.render(self.input_text, True, WHITE)
+                screen.blit(text_surface, (
+                    input_rect.x + self.PADDING,
+                    input_rect.centery - text_surface.get_height() // 2
+                ))
 
-        # Cursor
-        if pygame.time.get_ticks() % 1000 < 500:
-            cursor_pos = self.font.size(self.input_text)[0] + input_rect.x + self.PADDING
-            pygame.draw.line(screen, WHITE,
-                             (cursor_pos, input_rect.centery - 10),
-                             (cursor_pos, input_rect.centery + 10))
+            # Cursor
+            if pygame.time.get_ticks() % 1000 < 500:
+                cursor_pos = self.font.size(self.input_text)[0] + input_rect.x + self.PADDING
+                pygame.draw.line(screen, WHITE,
+                                 (cursor_pos, input_rect.centery - 10),
+                                 (cursor_pos, input_rect.centery + 10))
 
     def _calculate_text_height(self, text, max_width):
         """Calculate the height needed for the wrapped text"""
@@ -405,4 +417,81 @@ class DialogUI:
             screen.blit(text_surface, (
                 text_area.x + self.PADDING,
                 text_area.y + self.PADDING + i * 30
+            ))
+
+    def start_house_dialog(self, house):
+        """Initialize dialogue UI for house interaction"""
+        self.current_npc = house
+        self.current_response = house.description
+        self.selected_option = 0
+        self.should_exit = False
+
+    def draw_house_dialogue(self, screen):
+        """Draw house dialogue in the same style as NPC dialogue"""
+        screen_width = screen.get_width()
+        screen_height = screen.get_height()
+
+        # Calculate dimensions
+        side_panel_width = int(screen_width * self.SIDE_PANEL_WIDTH)
+        portrait_size = int(screen_height * self.PORTRAIT_SIZE)
+        top_margin = int(screen_height * self.TOP_MARGIN)
+
+        # Calculate text area width and height
+        text_area_width = screen_width - (side_panel_width * 2) - (self.PADDING * 4)
+        required_height = self._calculate_text_height(self.current_response, text_area_width - self.PADDING * 2)
+        text_area_height = max(int(screen_height * self.TEXT_AREA_HEIGHT), required_height)
+
+        # Draw dialog background
+        pygame.draw.rect(screen, (50, 50, 50), (0, 0, screen_width, screen_height))
+
+        # House section (top-left)
+        house_panel = pygame.Rect(
+            self.PADDING,
+            top_margin,
+            side_panel_width,
+            portrait_size + self.PADDING * 2
+        )
+        pygame.draw.rect(screen, (70, 70, 70), house_panel)
+
+        # House name
+        name_text = self.font.render(self.current_npc.name, True, WHITE)
+        screen.blit(name_text, (house_panel.x + self.PADDING, house_panel.y + self.PADDING))
+
+        # House face/image
+        if self.current_npc.face_surface:
+            face_rect = self.current_npc.face_surface.get_rect(
+                center=(house_panel.centerx, house_panel.centery + self.PADDING)
+            )
+            screen.blit(self.current_npc.face_surface, face_rect)
+
+        # Dialog text area (description)
+        dialog_text_area = pygame.Rect(
+            side_panel_width + self.PADDING * 2,
+            top_margin,
+            text_area_width,
+            text_area_height
+        )
+        pygame.draw.rect(screen, (40, 40, 40), dialog_text_area)
+        pygame.draw.rect(screen, WHITE, dialog_text_area, 2)
+
+        # Draw the wrapped text (description)
+        self._draw_wrapped_text(screen, dialog_text_area)
+
+        # Options panel at bottom
+        options_panel = pygame.Rect(
+            side_panel_width + self.PADDING * 2,
+            screen_height - portrait_size - self.PADDING * 3,
+            side_panel_width * 3,
+            portrait_size + self.PADDING * 2
+        )
+        pygame.draw.rect(screen, (40, 40, 40), options_panel)
+        pygame.draw.rect(screen, WHITE, options_panel, 2)
+
+        # Draw options
+        for i, option in enumerate(self.predefined_options):
+            color = RED if i == self.selected_option else WHITE
+            option_text = self.font.render(option, True, color)
+            screen.blit(option_text, (
+                options_panel.x + self.PADDING,
+                options_panel.y + self.PADDING + i * 40
             ))
