@@ -15,6 +15,7 @@ class GameState(Enum):
     COMBAT = 3
     DIALOG = 4
     INVENTORY = 5
+    DEAD = 6
 
 
 class GameStateManager:

@@ -30,7 +30,12 @@ class Character(Entity):
 
     def take_damage(self, amount):
         actual_damage = self.combat_stats.take_damage(amount)
+        self.check_dead()
         return actual_damage
+
+    def check_dead(self):
+        if not self.is_alive:
+            self.game_state.change_state(6)
 
     def accept_quest(self, quest_id: str) -> bool:
         """Accept a new quest if not already active or completed"""

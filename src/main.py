@@ -74,6 +74,8 @@ class Game:
             elif self.state_manager.current_state == GameState.DIALOG:
                 self.dialog_ui.update()
                 self.dialog_ui.draw(self.screen, self.state_manager.current_npc)
+            elif self.state_manager.current_state == GameState.DEAD:
+                self.draw_death_screen()
 
             pygame.display.flip()
             self.clock.tick(FPS)
@@ -140,7 +142,8 @@ class Game:
             self.handle_menu_input(event)
         elif self.state_manager.current_state == GameState.DIALOG:
             self.dialog_ui.handle_input(event)
-
+        elif self.state_manager.current_state == GameState.DEAD:
+            self.handle_death_input(event)
 
     def toggle_fullscreen(self):
         is_fullscreen = bool(self.screen.get_flags() & pygame.FULLSCREEN)
@@ -215,6 +218,11 @@ class Game:
         elif selected_option == "Quit":
             pygame.quit()
             sys.exit()
+
+    def handle_death_input(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:  # Return to main menu
+                self.state_manager.change_state(GameState.MAIN_MENU)
 
     def draw_menu(self):
         # Draw menu background
@@ -304,6 +312,13 @@ class Game:
                 self.state_manager.change_state(GameState.DIALOG)
                 return True
         return False
+
+    def draw_death_screen(self):
+        self.screen.fill(BLACK)
+        font = pygame.font.Font(None, MENU_FONT_SIZE * 2)
+        text_surface = font.render("You Died!", True, RED)
+        text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))
+        self.screen.blit(text_surface, text_rect)
 
 
 if __name__ == "__main__":
