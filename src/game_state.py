@@ -9,15 +9,6 @@ from constants import *
 import random
 
 
-class GameState(Enum):
-    MAIN_MENU = 1
-    PLAYING = 2
-    COMBAT = 3
-    DIALOG = 4
-    INVENTORY = 5
-    DEAD = 6
-
-
 class GameStateManager:
     def __init__(self):
         self.current_state = GameState.MAIN_MENU
@@ -121,7 +112,6 @@ class GameStateManager:
                 self.current_map.add_entity(monster, pos[0], pos[1])
 
         self.change_state(GameState.MAIN_MENU)
-
 
     def change_state(self, new_state):
         self.current_state = new_state

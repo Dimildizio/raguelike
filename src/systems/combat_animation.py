@@ -1,4 +1,3 @@
-import pygame
 import time
 import math
 from utils.sprite_loader import SpriteLoader
@@ -18,7 +17,7 @@ class CombatAnimation:
         self.attacker = None
         self.target = None
         self.original_pos = (0, 0)
-        #self.original_target_rotation = 0
+        # self.original_target_rotation = 0
         self.shake_offset = (0, 0)  # Store shake offset separately
 
     def start_attack(self, attacker, target):
@@ -27,7 +26,7 @@ class CombatAnimation:
         self.attacker = attacker
         self.target = target
         self.original_pos = (attacker.x, attacker.y)
-        #self.original_target_rotation = target.rotation
+        # self.original_target_rotation = target.rotation
         self.shake_offset = (0, 0)
 
         # Calculate and set target rotation immediately
@@ -49,7 +48,7 @@ class CombatAnimation:
             # Animation finished
             self.is_playing = False
             self.attacker.x, self.attacker.y = self.original_pos
-            #self.target.rotation = self.original_target_rotation
+            # self.target.rotation = self.original_target_rotation
             self.shake_offset = (0, 0)
             return
 

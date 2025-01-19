@@ -16,7 +16,13 @@ class CombatStats:
         self.current_hp -= actual_damage
         if self.current_hp <= 0:
             self.current_hp = 0
+            return 0
         return actual_damage
+
+    @property
+    def get_hp_perc(self):
+        return self.current_hp / self.max_hp if self.max_hp else 0
+
 
     @property
     def is_alive(self):

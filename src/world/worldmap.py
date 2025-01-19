@@ -1,4 +1,3 @@
-import pygame
 import random
 import math
 import heapq
@@ -44,27 +43,6 @@ class WorldMap:
                 
                 # Create tile with preprocessed sprite
                 self.tiles[y][x] = Tile(pixel_x, pixel_y, SPRITES["FLOOR"])
-
-    def generate(self):
-        """Generate a simple room-based map"""
-        # Fill map with walls initially
-        for y in range(self.height):
-            for x in range(self.width):
-                self.tiles[y][x].type = TILE_WALL
-
-        # Create a main room in the center
-        room_width = self.width // 2
-        room_height = self.height // 2
-        start_x = (self.width - room_width) // 2
-        start_y = (self.height - room_height) // 2
-
-        # Fill room with floor tiles
-        for y in range(start_y, start_y + room_height):
-            for x in range(start_x, start_x + room_width):
-                self.tiles[y][x].type = TILE_FLOOR
-
-        print(f"Generated map with dimensions {self.width}x{self.height}")
-        print(f"Created room at {start_x},{start_y} with size {room_width}x{room_height}")
 
     def update(self):
         self.entities = [entity for entity in self.entities if entity.is_alive]
@@ -196,7 +174,7 @@ class WorldMap:
                     self.tiles[y][x] is not None and
                     self.tiles[y][x].passable and
                     not self.tiles[y][x].get_blocking_entity()):
-                return (x, y)
+                return x, y
 
     def add_entity(self, entity, tile_x, tile_y):
         # Check if position is within bounds and no blocking entities
@@ -270,8 +248,7 @@ class WorldMap:
             return "none"
 
         # Get monster's current state
-        health_percentage = monster.health / monster.max_health
-
+        health_percentage = monster.combat_stats.get_hp_perc
         # Should we flee?
         if health_percentage < MONSTER_FLEE_HEALTH:
             # Brave monsters might still fight

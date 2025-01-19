@@ -1,7 +1,8 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 import random
 from constants import *
 from utils.sprite_loader import SpriteLoader
+from systems.combat_stats import CombatStats
 
 
 class Entity(ABC):
@@ -32,13 +33,9 @@ class Entity(ABC):
         self.breath_speed = random.uniform(0.5, 1.5) * BREATHING_SPEED
         self.is_breathing_in = True  # Direction of breathing
 
-        self.combat_stats = None
-
-        self.max_health = hp
-        self.health = hp
         self.max_action_points = ap
         self.action_points = ap
-        self.armor = 0
+        self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10)
 
     def update_breathing(self):
         # Move current angle towards target angle
@@ -56,7 +53,6 @@ class Entity(ABC):
 
         # Calculate total rotation (base + breathing)
         self.rotation = (self.base_rotation + self.current_angle) % 360
-
 
     def draw(self, screen, offset_x=0, offset_y=0):
         # Draw outline first (if exists) - no rotation
@@ -85,20 +81,11 @@ class Entity(ABC):
     def is_alive(self):
         return self.combat_stats and self.combat_stats.current_hp > 0  # Explicitly check current HP
 
-    def heal(self, amount):
-        self.health = min(self.max_health, self.health + amount)
-
     def take_damage(self, amount):
         if not self.is_alive:
             return 0
-
-        actual_damage = max(1, amount - self.armor)  # Minimum 1 damage
-        self.health -= actual_damage
-
-        if self.health <= 0:
-            self.health = 0
-        return actual_damage
-
+        dmg = self.combat_stats.take_damage(amount)
+        return dmg
 
     def spend_action_points(self, amount):
         self.action_points = max(0, self.action_points - amount)

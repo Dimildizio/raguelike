@@ -2,7 +2,7 @@ import pygame
 import sys
 import time
 import gc
-from game_state import GameStateManager, GameState
+from game_state import GameStateManager
 from constants import *
 from entities.monster import Monster
 from entities.npc import NPC
@@ -82,7 +82,6 @@ class Game:
             gc.collect()
         pygame.quit()
 
-
     def handle_monster_turns(self):
         # Get all monsters from the current map
         self.monsters_queue = [entity for entity in self.state_manager.current_map.entities
@@ -133,7 +132,6 @@ class Game:
                 self.monsters_queue.pop(0)
         else:
             self.monsters_queue.pop(0)
-
 
     def handle_input(self, event):
         if self.state_manager.current_state == GameState.PLAYING:
@@ -244,7 +242,6 @@ class Game:
             text_rect = text_surface.get_rect(centerx=WINDOW_WIDTH // 2, y=MENU_START_Y + i * MENU_SPACING)
             self.screen.blit(text_surface, text_rect)
 
-
     def draw_player_ui(self):
         # Calculate UI dimensions based on screen size
         padding = int(WINDOW_HEIGHT * 0.01)
@@ -257,9 +254,9 @@ class Game:
         health_surface = pygame.Surface((bar_width, bar_height), pygame.SRCALPHA)
         # Draw background with alpha (R, G, B, A) - A=128 means 50% transparent
         pygame.draw.rect(health_surface, (255, 0, 0, 180), (0, 0, bar_width, bar_height))
-
+        stats = self.state_manager.player.combat_stats
         # Draw current health with alpha
-        health_percentage = self.state_manager.player.health / PLAYER_START_HP
+        health_percentage = stats.current_hp / stats.max_hp
         health_width = int(bar_width * health_percentage)
         pygame.draw.rect(health_surface, (0, 255, 0, 180), (0, 0, health_width, bar_height))
 
@@ -267,7 +264,7 @@ class Game:
         self.screen.blit(health_surface, (padding, padding))
 
         # Health text
-        health_text = f"HP: {int(self.state_manager.player.health)}/{PLAYER_START_HP}"
+        health_text = f"HP: {int(stats.current_hp)}/{stats.max_hp}"
         health_text_surface = font.render(health_text, True, WHITE)
         text_y_offset = (bar_height - health_text_surface.get_height()) // 2
         self.screen.blit(health_text_surface, (padding + 5, padding + text_y_offset))
@@ -316,7 +313,7 @@ class Game:
         return False
 
     def draw_death_screen(self):
-        self.screen.fill(BLACK)
+        self.screen.fill(BLACK+(100,))
         font = pygame.font.Font(None, MENU_FONT_SIZE * 2)
         text_surface = font.render("You Died!", True, RED)
         text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))

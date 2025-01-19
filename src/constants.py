@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 
 # Window settings
 WINDOW_WIDTH = 1024
@@ -179,3 +180,12 @@ MOVEMENT_DELAY = 0.2
 INITIAL_ACTION_POINTS = 100
 MOVE_ACTION_COST = 10
 ATTACK_ACTION_COST = 35
+
+
+class GameState(Enum):
+    MAIN_MENU = 1
+    PLAYING = 2
+    COMBAT = 3
+    DIALOG = 4
+    INVENTORY = 5
+    DEAD = 6

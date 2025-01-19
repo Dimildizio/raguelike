@@ -1,9 +1,6 @@
-import math
 import pygame
 from .entity import Entity
 from constants import *
-
-import random
 from systems.combat_stats import CombatStats
 
 
@@ -22,9 +19,9 @@ class Character(Entity):
         self.gold = 0
 
     def update(self):
-            self.update_breathing()
-            self.rotation = self.facing + self.current_angle
-    
+        self.update_breathing()
+        self.rotation = self.facing + self.current_angle
+
     def set_facing(self, direction):
         self.facing = direction
 
@@ -35,7 +32,7 @@ class Character(Entity):
 
     def check_dead(self):
         if not self.is_alive:
-            self.game_state.change_state(6)
+            self.game_state.change_state(GameState.DEAD)
 
     def accept_quest(self, quest_id: str) -> bool:
         """Accept a new quest if not already active or completed"""
@@ -76,10 +73,6 @@ class Character(Entity):
             amount = amount or self.combat_stats.max_hp
             self.combat_stats.get_healed(amount)
 
-
     def get_dialogue_context(self):
-
-        context = {
-            "player_health": self.combat_stats.get_status(),
-        }
+        context = {"player_health": self.combat_stats.get_status()}
         return context

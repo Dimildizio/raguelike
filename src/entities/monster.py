@@ -28,19 +28,19 @@ class Monster(Entity):
         # Set personality-based traits
         personalities = {'aggressive': {'aggression': random.uniform(1.0, 1.6),
                                         'bravery': random.uniform(0.75, 1.0),
-                                        'dialogue_chance': 0.01,
+                                        'dialogue_chance': 0.001,
                                         'dmg': 1.2, 'armor': 1, 'hp': 1},
                          'cautious': {'aggression': random.uniform(0.8, 1.4),
                                       'bravery': random.uniform(0.6, 0.8),
-                                      'dialogue_chance': 0.05,
+                                      'dialogue_chance': 0.005,
                                       'dmg': 1, 'armor': 1.2, 'hp': 1},
                          'territorial': {'aggression': random.uniform(1.2, 1.5),
                                          'bravery': random.uniform(0.7, 0.9),
-                                         'dialogue_chance': 0.02,
+                                         'dialogue_chance': 0.002,
                                          'dmg': 1, 'armor': 1, 'hp': 1},
                          'cowardly': {'aggression': random.uniform(0.7, 1.3),
                                       'bravery': random.uniform(0.4, 0.6),
-                                      'dialogue_chance': 0.1,
+                                      'dialogue_chance': 0.01,
                                       'dmg': 1, 'armor': 1, 'hp': 1.2}}
 
         self.personality = random.choice(personality_types)
@@ -64,8 +64,7 @@ class Monster(Entity):
         if random.random() < crit_chance:
             base_damage *= 2
 
-        actual_damage = max(0, base_damage - target.combat_stats.armor)
-        target.health -= actual_damage
+        actual_damage = target.take_damage(base_damage)
         return actual_damage
 
     def take_damage(self, amount):
