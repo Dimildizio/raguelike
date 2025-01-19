@@ -153,6 +153,10 @@ class Game:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.SCALED)
 
     def handle_playing_input(self, event):
+        if hasattr(self, 'monsters_queue') and self.monsters_queue:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.state_manager.change_state(GameState.MAIN_MENU) # Only allow ESC key during monster turns
+            return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F11:
                 self.toggle_fullscreen()
