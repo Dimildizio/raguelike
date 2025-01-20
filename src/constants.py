@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from pathlib import Path
 
 # Window settings
 WINDOW_WIDTH = 1024
@@ -20,6 +21,7 @@ NUM_MONSTERS = 3
 NUM_NPCS = 2
 
 # Asset paths
+SOUND_DIR = Path("assets/music")
 ASSET_DIR = "assets"
 SPRITES = {
     "PLAYER": os.path.join(ASSET_DIR, "player.png"),

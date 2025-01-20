@@ -1,10 +1,10 @@
-import pygame
+import pygame as pg
 import sys
 import time
 import gc
 from game_state import GameStateManager
+from systems.sound_manager import SoundManager
 from constants import *
-
 from entities.entity import House
 from entities.monster import Monster
 from entities.npc import NPC
@@ -13,14 +13,18 @@ from ui.dialog_ui import DialogUI
 
 class Game:
     def __init__(self):
-        pygame.init()
-        #self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN)
-        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        pygame.display.set_caption(GAME_TITLE)
-        self.clock = pygame.time.Clock()
+        pg.init()
+        # self.screen = pg.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pg.FULLSCREEN)
+        self.screen = pg.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        pg.display.set_caption(GAME_TITLE)
+        self.clock = pg.time.Clock()
+        self.last_action_time = 0
         self.state_manager = GameStateManager()
-        self.dialog_ui = DialogUI(self.state_manager)
+        self.sound_manager = SoundManager(SOUND_DIR)
+        self.dialog_ui = DialogUI(self.state_manager, self.sound_manager)
         self.monsters_queue = None
+        self.camera_x = None
+        self.camera_y = None
         self.update_camera()
 
     def update_camera(self):
@@ -49,9 +53,11 @@ class Game:
     def run(self):
         running = True
         while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
                     running = False
+                elif event.type == pg.USEREVENT + 1:  # Music track ended
+                    self.sound_manager.play_next_track()
                 self.handle_input(event)
             if self.state_manager.current_state == GameState.DIALOG and self.dialog_ui.should_exit:
                 self.exit_dialogue()
@@ -79,10 +85,14 @@ class Game:
             elif self.state_manager.current_state == GameState.DEAD:
                 self.draw_death_screen()
 
-            pygame.display.flip()
+            pg.display.flip()
+            self.sound_manager.update()
             self.clock.tick(FPS)
             gc.collect()
-        pygame.quit()
+
+        # Quit
+        self.sound_manager.stop_all()
+        pg.quit()
 
     def handle_monster_turns(self):
         # Get all monsters from the current map
@@ -146,66 +156,66 @@ class Game:
             self.handle_death_input(event)
 
     def toggle_fullscreen(self):
-        is_fullscreen = bool(self.screen.get_flags() & pygame.FULLSCREEN)
+        is_fullscreen = bool(self.screen.get_flags() & pg.FULLSCREEN)
         if is_fullscreen:
             # Switch to windowed mode
-            self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.screen = pg.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         else:
             # Switch to fullscreen
-            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.SCALED)
+            self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN | pg.SCALED)
 
     def handle_playing_input(self, event):
         if hasattr(self, 'monsters_queue') and self.monsters_queue:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self.state_manager.change_state(GameState.MAIN_MENU) # Only allow ESC key during monster turns
+            if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                self.state_manager.change_state(GameState.MAIN_MENU)  # Only allow ESC key during monster turns
             return
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_F11:
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_F11:
                 self.toggle_fullscreen()
             player_tile_x = self.state_manager.player.x // self.state_manager.current_map.tile_size
             player_tile_y = self.state_manager.player.y // self.state_manager.current_map.tile_size
 
-            if event.key == pygame.K_SPACE:  # End turn
+            if event.key == pg.K_SPACE:  # End turn
                 self.state_manager.player.reset_action_points()
                 self.handle_monster_turns()
                 return
 
             # Movement
-            if event.key in (pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d):
+            if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):
                 direction, tile_x, tile_y = self.get_move_direction(event.key, player_tile_x, player_tile_y)
                 self.state_manager.player.set_facing(direction)
                 if not self.try_interact_with_npc(tile_x, tile_y):
                     self.state_manager.current_map.move_entity(self.state_manager.player, tile_x, tile_y)
 
-            if event.key == pygame.K_j:  # View quest journal
+            if event.key == pg.K_j:  # View quest journal
                 quest_status = self.state_manager.quest_manager.format_all_quests_status()
                 print("\n" + quest_status + "\n")
                 print('money:', self.state_manager.player.gold)
-            if event.key == pygame.K_h:
+            if event.key == pg.K_h:
                 self.state_manager.player.heal_self()
 
             # Interaction
-            if event.key == pygame.K_e:  # Interact
+            if event.key == pg.K_e:  # Interact
                 # Check adjacent tiles for NPCs
                 facing_pos = self.state_manager.current_map.get_facing_tile_position(self.state_manager.player)
                 if facing_pos:
                     self.try_interact_with_npc(facing_pos[0], facing_pos[1])
 
             # Menu controls
-            elif event.key == pygame.K_i:  # Inventory
+            elif event.key == pg.K_i:  # Inventory
                 self.state_manager.change_state(GameState.INVENTORY)
-            elif event.key == pygame.K_ESCAPE:  # Menu
+            elif event.key == pg.K_ESCAPE:  # Menu
                 self.state_manager.change_state(GameState.MAIN_MENU)
 
     def handle_menu_input(self, event):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w or event.key == pygame.K_UP:  # Move up
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_w or event.key == pg.K_UP:  # Move up
                 self.state_manager.selected_menu_item = (self.state_manager.selected_menu_item - 1) % len(MENU_OPTIONS)
-            elif event.key == pygame.K_s or event.key == pygame.K_DOWN:  # Move down
+            elif event.key == pg.K_s or event.key == pg.K_DOWN:  # Move down
                 self.state_manager.selected_menu_item = (self.state_manager.selected_menu_item + 1) % len(MENU_OPTIONS)
-            elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:  # Select option
+            elif event.key == pg.K_RETURN or event.key == pg.K_SPACE:  # Select option
                 self.handle_menu_selection()
-            elif event.key == pygame.K_ESCAPE:  # Return to game if we were playing
+            elif event.key == pg.K_ESCAPE:  # Return to game if we were playing
                 if self.state_manager.player:  # If game is in progress
                     self.state_manager.change_state(GameState.PLAYING)
 
@@ -222,12 +232,12 @@ class Game:
             # Implement settings menu
             pass
         elif selected_option == "Quit":
-            pygame.quit()
+            pg.quit()
             sys.exit()
 
     def handle_death_input(self, event):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:  # Return to main menu
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:  # Return to main menu
                 self.state_manager.change_state(GameState.MAIN_MENU)
 
     def draw_menu(self):
@@ -235,13 +245,13 @@ class Game:
         self.screen.fill(BLACK)
 
         # Draw title
-        title_font = pygame.font.Font(None, MENU_FONT_SIZE * 2)
+        title_font = pg.font.Font(None, MENU_FONT_SIZE * 2)
         title_surface = title_font.render(GAME_TITLE, True, WHITE)
         title_rect = title_surface.get_rect(centerx=WINDOW_WIDTH // 2, y=50)
         self.screen.blit(title_surface, title_rect)
 
         # Draw menu options
-        menu_font = pygame.font.Font(None, MENU_FONT_SIZE)
+        menu_font = pg.font.Font(None, MENU_FONT_SIZE)
         for i, option in enumerate(MENU_OPTIONS):
             color = RED if i == self.state_manager.selected_menu_item else WHITE
             text_surface = menu_font.render(option, True, color)
@@ -254,17 +264,17 @@ class Game:
         bar_width = int(WINDOW_WIDTH * 0.15)
         bar_height = int(WINDOW_HEIGHT * 0.03)
         font_size = int(WINDOW_HEIGHT * 0.025)
-        font = pygame.font.Font(None, font_size)
+        font = pg.font.Font(None, font_size)
 
         # Create a surface for the health bar with alpha channel
-        health_surface = pygame.Surface((bar_width, bar_height), pygame.SRCALPHA)
+        health_surface = pg.Surface((bar_width, bar_height), pg.SRCALPHA)
         # Draw background with alpha (R, G, B, A) - A=128 means 50% transparent
-        pygame.draw.rect(health_surface, (255, 0, 0, 180), (0, 0, bar_width, bar_height))
+        pg.draw.rect(health_surface, (255, 0, 0, 180), (0, 0, bar_width, bar_height))
         stats = self.state_manager.player.combat_stats
         # Draw current health with alpha
         health_percentage = stats.current_hp / stats.max_hp
         health_width = int(bar_width * health_percentage)
-        pygame.draw.rect(health_surface, (0, 255, 0, 180), (0, 0, health_width, bar_height))
+        pg.draw.rect(health_surface, (0, 255, 0, 180), (0, 0, health_width, bar_height))
 
         # Blit the health surface to the screen
         self.screen.blit(health_surface, (padding, padding))
@@ -277,14 +287,14 @@ class Game:
 
         # Create a surface for the AP bar with alpha channel
         ap_y = padding * 2 + bar_height
-        ap_surface = pygame.Surface((bar_width, bar_height), pygame.SRCALPHA)
+        ap_surface = pg.Surface((bar_width, bar_height), pg.SRCALPHA)
         # Draw background with alpha
-        pygame.draw.rect(ap_surface, (50, 50, 150, 180), (0, 0, bar_width, bar_height))
+        pg.draw.rect(ap_surface, (50, 50, 150, 180), (0, 0, bar_width, bar_height))
 
         # Draw current AP with alpha
         ap_percentage = self.state_manager.player.action_points / self.state_manager.player.max_action_points
         ap_width = int(bar_width * ap_percentage)
-        pygame.draw.rect(ap_surface, (100, 100, 255, 180), (0, 0, ap_width, bar_height))
+        pg.draw.rect(ap_surface, (100, 100, 255, 180), (0, 0, ap_width, bar_height))
 
         # Blit the AP surface to the screen
         self.screen.blit(ap_surface, (padding, ap_y))
@@ -296,10 +306,10 @@ class Game:
 
     @staticmethod
     def get_move_direction(key, player_tile_x, player_tile_y):
-        moves = {pygame.K_w: {'direction': DIRECTION_UP, 'tile_x': player_tile_x, 'tile_y': player_tile_y - 1},
-                 pygame.K_s: {'direction': DIRECTION_DOWN, 'tile_x': player_tile_x, 'tile_y': player_tile_y + 1},
-                 pygame.K_a: {'direction': DIRECTION_LEFT, 'tile_x': player_tile_x - 1, 'tile_y': player_tile_y},
-                 pygame.K_d: {'direction': DIRECTION_RIGHT, 'tile_x': player_tile_x + 1, 'tile_y': player_tile_y}}
+        moves = {pg.K_w: {'direction': DIRECTION_UP, 'tile_x': player_tile_x, 'tile_y': player_tile_y - 1},
+                 pg.K_s: {'direction': DIRECTION_DOWN, 'tile_x': player_tile_x, 'tile_y': player_tile_y + 1},
+                 pg.K_a: {'direction': DIRECTION_LEFT, 'tile_x': player_tile_x - 1, 'tile_y': player_tile_y},
+                 pg.K_d: {'direction': DIRECTION_RIGHT, 'tile_x': player_tile_x + 1, 'tile_y': player_tile_y}}
         return moves[key]['direction'], int(moves[key]['tile_x']), int(moves[key]['tile_y'])
 
     def try_interact_with_npc(self, tile_x, tile_y):
@@ -326,7 +336,7 @@ class Game:
 
     def draw_death_screen(self):
         self.screen.fill(BLACK+(100,))
-        font = pygame.font.Font(None, MENU_FONT_SIZE * 2)
+        font = pg.font.Font(None, MENU_FONT_SIZE * 2)
         text_surface = font.render("You Died!", True, RED)
         text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))
         self.screen.blit(text_surface, text_rect)

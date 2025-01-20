@@ -7,18 +7,18 @@ import json
 
 
 class DialogUI:
-    def __init__(self, game_state_manager):
+    def __init__(self, game_state_manager, sound_manager):
         self.font = pygame.font.Font(None, 32)
         self.input_text = ""
         self.last_input_text = ""
         self.max_input_length = 100
         self.game_state_manager = game_state_manager
-        #self.predefined_options = ["Got any quests?", "How are you?", "Bye"]
         self.selected_option = 0
         self.should_exit = False
         self.current_npc = None
         self.current_response = None
         self.dialogue_processor = DialogueProcessor()
+        self.sound_engine = sound_manager
         self.current_response = "Hello traveler! How can I help you today?"
 
         self.streaming_response = ""
@@ -55,6 +55,9 @@ class DialogUI:
                                 npc, Monster) else "Hey you! We need talk!"
         self.selected_option = 0  # Reset selection
 
+    def stop_dialogue(self):
+        self.should_exit = True
+        self.sound_engine.stop_narration()
 
     def clear_dialogue_state(self):
         """Reset all dialogue-related state"""
@@ -64,7 +67,6 @@ class DialogUI:
         self.streaming_response = ""
         self.is_streaming = False
         self.stream = None
-        self.should_exit = False
         if self.game_state_manager:
             self.game_state_manager.current_npc = None
 
@@ -80,7 +82,7 @@ class DialogUI:
             if event.key == pygame.K_RETURN:
                 if self.input_text:
                     if self.input_text.lower() in ["bye", "goodbye", "see you", "leave"]:
-                        self.should_exit = True
+                        self.stop_dialogue()
                     else:
                         self.process_input(self.input_text, self.current_npc)
                         self.last_input_text = self.input_text
@@ -93,11 +95,11 @@ class DialogUI:
                     # If no input text, use selected predefined option
                     selected_text = self.predefined_options[self.selected_option]
                     if selected_text == "Bye":
-                        self.should_exit = True
+                        self.stop_dialogue()
                     else:
                         print(f"Player chose: {selected_text}")
                         if isinstance(self.current_npc, House):
-                            self.should_exit = True
+                            self.stop_dialogue()
 
 
             elif event.key == pygame.K_BACKSPACE:
@@ -118,21 +120,16 @@ class DialogUI:
     def process_input(self, text, npc):
         """Process player input and get NPC response"""
         if text.lower() in ["bye", "goodbye", "see you", 'leave']:
-            self.should_exit = True
-            #self.clear_dialogue_state()
-            return
-
+            return self.stop_dialogue()
         try:
             if isinstance(npc, House):
                 print('this is house', text)
                 if text.lower() in ['sleep', 'rent a bed']:
                     self.game_state_manager.pass_night(npc.fee)
-
                     return
             elif isinstance(npc, Monster):
                 self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
             else:
-
                 # Get the response stream
                 self.stream = self.dialogue_processor.process_dialogue(
                     player_input=text,
@@ -176,6 +173,7 @@ class DialogUI:
             except StopIteration:
                 # Stream is complete
                 try:
+                    self.sound_engine.start_narration()
                     # Find the JSON part between ```json and ```
                     json_parts = self.streaming_response.split('```json')
                     if len(json_parts) > 1:
