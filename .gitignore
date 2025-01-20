@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+tts_api/Kokoro-82M/
+
 # C extensions
 *.so
 
