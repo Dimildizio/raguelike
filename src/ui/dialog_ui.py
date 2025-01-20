@@ -1,6 +1,7 @@
-import pygame
+import pygame as pg
 from constants import *
 from utils.dialogue_processor import DialogueProcessor
+from utils.tts_helper import TTSHandler
 from entities.monster import Monster
 from entities.entity import House
 import json
@@ -8,7 +9,7 @@ import json
 
 class DialogUI:
     def __init__(self, game_state_manager, sound_manager):
-        self.font = pygame.font.Font(None, 32)
+        self.font = pg.font.Font(None, 32)
         self.input_text = ""
         self.last_input_text = ""
         self.max_input_length = 100
@@ -18,8 +19,13 @@ class DialogUI:
         self.current_npc = None
         self.current_response = None
         self.dialogue_processor = DialogueProcessor()
+        self.tts = TTSHandler()
+        self.current_audio_buffer = None
         self.sound_engine = sound_manager
         self.current_response = "Hello traveler! How can I help you today?"
+        self.current_partial_sentence = ""
+        self.sentence_queue = []
+        self.sentence_end_markers = {'.', '!', '?'}
 
         self.streaming_response = ""
         self.is_streaming = False
@@ -54,10 +60,18 @@ class DialogUI:
         self.current_response = "Hello traveler! How can I help you today?" if not isinstance(
                                 npc, Monster) else "Hey you! We need talk!"
         self.selected_option = 0  # Reset selection
+        self.current_partial_sentence = self.current_response
+        self.sentence_queue.append(self.current_response)
+        self.process_sentence_queue()
+        self.current_partial_sentence = ''
+
 
     def stop_dialogue(self):
         self.should_exit = True
+        self.current_audio_buffer = None
         self.sound_engine.stop_narration()
+        self.sentence_queue.clear()
+        self.current_partial_sentence = ""
 
     def clear_dialogue_state(self):
         """Reset all dialogue-related state"""
@@ -78,8 +92,8 @@ class DialogUI:
                 char in ".,!?'-")
 
     def handle_input(self, event):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN:
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_RETURN:
                 if self.input_text:
                     if self.input_text.lower() in ["bye", "goodbye", "see you", "leave"]:
                         self.stop_dialogue()
@@ -102,13 +116,13 @@ class DialogUI:
                             self.stop_dialogue()
 
 
-            elif event.key == pygame.K_BACKSPACE:
+            elif event.key == pg.K_BACKSPACE:
                 self.input_text = self.input_text[:-1]
-            elif event.key == pygame.K_UP:
+            elif event.key == pg.K_UP:
                 self.selected_option = (self.selected_option - 1) % len(self.predefined_options)
-            elif event.key == pygame.K_DOWN:
+            elif event.key == pg.K_DOWN:
                 self.selected_option = (self.selected_option + 1) % len(self.predefined_options)
-            elif event.key == pygame.K_SPACE and len(self.input_text) < self.max_input_length:
+            elif event.key == pg.K_SPACE and len(self.input_text) < self.max_input_length:
                 self.input_text += " "
             # Only add character if it's valid and there's room
             elif (len(event.unicode) == 1 and
@@ -151,6 +165,8 @@ class DialogUI:
 
     def update(self):
         """Update dialogue state"""
+        if not WHOLE_DIALOG and self.sentence_queue:
+            self.process_sentence_queue(whole_dialogue=False)
         if isinstance(self.current_npc, House):
             self.current_response = self.current_npc.description
         if self.is_streaming and self.stream:
@@ -166,13 +182,18 @@ class DialogUI:
                         start_idx = self.streaming_response.find(start_marker) + len(start_marker)
                         # Show everything after the start marker, cleaning up JSON artifacts
                         partial_response = self.streaming_response[start_idx:]
-                        self.current_response = (partial_response.replace('```', '')
-                                                 .replace('}', '')
-                                                 .replace('"', '')
-                                                 .replace('``', ''))
+                        self.current_response = self._replace_symbols(partial_response)
+                        self.process_streaming_text(self._replace_symbols(chunk))
             except StopIteration:
                 # Stream is complete
                 try:
+                    try:
+                        self.process_sentence_queue()
+                    except Exception as e:
+                        print(e)
+                    if self.current_partial_sentence.strip():
+                        self.current_partial_sentence = ""
+                        self.process_sentence_queue()
                     self.sound_engine.start_narration()
                     # Find the JSON part between ```json and ```
                     json_parts = self.streaming_response.split('```json')
@@ -180,7 +201,6 @@ class DialogUI:
                         json_text = json_parts[1].split('```')[0]
                         final_response = json.loads(json_text)
                         print(final_response)
-
                         # Update NPC's last response
                         if self.current_npc:
                             self.current_npc.last_response = final_response.get('text', '')
@@ -260,6 +280,7 @@ class DialogUI:
                 self.stream = None
 
     def draw(self, screen, npc):
+
         screen_width = screen.get_width()
         screen_height = screen.get_height()
         if isinstance(npc, House):
@@ -277,16 +298,16 @@ class DialogUI:
             text_area_height = max(int(screen_height * self.TEXT_AREA_HEIGHT), required_height)
 
             # Draw dialog background
-            pygame.draw.rect(screen, (50, 50, 50), (0, 0, screen_width, screen_height))
+            pg.draw.rect(screen, (50, 50, 50), (0, 0, screen_width, screen_height))
 
             # NPC section (top-left)
-            npc_panel = pygame.Rect(
+            npc_panel = pg.Rect(
                 self.PADDING,
                 top_margin,
                 side_panel_width,
                 portrait_size + self.PADDING * 2
             )
-            pygame.draw.rect(screen, (70, 70, 70), npc_panel)
+            pg.draw.rect(screen, (70, 70, 70), npc_panel)
 
             # NPC name
             name_text = self.font.render(npc.name, True, WHITE)
@@ -299,26 +320,26 @@ class DialogUI:
             screen.blit(npc.face_surface, face_rect)
 
             # Dialog text area (top-middle)
-            dialog_text_area = pygame.Rect(
+            dialog_text_area = pg.Rect(
                 side_panel_width + self.PADDING * 2,
                 top_margin,
                 text_area_width,
                 text_area_height
             )
-            pygame.draw.rect(screen, (40, 40, 40), dialog_text_area)
-            pygame.draw.rect(screen, WHITE, dialog_text_area, 2)
+            pg.draw.rect(screen, (40, 40, 40), dialog_text_area)
+            pg.draw.rect(screen, WHITE, dialog_text_area, 2)
 
             # Draw the wrapped text
             self._draw_wrapped_text(screen, dialog_text_area)
 
             # Player section (bottom-left)
-            player_panel = pygame.Rect(
+            player_panel = pg.Rect(
                 self.PADDING,
                 screen_height - portrait_size - self.PADDING * 3 - int(screen_height * self.INPUT_HEIGHT),
                 side_panel_width,
                 portrait_size + self.PADDING * 2
             )
-            pygame.draw.rect(screen, (70, 70, 70), player_panel)
+            pg.draw.rect(screen, (70, 70, 70), player_panel)
 
             # Player name
             player_name_text = self.font.render("Ready_Player_1", True, WHITE)
@@ -331,14 +352,14 @@ class DialogUI:
             screen.blit(self.game_state_manager.player.face_surface, player_face_rect)
 
             # Options panel (to the right of player)
-            options_panel = pygame.Rect(
+            options_panel = pg.Rect(
                 side_panel_width + self.PADDING * 2,
                 screen_height - portrait_size - self.PADDING * 3 - int(screen_height * self.INPUT_HEIGHT),
                 side_panel_width * 3,  # Made wider for options
                 portrait_size + self.PADDING * 2  # Made taller to match player panel
             )
-            pygame.draw.rect(screen, (40, 40, 40), options_panel)
-            pygame.draw.rect(screen, WHITE, options_panel, 2)
+            pg.draw.rect(screen, (40, 40, 40), options_panel)
+            pg.draw.rect(screen, WHITE, options_panel, 2)
 
             # Draw options
             for i, option in enumerate(self.predefined_options):
@@ -350,14 +371,14 @@ class DialogUI:
                 ))
 
             # Input field (starting from right of player panel)
-            input_rect = pygame.Rect(
+            input_rect = pg.Rect(
                 player_panel.right + self.PADDING,
                 screen_height - self.PADDING - int(screen_height * self.INPUT_HEIGHT),
                 screen_width - player_panel.right - self.PADDING * 2,
                 int(screen_height * self.INPUT_HEIGHT)
             )
-            pygame.draw.rect(screen, (40, 40, 40), input_rect)
-            pygame.draw.rect(screen, WHITE, input_rect, 2)
+            pg.draw.rect(screen, (40, 40, 40), input_rect)
+            pg.draw.rect(screen, WHITE, input_rect, 2)
 
             # Input text
             if self.input_text:
@@ -368,11 +389,12 @@ class DialogUI:
                 ))
 
             # Cursor
-            if pygame.time.get_ticks() % 1000 < 500:
+            if pg.time.get_ticks() % 1000 < 500:
                 cursor_pos = self.font.size(self.input_text)[0] + input_rect.x + self.PADDING
-                pygame.draw.line(screen, WHITE,
+                pg.draw.line(screen, WHITE,
                                  (cursor_pos, input_rect.centery - 10),
                                  (cursor_pos, input_rect.centery + 10))
+
 
     def _calculate_text_height(self, text, max_width):
         """Calculate the height needed for the wrapped text"""
@@ -423,6 +445,9 @@ class DialogUI:
                 text_area.y + self.PADDING + i * 30
             ))
 
+    def _replace_symbols(self, chunk):
+        return chunk.replace('```', '').replace('}', '').replace('"', '').replace('``', '')
+
     def start_house_dialog(self, house):
         """Initialize dialogue UI for house interaction"""
         self.current_npc = house
@@ -446,16 +471,16 @@ class DialogUI:
         text_area_height = max(int(screen_height * self.TEXT_AREA_HEIGHT), required_height)
 
         # Draw dialog background
-        pygame.draw.rect(screen, (50, 50, 50), (0, 0, screen_width, screen_height))
+        pg.draw.rect(screen, (50, 50, 50), (0, 0, screen_width, screen_height))
 
         # House section (top-left)
-        house_panel = pygame.Rect(
+        house_panel = pg.Rect(
             self.PADDING,
             top_margin,
             side_panel_width,
             portrait_size + self.PADDING * 2
         )
-        pygame.draw.rect(screen, (70, 70, 70), house_panel)
+        pg.draw.rect(screen, (70, 70, 70), house_panel)
 
         # House name
         name_text = self.font.render(self.current_npc.name, True, WHITE)
@@ -470,13 +495,13 @@ class DialogUI:
 
         # Player section (bottom-left)
         player = self.game_state_manager.player
-        player_panel = pygame.Rect(
+        player_panel = pg.Rect(
             self.PADDING,  # Same x as house panel
             screen_height - portrait_size - self.PADDING * 3,  # Position at bottom
             side_panel_width,
             portrait_size + self.PADDING * 2
         )
-        pygame.draw.rect(screen, (70, 70, 70), player_panel)
+        pg.draw.rect(screen, (70, 70, 70), player_panel)
 
         # Player name
         player_name_text = self.font.render(player.name, True, WHITE)
@@ -490,27 +515,27 @@ class DialogUI:
             screen.blit(player.face_surface, player_face_rect)
 
         # Dialog text area (description)
-        dialog_text_area = pygame.Rect(
+        dialog_text_area = pg.Rect(
             side_panel_width + self.PADDING * 2,
             top_margin,
             text_area_width,
             text_area_height
         )
-        pygame.draw.rect(screen, (40, 40, 40), dialog_text_area)
-        pygame.draw.rect(screen, WHITE, dialog_text_area, 2)
+        pg.draw.rect(screen, (40, 40, 40), dialog_text_area)
+        pg.draw.rect(screen, WHITE, dialog_text_area, 2)
 
         # Draw the wrapped text (description)
         self._draw_wrapped_text(screen, dialog_text_area)
 
         # Options panel at bottom
-        options_panel = pygame.Rect(
+        options_panel = pg.Rect(
             side_panel_width + self.PADDING * 2,
             screen_height - portrait_size - self.PADDING * 3,
             side_panel_width * 3,
             portrait_size + self.PADDING * 2
         )
-        pygame.draw.rect(screen, (40, 40, 40), options_panel)
-        pygame.draw.rect(screen, WHITE, options_panel, 2)
+        pg.draw.rect(screen, (40, 40, 40), options_panel)
+        pg.draw.rect(screen, WHITE, options_panel, 2)
 
         # Draw options
         for i, option in enumerate(self.predefined_options):
@@ -520,3 +545,38 @@ class DialogUI:
                 options_panel.x + self.PADDING,
                 options_panel.y + self.PADDING + i * 40
             ))
+
+    def process_streaming_text(self, full_text):
+        """Process streaming text to extract complete sentences"""
+        # Get only the new text since last processed
+        for symbol in full_text:
+            if symbol in STOP_SYMBOLS_SPEECH:
+                # We have a complete sentence
+                self.sentence_queue.append(self.current_partial_sentence.strip())
+                self.current_partial_sentence = ""
+            else:
+                self.current_partial_sentence += symbol
+                if self.current_partial_sentence.endswith('...'): #... is a pause marker, so we ignore it
+                    self.current_partial_sentence = self.current_partial_sentence[:-3]
+                    break
+
+
+    def process_sentence_queue(self, whole_dialogue=WHOLE_DIALOG):
+        """Process and play complete sentences from the queue"""
+        if (whole_dialogue and not self.current_partial_sentence) or (not whole_dialogue and not self.sentence_queue):
+            print('empty sentence', self.current_partial_sentence, 'and', self.sentence_queue)
+
+            return
+        # Only process if not currently narrating
+        print('parts', self.current_partial_sentence, 'queue', self.sentence_queue)
+        if not self.sound_engine.narration_channel.get_busy():
+            sentence = self.current_partial_sentence if whole_dialogue else self.sentence_queue.pop(0)
+            if sentence:
+                self.play_audio(sentence, 'a')
+
+    def play_audio(self, text, voice='a'):
+        self.current_audio_buffer = self.tts.generate_and_play_tts(text, voice)
+        if self.current_audio_buffer:
+
+            sound = pg.mixer.Sound(self.current_audio_buffer)
+            self.sound_engine.play_narration(sound)

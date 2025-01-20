@@ -23,6 +23,9 @@ NUM_NPCS = 2
 # Asset paths
 SOUND_DIR = Path("assets/sounds/music")
 SOUNDS ={'HIT': os.path.join('assets/sounds/', 'sword.wav')}
+WHOLE_DIALOG = True
+STOP_SYMBOLS_SPEECH = '}' if WHOLE_DIALOG else '.!?'
+
 
 ASSET_DIR = "assets"
 SPRITES = {
