@@ -23,6 +23,19 @@ NUM_NPCS = 2
 # Asset paths
 SOUND_DIR = Path("assets/sounds/music")
 SOUNDS ={'HIT': os.path.join('assets/sounds/', 'sword.wav')}
+VOICE_MAP = {
+            'a': 'af_bella',  # default female
+            'b': 'bm_lewis',  # default male
+            'c': 'am_michael',
+            'd': 'bf_emma',
+            'e': 'af',
+            'f': 'af_sarah',
+            'g': 'am_adam',
+            'h': 'bf_isabella',
+            'i': 'bm_george',
+            'j': 'af_nicole',
+            'k': 'af_sky'
+        }
 WHOLE_DIALOG = True
 STOP_SYMBOLS_SPEECH = '}' if WHOLE_DIALOG else '.!?'
 

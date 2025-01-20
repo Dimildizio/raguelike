@@ -8,8 +8,8 @@ from systems.combat_stats import CombatStats
 
 class NPC(Entity):
     def __init__(self, x, y, sprite_path="NPC_1", face_path ='NPC_FACE_1', name="Villager Amelia", mood='playful',
-                 game_state=None, description=''):
-        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_YELLOW"], game_state=game_state)
+                 game_state=None, description='', voice='a'):
+        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_YELLOW"], game_state=game_state, voice=voice)
         self.last_response = "Hello traveler! How can I help you today?"
         self.monster_type = 'npc'
         self.name = name

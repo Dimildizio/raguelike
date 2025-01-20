@@ -7,7 +7,7 @@ from systems.combat_stats import CombatStats
 
 
 class Entity(ABC):
-    def __init__(self, x, y, sprite_path, outline_path=None, hp=100, ap=100, game_state=None):
+    def __init__(self, x, y, sprite_path, outline_path=None, hp=100, ap=100, game_state=None, voice='a'):
         self.x = x
         self.y = y
         self.game_state = game_state
@@ -17,6 +17,7 @@ class Entity(ABC):
             DISPLAY_TILE_SIZE
         )
         self.name = 'No name'
+        self.voice = voice
         self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
         self.outline = None
         self.is_passable = False
@@ -127,9 +128,9 @@ class Tree(Entity):
 
 
 class House(Entity):
-    def __init__(self, x, y, name="Village House",
+    def __init__(self, x, y, name="Village House", voice='a',
                  description="A cozy village house promises warmth and a bed for a night"):
-        super().__init__(x, y, None)  # No sprite needed since tiles has visualization
+        super().__init__(x, y, None, voice=voice)  # No sprite needed since tiles has visualization
         self.name = name
         self.description = description
         self.is_passable = False

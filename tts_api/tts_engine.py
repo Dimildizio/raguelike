@@ -8,6 +8,20 @@ from set_kokoro_path import generate, build_model, kokoro_path
 import scipy.io.wavfile as wav
 
 
+VOICE_MAP = {
+            'a': 'af_bella',  # default female
+            'b': 'bm_lewis',  # default male
+            'c': 'am_michael',
+            'd': 'bf_emma',
+            'e': 'af',
+            'f': 'af_sarah',
+            'g': 'am_adam',
+            'h': 'bf_isabella',
+            'i': 'bm_george',
+            'j': 'af_nicole',
+            'k': 'af_sky'
+        }
+
 class TTSRequest(BaseModel):
     text: str
     voice_type: str = "a"
@@ -27,13 +41,12 @@ class KokoroTTSHandler:
     def __init__(self):
         self.model = build_model(kokoro_path + '/fp16/kokoro-v0_19-half.pth', 'cpu')
         self.sample_rate = 24000
-        self.voices = {'a': Voice('af_bella'),
-                       'b': Voice('bm_lewis')}
+        self.voices = {key: Voice(value) for key, value in VOICE_MAP.items()}
 
 
     def generate_audio(self, text: str, voice_type: str) -> bytes:
         try:
-            audio, _ = generate(self.model, text, self.voices[voice_type].voice, lang=voice_type[0])
+            audio, _ = generate(self.model, text, self.voices[voice_type].voice, lang=self.voices[voice_type].name[0])
             byte_io = io.BytesIO()
             wav.write(byte_io, self.sample_rate, audio.astype(np.float32))
             return byte_io.getvalue()

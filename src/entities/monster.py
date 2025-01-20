@@ -7,9 +7,9 @@ import random
 
 
 class Monster(Entity):
-    def __init__(self, x, y, sprite_path="MONSTER", name='Goblin', monster_type='goblin',
+    def __init__(self, x, y, sprite_path="MONSTER", name='Goblin', monster_type='goblin', voice='b',
                  game_state=None, can_talk=True, description="vile greenskin creature"):
-        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=60, game_state=game_state)
+        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=60, game_state=game_state, voice=voice)
         self.name = name
         self.monster_type = monster_type
         self.is_hostile = True

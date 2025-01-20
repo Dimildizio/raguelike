@@ -58,8 +58,8 @@ class GameStateManager:
 
         # Create monsters
         monsters = [
-            Monster(0, 0, "MONSTER", name=f'Monster_{n}', game_state=self) for n in range(NUM_MONSTERS)
-        ]
+            Monster(0, 0, "MONSTER", name=f'Monster_{n}', game_state=self, voice=random.choice(
+                        [x[0] for x in VOICE_MAP.values() if x[1] == 'f'])) for n in range(NUM_MONSTERS)]
 
         # Create NPCs with specific attributes
         npc_data = [
@@ -68,19 +68,21 @@ class GameStateManager:
                 'sprite': 'NPC_1',
                 'face': 'NPC_FACE_1',
                 'description': 'young girl',
-                'position': None  # Will be set by MapCreator
+                'position': None,  # Will be set by MapCreator
+                'voice': 'a',
             },
             {
                 'name': 'Merchant Tom',
                 'sprite': 'NPC_2',
                 'face': 'NPC_FACE_2',
                 'description': 'old tired merchant',
-                'position': None
+                'position': None,
+                'voice': 'b',
             }
         ]
         moods = ['playful', 'happy', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
         npcs = [
-            NPC(0, 0, npc['sprite'], face_path=npc['face'], name=npc['name'],
+            NPC(0, 0, npc['sprite'], face_path=npc['face'], name=npc['name'], voice=npc['voice'],
                 mood=random.choice(moods), game_state=self, description=npc['description']
                 ) for npc in npc_data
         ]
@@ -93,7 +95,7 @@ class GameStateManager:
 
         # Place house at random valid position from MapCreator
         for (h_x, h_y) in house_pos:
-            self.current_map.add_entity(House(h_x, h_y), h_x, h_y)
+            self.current_map.add_entity(House(h_x, h_y, voice=random.choice([VOICE_MAP.keys()])), h_x, h_y)
         # Place NPCs at their designated positions from MapCreator
         for npc, position in zip(npcs, npc_positions):
             x, y = position
