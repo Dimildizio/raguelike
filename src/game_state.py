@@ -11,13 +11,14 @@ import random
 
 
 class GameStateManager:
-    def __init__(self):
+    def __init__(self, sound_manager):
         self.current_state = GameState.MAIN_MENU
         self.selected_menu_item = 0  # Track which menu item is selected
         self.current_map = WorldMap(self)
         self.player = None  # Don't create player until game starts
         self.combat_system = None
         self.current_npc = None
+        self.sound_manager = sound_manager
         self.quest_manager = QuestManager()
 
     def start_new_game1(self):

@@ -1,5 +1,6 @@
 import pygame as pg
 import random
+from constant import *
 
 
 class SoundManager:
@@ -8,14 +9,19 @@ class SoundManager:
         self.music_folder = sound_path
         self.music_files = [f for f in self.music_folder.glob("*.mp3")]
         self.current_track = None
-        self.normal_volume = 0.2  # 30% volume normally
-        self.lowered_volume = 0.05  # 10% volume during narration
+        self.normal_volume = 0.2  # 20% volume normally
+        self.lowered_volume = 0.05  # 5% volume during narration
         self.is_narrating = False
         # Set up music channel
         pg.mixer.music.set_volume(self.normal_volume)
         # Create a channel for future TTS narration
         self.narration_queue = []
         self.narration_channel = pg.mixer.Channel(1)
+        self.sfx_channel = pg.mixer.Channel(2)
+
+        self.hit_sound = pg.mixer.Sound(SOUNDS["HIT"])
+        self.hit_sound.set_volume(0.2)
+
         self.start_music()
 
     def start_music(self):
@@ -82,6 +88,10 @@ class SoundManager:
             self.start_narration()
             self.narration_channel.play(sound, loops=0)
             self.is_narrating = True
+
+    def play_hit_sound(self):
+        """Play the hit sound effect"""
+        self.sfx_channel.play(self.hit_sound)
 
     def stop_all(self):
         """Stop all audio"""

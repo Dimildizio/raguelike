@@ -21,7 +21,9 @@ NUM_MONSTERS = 3
 NUM_NPCS = 2
 
 # Asset paths
-SOUND_DIR = Path("assets/music")
+SOUND_DIR = Path("assets/sounds/music")
+SOUNDS ={'HIT': os.path.join('assets/sounds/', 'hit.mp3')}
+
 ASSET_DIR = "assets"
 SPRITES = {
     "PLAYER": os.path.join(ASSET_DIR, "player.png"),

@@ -18,7 +18,7 @@ class WorldMap:
         self.width = width
         self.height = height
         self.tile_size = DISPLAY_TILE_SIZE
-        self.combat_animation = CombatAnimation()
+        self.combat_animation = CombatAnimation(self.state_manager.sound_manager)
 
         self.sprite_loader = SpriteLoader(
             ORIGINAL_SPRITE_SIZE,

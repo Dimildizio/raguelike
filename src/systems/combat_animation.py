@@ -5,20 +5,21 @@ from constants import *
 
 
 class CombatAnimation:
-    def __init__(self):
+    def __init__(self, sound_manager):
         self.sprite_loader = SpriteLoader(
             ORIGINAL_SPRITE_SIZE,
             PREPROCESSED_TILE_SIZE,
             DISPLAY_TILE_SIZE
         )
         self.slash_surface, _ = self.sprite_loader.load_sprite(SPRITES["SLASH"])
+        self.sound_manager = sound_manager
         self.is_playing = False
         self.start_time = 0
         self.attacker = None
         self.target = None
         self.original_pos = (0, 0)
-        # self.original_target_rotation = 0
         self.shake_offset = (0, 0)  # Store shake offset separately
+        self.hit_played = False
 
     def start_attack(self, attacker, target):
         self.is_playing = True
@@ -46,6 +47,8 @@ class CombatAnimation:
 
         if elapsed > ATTACK_ANIMATION_DURATION:
             # Animation finished
+            self.sound_manager.play_hit_sound()
+            self.hit_played = True
             self.is_playing = False
             self.attacker.x, self.attacker.y = self.original_pos
             # self.target.rotation = self.original_target_rotation

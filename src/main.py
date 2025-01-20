@@ -19,8 +19,8 @@ class Game:
         pg.display.set_caption(GAME_TITLE)
         self.clock = pg.time.Clock()
         self.last_action_time = 0
-        self.state_manager = GameStateManager()
         self.sound_manager = SoundManager(SOUND_DIR)
+        self.state_manager = GameStateManager(self.sound_manager)
         self.dialog_ui = DialogUI(self.state_manager, self.sound_manager)
         self.monsters_queue = None
         self.camera_x = None
