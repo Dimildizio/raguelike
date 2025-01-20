@@ -1,6 +1,6 @@
 import pygame as pg
 import random
-from constant import *
+from constants import *
 
 
 class SoundManager:

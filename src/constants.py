@@ -22,7 +22,7 @@ NUM_NPCS = 2
 
 # Asset paths
 SOUND_DIR = Path("assets/sounds/music")
-SOUNDS ={'HIT': os.path.join('assets/sounds/', 'hit.mp3')}
+SOUNDS ={'HIT': os.path.join('assets/sounds/', 'sword.wav')}
 
 ASSET_DIR = "assets"
 SPRITES = {
