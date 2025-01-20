@@ -54,7 +54,7 @@ class GameStateManager:
         self.current_map = None
 
         # Create player
-        self.player = Character(0, 0, "PLAYER", game_state=self)
+        self.player = Character(0, 0, "PLAYER", game_state=self, voice='c')
 
         # Create monsters
         monsters = [

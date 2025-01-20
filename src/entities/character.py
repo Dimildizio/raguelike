@@ -5,7 +5,7 @@ from systems.combat_stats import CombatStats
 
 
 class Character(Entity):
-    def __init__(self, x, y, sprite_path="PLAYER", game_state=None, voice='a'):
+    def __init__(self, x, y, sprite_path="PLAYER", game_state=None, voice='c'):
         super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_GREEN"], game_state=game_state, voice=voice)
         self.combat_stats = CombatStats(base_hp=PLAYER_START_HP, base_armor=PLAYER_START_ARMOR,
                                         base_damage=PLAYER_BASE_DAMAGE)

@@ -25,6 +25,7 @@ class DialogUI:
         self.current_response = "Hello traveler! How can I help you today?"
         self.current_partial_sentence = ""
         self.sentence_queue = []
+        self.audio_buffer_queue = []
         self.sentence_end_markers = {'.', '!', '?'}
 
         self.streaming_response = ""
@@ -95,6 +96,8 @@ class DialogUI:
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_RETURN:
                 if self.input_text:
+                    self.play_audio(self.input_text, self.game_state_manager.player.voice)
+                    print(self.input_text, self.game_state_manager.player.voice)
                     if self.input_text.lower() in ["bye", "goodbye", "see you", "leave"]:
                         self.stop_dialogue()
                     else:
@@ -108,6 +111,8 @@ class DialogUI:
 
                     # If no input text, use selected predefined option
                     selected_text = self.predefined_options[self.selected_option]
+                    print(selected_text, self.game_state_manager.player.voice)
+                    self.play_audio(selected_text, self.game_state_manager.player.voice)
                     if selected_text == "Bye":
                         self.stop_dialogue()
                     else:
@@ -568,15 +573,12 @@ class DialogUI:
     def process_sentence_queue(self, whole_dialogue=WHOLE_DIALOG):
         """Process and play complete sentences from the queue"""
         if (whole_dialogue and not self.current_partial_sentence) or (not whole_dialogue and not self.sentence_queue):
-            print('empty sentence', self.current_partial_sentence, 'and', self.sentence_queue)
-
             return
         # Only process if not currently narrating
-        print('parts', self.current_partial_sentence, 'queue', self.sentence_queue)
         if not self.sound_engine.narration_channel.get_busy():
             sentence = self.current_partial_sentence if whole_dialogue else self.sentence_queue.pop(0)
             if sentence:
-                self.play_audio(sentence, 'a')
+                self.play_audio(sentence, self.current_npc.voice)
 
     def play_audio(self, text, voice='a'):
         self.current_audio_buffer = self.tts.generate_and_play_tts(text, voice)

@@ -13,6 +13,7 @@ class TTSHandler:
         Sends text to TTS API, converts response to pygame Sound, and plays it
         """
         try:
+            print('PAYLOAD:', self.api_url, {"text": text, "voice_type": voice_type})
             response = requests.post(self.api_url, json={"text": text, "voice_type": voice_type})
             response.raise_for_status()
 

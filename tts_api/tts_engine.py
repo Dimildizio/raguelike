@@ -51,8 +51,8 @@ class KokoroTTSHandler:
             wav.write(byte_io, self.sample_rate, audio.astype(np.float32))
             return byte_io.getvalue()
         except Exception as e:
+            print(voice_type, e)
             raise HTTPException(status_code=500, detail=str(e))
-
 
 tts_handler = KokoroTTSHandler()
 app = FastAPI()
