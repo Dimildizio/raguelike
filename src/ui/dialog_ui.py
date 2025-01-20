@@ -97,7 +97,6 @@ class DialogUI:
             if event.key == pg.K_RETURN:
                 if self.input_text:
                     self.play_audio(self.input_text, self.game_state_manager.player.voice)
-                    print(self.input_text, self.game_state_manager.player.voice)
                     if self.input_text.lower() in ["bye", "goodbye", "see you", "leave"]:
                         self.stop_dialogue()
                     else:
@@ -111,7 +110,6 @@ class DialogUI:
 
                     # If no input text, use selected predefined option
                     selected_text = self.predefined_options[self.selected_option]
-                    print(selected_text, self.game_state_manager.player.voice)
                     self.play_audio(selected_text, self.game_state_manager.player.voice)
                     if selected_text == "Bye":
                         self.stop_dialogue()
@@ -170,6 +168,7 @@ class DialogUI:
 
     def update(self):
         """Update dialogue state"""
+        self.play_queue_audio()
         if not WHOLE_DIALOG and self.sentence_queue:
             self.process_sentence_queue(whole_dialogue=False)
         if isinstance(self.current_npc, House):
@@ -570,7 +569,7 @@ class DialogUI:
                     break
 
 
-    def process_sentence_queue(self, whole_dialogue=WHOLE_DIALOG):
+    def process_sentence_queue1(self, whole_dialogue=WHOLE_DIALOG):
         """Process and play complete sentences from the queue"""
         if (whole_dialogue and not self.current_partial_sentence) or (not whole_dialogue and not self.sentence_queue):
             return
@@ -579,6 +578,28 @@ class DialogUI:
             sentence = self.current_partial_sentence if whole_dialogue else self.sentence_queue.pop(0)
             if sentence:
                 self.play_audio(sentence, self.current_npc.voice)
+
+    def process_sentence_queue(self, whole_dialogue=WHOLE_DIALOG):
+        """Process sentences and generate TTS regardless of playback status"""
+        if (whole_dialogue and not self.current_partial_sentence) or (not whole_dialogue and not self.sentence_queue):
+            return
+
+        # Generate TTS for next sentence if we have one
+        if self.sentence_queue:
+            sentence = self.current_partial_sentence if whole_dialogue else self.sentence_queue.pop(0)
+            if sentence:
+                audio_buffer = self.tts.generate_and_play_tts(sentence, self.current_npc.voice)
+                if audio_buffer:
+                    print('sentence added to buffer', sentence)
+                    self.audio_buffer_queue.append(audio_buffer)
+
+    def play_queue_audio(self):
+        # Play next audio if nothing is currently playing
+        if not self.sound_engine.narration_channel.get_busy() and self.audio_buffer_queue:
+            next_buffer = self.audio_buffer_queue.pop(0)
+            sound = pg.mixer.Sound(next_buffer)
+            self.sound_engine.play_narration(sound)
+
 
     def play_audio(self, text, voice='a'):
         self.current_audio_buffer = self.tts.generate_and_play_tts(text, voice)

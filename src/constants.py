@@ -36,7 +36,7 @@ VOICE_MAP = {
             'j': 'af_nicole',
             'k': 'af_sky'
         }
-WHOLE_DIALOG = True
+WHOLE_DIALOG = False
 STOP_SYMBOLS_SPEECH = '}' if WHOLE_DIALOG else '.!?'
 
 
