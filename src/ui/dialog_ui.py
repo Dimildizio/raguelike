@@ -454,6 +454,10 @@ class DialogUI:
         self.current_response = house.description + f'(Rent is {house.fee} gold)'
         self.selected_option = 0
         self.should_exit = False
+        self.current_partial_sentence = self.current_response
+        self.sentence_queue.append(self.current_response)
+        self.process_sentence_queue()
+        self.current_partial_sentence = ''
 
     def draw_house_dialogue(self, screen):
         """Draw house dialogue with house portrait at top and player at bottom"""
