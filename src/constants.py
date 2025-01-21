@@ -165,6 +165,7 @@ MONSTER_BASE_ARMOR = 5
 MONSTER_BASE_DAMAGE = 15
 MONSTER_AGGRO_RANGE = 5
 MONSTER_FLEE_HEALTH = 0.3      # Percentage of health when monster tries to flee
+MONSTER_CHAT_CHANCE = 0.1
 MONSTER_ATTACK_RANGE = 1
 MONSTER_PERSONALITY_TYPES = [
     "aggressive",    # Attacks more often, flees less
@@ -172,6 +173,7 @@ MONSTER_PERSONALITY_TYPES = [
     "cowardly",      # Flees at higher health, attacks less often
     "territorial"    # Only aggressive when player is very close
 ]
+MOSNTER_DIALOG_CHANCE = {'goblin':0.001}
 DIALOGUE_COOLDOWN = 3
 DIALOGUE_DISTANCE = 3
 SPAWN_DISTANCE = 5

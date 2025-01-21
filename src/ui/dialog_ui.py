@@ -145,7 +145,7 @@ class DialogUI:
                     self.game_state_manager.pass_night(npc.fee)
                     return
             elif isinstance(npc, Monster):
-                self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
+                self.stream = self.process_monster_types_dialogue(text, npc)
             else:
                 # Get the response stream
                 self.stream = self.dialogue_processor.process_dialogue(
@@ -165,6 +165,11 @@ class DialogUI:
             print(f"Error in process_input: {e}")
             self.current_response = "Sorry, I didn't quite understand that."
 
+    def process_monster_types_dialogue(self, text, npc):
+        if npc.should_flee():
+            self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
+        elif npc.monster_type == "troll":
+            self.stream = self.dialogue_processor.process_riddle_dialogue(text, npc, self.game_state_manager)
 
     def update(self):
         """Update dialogue state"""
@@ -204,77 +209,7 @@ class DialogUI:
                     if len(json_parts) > 1:
                         json_text = json_parts[1].split('```')[0]
                         final_response = json.loads(json_text)
-                        print(final_response)
-                        # Update NPC's last response
-                        if self.current_npc:
-                            self.current_npc.last_response = final_response.get('text', '')
-
-                            # Handle quest-related actions
-                            if self.current_npc.monster_type == 'npc':
-                                if final_response.get('further_action') == 'give_quest':
-                                    quest_id = final_response.get('quest_id')
-                                    print('give quest', quest_id)
-                                    if quest_id:
-                                        if self.game_state_manager.accept_quest(quest_id):
-                                            self.current_response += "\nQuest accepted!"
-                                        else:
-                                            self.current_response += "\nCouldn't accept the quest."
-
-                                # Handle reward negotiation
-                                elif final_response.get('further_action') == 'negotiate_reward':
-                                    quest_id = final_response.get('quest_id')
-                                    negotiated_amount = final_response.get('negotiated_amount')
-                                    if quest_id and negotiated_amount:
-                                        if self.current_npc.negotiate_reward(quest_id, negotiated_amount):
-                                            self.current_response += f"\nAlright, I agree to pay you {negotiated_amount} gold upon completion."
-                                        else:
-                                            self.current_response += "\nI'm sorry, but I can't afford to pay that much."
-
-                                # Handle quest completion and reward payment
-                                elif final_response.get('further_action') == 'reward':
-                                    quest_id = final_response.get('quest_id')
-                                    if quest_id:
-                                        rewards = self.game_state_manager.complete_quest(quest_id)
-                                        if rewards:
-                                            total_received = 0
-                                            reward_texts = []
-                                            for reward in rewards:
-                                                if reward['type'] == 'gold':
-                                                    amount = reward['amount']
-                                                    # Add the gold to player's inventory
-                                                    received = self.game_state_manager.player.add_gold(amount)
-                                                    total_received += received
-                                                    reward_texts.append(f"{received} gold")
-
-                                            if total_received > 0:
-                                                self.current_response += f"\nReceived: {', '.join(reward_texts)}"
-                                                if total_received < sum(
-                                                        r['amount'] for r in rewards if r['type'] == 'gold'):
-                                                    self.current_response += "\n(That's all I could afford right now)"
-                                            else:
-                                                self.current_response += "\nI'm sorry, but I don't have any money to pay you right now."
-                                        else:
-                                            self.current_response += "\nI'm sorry, but I can't pay you right now."
-                            else:
-                                print('FINAL', final_response)
-                                if int(final_response.get('give_money', 0)) > 0:
-                                    give_money = final_response['give_money']
-                                    if give_money > self.current_npc.money:
-                                        self.current_response += (f"\nHere ya {give_money}...Ehh Me dont 'ave that many "
-                                                                  f"gold, me give ya {self.current_npc.money}! "
-                                                                  f"(Paid {self.current_npc.money} gold)")
-                                        give_money = self.current_npc.money
-                                        self.current_npc.set_hostility(False)
-
-                                    else:
-                                        self.current_response += f"(Paid {give_money} gold)"
-                                    received = self.game_state_manager.player.add_gold(give_money)
-                                if final_response.get('player_friendly'):
-                                    self.current_npc.set_hostility(False)
-
-                            # Update interaction history
-                            self.current_npc.add_to_history(self.last_input_text, final_response.get('text', ''))
-
+                        self.process_final_response_output(final_response)
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON: {e}")
                 except Exception as e:
@@ -282,6 +217,84 @@ class DialogUI:
 
                 self.is_streaming = False
                 self.stream = None
+
+    def process_final_response_output(self, final_response):
+        if self.current_npc:
+            self.current_npc.last_response = final_response.get('text', '')
+            # Handle quest-related actions
+
+            if self.current_npc.monster_type == 'npc':
+                if final_response.get('further_action') == 'give_quest':
+                    quest_id = final_response.get('quest_id')
+                    print('give quest', quest_id)
+                    if quest_id:
+                        if self.game_state_manager.accept_quest(quest_id):
+                            self.current_response += "\nQuest accepted!"
+                        else:
+                            self.current_response += "\nCouldn't accept the quest."
+
+                # Handle reward negotiation
+                elif final_response.get('further_action') == 'negotiate_reward':
+                    quest_id = final_response.get('quest_id')
+                    negotiated_amount = final_response.get('negotiated_amount')
+                    if quest_id and negotiated_amount:
+                        if self.current_npc.negotiate_reward(quest_id, negotiated_amount):
+                            self.current_response += f"\nAlright, I agree to pay you {negotiated_amount} gold upon completion."
+                        else:
+                            self.current_response += "\nI'm sorry, but I can't afford to pay that much."
+
+                # Handle quest completion and reward payment
+                elif final_response.get('further_action') == 'reward':
+                    quest_id = final_response.get('quest_id')
+                    if quest_id:
+                        rewards = self.game_state_manager.complete_quest(quest_id)
+                        if rewards:
+                            total_received = 0
+                            reward_texts = []
+                            for reward in rewards:
+                                if reward['type'] == 'gold':
+                                    amount = reward['amount']
+                                    # Add the gold to player's inventory
+                                    received = self.game_state_manager.player.add_gold(amount)
+                                    total_received += received
+                                    reward_texts.append(f"{received} gold")
+
+                            if total_received > 0:
+                                self.current_response += f"\nReceived: {', '.join(reward_texts)}"
+                                if total_received < sum(
+                                        r['amount'] for r in rewards if r['type'] == 'gold'):
+                                    self.current_response += "\n(That's all I could afford right now)"
+                            else:
+                                self.current_response += "\nI'm sorry, but I don't have any money to pay you right now."
+                        else:
+                            self.current_response += "\nI'm sorry, but I can't pay you right now."
+
+            else:
+                if final_response.get('riddle_solved', False):
+                    self.current_response += "\n(Riddle solved!"
+                    money = self.current_npc.money
+                    self.current_response += f"(Paid {money} gold)"
+                    received = self.game_state_manager.player.add_gold(money)
+                    self.current_npc.money = 0
+                    self.current_npc.set_hostility(False)
+
+                elif int(final_response.get('give_money', 0)) > 0:
+                    give_money = final_response['give_money']
+                    if give_money > self.current_npc.money:
+                        self.current_response += (f"\nHere ya {give_money}...Ehh Me dont 'ave that many "
+                                                  f"gold, me give ya {self.current_npc.money}! "
+                                                  f"(Paid {self.current_npc.money} gold)")
+                        give_money = self.current_npc.money
+                        self.current_npc.set_hostility(False)
+
+                    else:
+                        self.current_response += f"(Paid {give_money} gold)"
+                    received = self.game_state_manager.player.add_gold(give_money)
+                if final_response.get('player_friendly'):
+                    self.current_npc.set_hostility(False)
+
+            # Update interaction history
+            self.current_npc.add_to_history(self.last_input_text, final_response.get('text', ''))
 
     def draw(self, screen, npc):
 

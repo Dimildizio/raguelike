@@ -7,9 +7,10 @@ import random
 
 
 class Monster(Entity):
-    def __init__(self, x, y, sprite_path="MONSTER", name='Goblin', monster_type='goblin', voice='b',
-                 game_state=None, can_talk=True, description="vile greenskin creature"):
-        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=60, game_state=game_state, voice=voice)
+    def __init__(self, x, y, sprite_path="MONSTER", name='Goblin', monster_type='goblin', voice='b', game_state=None,
+                 can_talk=True, description="vile greenskin creature", ap=60, money=40, dmg=MONSTER_BASE_DAMAGE,
+                 armor=MONSTER_BASE_ARMOR, hp=MONSTER_BASE_HP, face_path=SPRITES["NPC_FACE_3"]):
+        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=ap, game_state=game_state, voice=voice)
         self.name = name
         self.monster_type = monster_type
         self.is_hostile = True
@@ -17,26 +18,25 @@ class Monster(Entity):
         self.can_talk = can_talk
         self.description = description
         self.dialog_cooldown = DIALOGUE_COOLDOWN
-        self.set_stats(MONSTER_PERSONALITY_TYPES, MONSTER_BASE_DAMAGE, MONSTER_BASE_ARMOR, MONSTER_BASE_HP)
-        face_path = SPRITES["NPC_FACE_3"]
+        self.set_stats(MONSTER_PERSONALITY_TYPES, dmg, armor, hp)
         self.face_surface = pg.image.load(face_path).convert_alpha()
         self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
 
         self.interaction_history = []
-        self.money = 40
+        self.money = money
 
     def set_stats(self, personality_types, dmg, armor, hp):
         # Set personality-based traits
         personalities = {'aggressive': {'aggression': random.uniform(1.0, 1.6),
-                                        'bravery': random.uniform(0.75, 1.0),
+                                        'bravery': random.uniform(0.1, 0.2),
                                         'dialogue_chance': 0.001,
                                         'dmg': 1.2, 'armor': 1, 'hp': 1},
                          'cautious': {'aggression': random.uniform(0.8, 1.4),
-                                      'bravery': random.uniform(0.6, 0.8),
+                                      'bravery': random.uniform(0.3, 0.5),
                                       'dialogue_chance': 0.005,
                                       'dmg': 1, 'armor': 1.2, 'hp': 1},
                          'territorial': {'aggression': random.uniform(1.2, 1.5),
-                                         'bravery': random.uniform(0.7, 0.9),
+                                         'bravery': random.uniform(0.2, 0.4),
                                          'dialogue_chance': 0.002,
                                          'dmg': 1, 'armor': 1, 'hp': 1},
                          'cowardly': {'aggression': random.uniform(0.7, 1.3),
@@ -47,7 +47,7 @@ class Monster(Entity):
         self.personality = random.choice(personality_types)
         perc = personalities[self.personality]
         self.aggression = perc['aggression']
-        self.bravery = perc['bravery']
+        self.chance_to_run = perc['bravery']
         self.dialogue_chance = perc['dialogue_chance']
         self.combat_stats = CombatStats(base_hp=hp * perc['hp'],
                                         base_armor=armor * perc['armor'],
@@ -90,18 +90,17 @@ class Monster(Entity):
 
     def should_flee(self):
         # More brave monsters will fight at lower health
-        return self.combat_stats.get_hp_perc < self.bravery
+        return self.combat_stats.get_hp_perc < self.chance_to_run
 
     def lost_resolve(self):
-        if(self.should_flee() and random.random() > self.bravery) or self.is_fleeing:
+        if(self.should_flee() and random.random() < self.chance_to_run) or self.is_fleeing:
             num = random.random()
-            print(num, 'vs', self.bravery)
-            if num < self.bravery * 0.05 and self.is_fleeing:  # chance to regain it
+            print(num, 'vs', self.chance_to_run)
+            if num < self.chance_to_run * 0.05 and self.is_fleeing:  # chance to regain it
                 if self.is_fleeing:
-                    self.bravery += 0.1
+                    self.chance_to_run = max(0, self.chance_to_run - 0.1)
                     self.is_fleeing = False
                     print(self.name, 'routed')
-
             else:
                 self.is_fleeing = True
                 print(self.name, 'is fleeing')
@@ -149,9 +148,7 @@ class Monster(Entity):
                 rand = random.random()
                 if rand < self.dialogue_chance:
                     print(rand, self.dialogue_chance)
-
                     self.dialog_cooldown = 0
-
                     return True
             return False
 

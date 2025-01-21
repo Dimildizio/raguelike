@@ -160,10 +160,7 @@ class DialogueProcessor:
         except Exception as e:
             self.logger.error(f"Error storing interaction: {e}")
 
-    def process_monster_dialogue(self,
-                         player_input: str,
-                         npc: Any,
-                         game_state: Any) -> Dict:
+    def process_monster_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
 
         try:
             #Other monsters around that can fight the adventurer: {[x[1] for x in npc.detect_nearby_monsters(
@@ -206,18 +203,53 @@ class DialogueProcessor:
             Player says: {player_input}"""
             print(system_prompt)
             # Get response from LLM
-            stream = self.client.chat(
-                model=self.model,
-                messages=[{
-                    'role': 'system',
-                    'content': system_prompt}],
-                stream=True
-            )
-
-            # Return the stream for processing by the caller
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
+                                      stream=True)
             return stream
 
         except Exception as e:
             self.logger.error(f"Error processing dialogue: {e}")
             return {"text": "Giant's butt says what?"}
 
+
+    def process_riddle_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
+        try:
+            system_prompt = f"""You are a playful monster {npc.monster_type} named {npc.name} in a fantasy RPG game. 
+            Your personality is {npc.personality}. You need to reply as a {npc.monster_type} who loves riddles. 
+            Sometimes you make mistakes in word forms and pronouns, speaking like a big and dumb creature.
+
+            You are aware of the following information:
+            - You have challenged the adventurer to solve your riddle
+            - If they solve it correctly, you'll give them all your money ({npc.money} gold) and leave
+            - If they get it wrong, you'll continue with your riddle game
+            - You can only use simple, slightly dumb, classic riddles appropriate for your monster type
+
+            Your status:
+            {npc.get_dialogue_context()}
+
+            Player status:
+            {game_state.player.get_dialogue_context()}
+
+            Recent conversation history:
+            {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
+                        indent=2) if npc.interaction_history else "No recent interactions."}
+
+            Respond in character as {npc.name}, considering your playful nature and love for riddles.
+            If this is the first interaction, present a new riddle.
+            If the player has answered, evaluate their answer.
+
+            Format your response as JSON with these fields:
+            - riddle_solved (boolean: True if player answered correctly, False otherwise)
+            - give_money (integer: all your money if riddle solved, 0 otherwise)
+            - text (string: your in-character response, including new riddle if previous wasn't solved)
+
+            Player says: {player_input}"""
+
+            stream = self.client.chat(model=self.model,
+                                      messages=[{'role': 'system', 'content': system_prompt}],
+                                      stream=True)
+            return stream
+
+        except Exception as e:
+            self.logger.error(f"Error processing riddle dialogue: {e}")
+            return {"text": "The monster seems confused and unable to think of a riddle."}

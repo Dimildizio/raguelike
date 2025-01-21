@@ -57,9 +57,12 @@ class GameStateManager:
         self.player = Character(0, 0, "PLAYER", game_state=self, voice='c')
 
         # Create monsters
-        monsters = [
-            Monster(0, 0, "MONSTER", name=f'Monster_{n}', game_state=self, voice=random.choice(
-                        [x[0] for x in VOICE_MAP.values() if x[1] == 'f'])) for n in range(NUM_MONSTERS)]
+        monsters = [Monster(0, 0, "MONSTER", name=f'Monster_{n}', game_state=self, voice=random.choice(
+                            [x[0] for x in VOICE_MAP.values() if x[1] == 'f'])) for n in range(NUM_MONSTERS)]
+        monsters.append(Monster(0, 0, "TROLL", name='Trolliddrr', game_state=self, voice='i', ap=70,
+                        face_path=SPRITES["TROLL_FACE"], monster_type='troll',
+                        description='big ugly hulking creature that loves jokes and riddles',
+                        hp=int(MONSTER_BASE_HP*1.5), dmg=int(MONSTER_BASE_DAMAGE*2), armor=int(MONSTER_BASE_ARMOR*2)))
 
         # Create NPCs with specific attributes
         npc_data = [
