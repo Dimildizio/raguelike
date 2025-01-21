@@ -1,3 +1,4 @@
+import re
 import pygame as pg
 from constants import *
 from utils.dialogue_processor import DialogueProcessor
@@ -133,6 +134,11 @@ class DialogUI:
                   len(self.input_text) < self.max_input_length):
                 self.input_text += event.unicode
 
+    def process_monster(self, text, npc):
+        if 'troll' in npc.monster_type:
+            return self.dialogue_processor.process_riddle_dialogue(text, npc, self.game_state_manager)
+        else:
+            return self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
 
     def process_input(self, text, npc):
         """Process player input and get NPC response"""
@@ -145,7 +151,7 @@ class DialogUI:
                     self.game_state_manager.pass_night(npc.fee)
                     return
             elif isinstance(npc, Monster):
-                self.stream = self.process_monster_types_dialogue(text, npc)
+                self.stream = self.process_monster(text, npc) #self.stream = self.process_monster_types_dialogue(text, npc)
             else:
                 # Get the response stream
                 self.stream = self.dialogue_processor.process_dialogue(
@@ -271,9 +277,9 @@ class DialogUI:
 
             else:
                 if final_response.get('riddle_solved', False):
-                    self.current_response += "\n(Riddle solved!"
+                    self.current_response += "\n (Riddle solved! "
                     money = self.current_npc.money
-                    self.current_response += f"(Paid {money} gold)"
+                    self.current_response += f"Paid {money} gold) "
                     received = self.game_state_manager.player.add_gold(money)
                     self.current_npc.money = 0
                     self.current_npc.set_hostility(False)
@@ -281,14 +287,14 @@ class DialogUI:
                 elif int(final_response.get('give_money', 0)) > 0:
                     give_money = final_response['give_money']
                     if give_money > self.current_npc.money:
-                        self.current_response += (f"\nHere ya {give_money}...Ehh Me dont 'ave that many "
+                        self.current_response += (f"\nHere ya {give_money}... Ehh Me dont 'ave that many "
                                                   f"gold, me give ya {self.current_npc.money}! "
-                                                  f"(Paid {self.current_npc.money} gold)")
+                                                  f" (Paid {self.current_npc.money} gold)")
                         give_money = self.current_npc.money
                         self.current_npc.set_hostility(False)
 
                     else:
-                        self.current_response += f"(Paid {give_money} gold)"
+                        self.current_response += f" (Paid {give_money} gold)"
                     received = self.game_state_manager.player.add_gold(give_money)
                 if final_response.get('player_friendly'):
                     self.current_npc.set_hostility(False)
@@ -463,7 +469,16 @@ class DialogUI:
             ))
 
     def _replace_symbols(self, chunk):
-        return chunk.replace('```', '').replace('}', '').replace('"', '').replace('``', '')
+        symbols_to_remove = [
+            '```', '``', '}', '"', '*', r'\n', '\n',  # Code and formatting
+            '\U0001F600', '\U0001F601', '\U0001F602', '\U0001F603',  # Common emojis
+            '\U0001F604', '\U0001F605', '\U0001F606', '\U0001F607',
+            '\U0001F608', '\U0001F609', '\U0001F60A', '\U0001F60B',
+            '\U0001F60C', '\U0001F60D', '\U0001F60E', '\U0001F60F'
+        ]
+        for symbol in symbols_to_remove:
+            chunk = chunk.replace(symbol, '')  # Remove common emojis and formatting
+        return chunk
 
     def start_house_dialog(self, house):
         """Initialize dialogue UI for house interaction"""
@@ -601,6 +616,7 @@ class DialogUI:
         if self.sentence_queue:
             sentence = self.current_partial_sentence if whole_dialogue else self.sentence_queue.pop(0)
             if sentence:
+                sentence = self._replace_symbols(sentence)
                 audio_buffer = self.tts.generate_and_play_tts(sentence, self.current_npc.voice)
                 if audio_buffer:
                     print('sentence added to buffer', sentence)
@@ -615,6 +631,7 @@ class DialogUI:
 
 
     def play_audio(self, text, voice='a'):
+        text = self._replace_symbols(text)
         self.current_audio_buffer = self.tts.generate_and_play_tts(text, voice)
         if self.current_audio_buffer:
 

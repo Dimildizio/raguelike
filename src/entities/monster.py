@@ -29,19 +29,19 @@ class Monster(Entity):
         # Set personality-based traits
         personalities = {'aggressive': {'aggression': random.uniform(1.0, 1.6),
                                         'bravery': random.uniform(0.1, 0.2),
-                                        'dialogue_chance': 0.001,
+                                        'dialogue_chance': 0.01,
                                         'dmg': 1.2, 'armor': 1, 'hp': 1},
                          'cautious': {'aggression': random.uniform(0.8, 1.4),
                                       'bravery': random.uniform(0.3, 0.5),
-                                      'dialogue_chance': 0.005,
+                                      'dialogue_chance': 0.05,
                                       'dmg': 1, 'armor': 1.2, 'hp': 1},
                          'territorial': {'aggression': random.uniform(1.2, 1.5),
                                          'bravery': random.uniform(0.2, 0.4),
-                                         'dialogue_chance': 0.002,
+                                         'dialogue_chance': 0.02,
                                          'dmg': 1, 'armor': 1, 'hp': 1},
                          'cowardly': {'aggression': random.uniform(0.7, 1.3),
                                       'bravery': random.uniform(0.4, 0.6),
-                                      'dialogue_chance': 0.01,
+                                      'dialogue_chance': 0.1,
                                       'dmg': 1, 'armor': 1, 'hp': 1.2}}
 
         self.personality = random.choice(personality_types)

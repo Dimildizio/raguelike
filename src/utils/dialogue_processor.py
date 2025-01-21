@@ -214,6 +214,7 @@ class DialogueProcessor:
 
     def process_riddle_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         try:
+            print('doing riddle')
             system_prompt = f"""You are a playful monster {npc.monster_type} named {npc.name} in a fantasy RPG game. 
             Your personality is {npc.personality}. You need to reply as a {npc.monster_type} who loves riddles. 
             Sometimes you make mistakes in word forms and pronouns, speaking like a big and dumb creature.
@@ -233,15 +234,17 @@ class DialogueProcessor:
             Recent conversation history:
             {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                         indent=2) if npc.interaction_history else "No recent interactions."}
+            Make sure not to give any more riddles if the player has already answered one or change the riddle if the player is wrong.
 
             Respond in character as {npc.name}, considering your playful nature and love for riddles.
             If this is the first interaction, present a new riddle.
-            If the player has answered, evaluate their answer.
+            If the player has answered, evaluate their answer and stop giving riddles if they are correct. 
+            Check the if riddle has been answered in recent conversation history.
 
             Format your response as JSON with these fields:
             - riddle_solved (boolean: True if player answered correctly, False otherwise)
             - give_money (integer: all your money if riddle solved, 0 otherwise)
-            - text (string: your in-character response, including new riddle if previous wasn't solved)
+            - text (string: your in-character response, including another riddle if previous wasn't solved)
 
             Player says: {player_input}"""
 
@@ -252,4 +255,4 @@ class DialogueProcessor:
 
         except Exception as e:
             self.logger.error(f"Error processing riddle dialogue: {e}")
-            return {"text": "The monster seems confused and unable to think of a riddle."}
+            return {"text": "The monster seems confused and unable to think clearly."}

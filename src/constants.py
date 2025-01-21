@@ -60,6 +60,9 @@ SPRITES = {
     "GRASS_1": os.path.join(ASSET_DIR, "grass_1.png"),
     "GRASS_2": os.path.join(ASSET_DIR, "grass_2.png"),
     "DEAD_GOBLIN": os.path.join(ASSET_DIR, "goblin_dead1.png"),
+    "BLUE_TROLL": os.path.join(ASSET_DIR, "sized_troll_1.png"),
+    "BLUE_TROLL_FACE": os.path.join(ASSET_DIR, "blue_troll_face.png"),
+    "DEAD_BLUE_TROLL": os.path.join(ASSET_DIR, "sized_dead_troll_1.png"),
     "TREE_1": os.path.join(ASSET_DIR, "trees/tree_1.png"),
     "TREE_2": os.path.join(ASSET_DIR, "trees/tree_2.png"),
     "TREE_3": os.path.join(ASSET_DIR, "trees/tree_3.png"),
@@ -70,8 +73,9 @@ FOREST_EDGE_THICKNESS = 1
 FOREST_EDGE_WIDTH = 4
 RANDOM_TREE_CHANCE = 0.05
 
-SPRITES.update({
 
+
+SPRITES.update({
     "HOUSE_FACE": os.path.join(ASSET_DIR, "house/house_face.png"),
     # Top row
     "HOUSE_1_TOP_TOP": os.path.join(ASSET_DIR, "house/house1_top_top.png"),
