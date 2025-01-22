@@ -19,6 +19,8 @@ class GameStateManager:
         self.player = None  # Don't create player until game starts
         self.combat_system = None
         self.current_npc = None
+        self.current_day = 1
+        self.stats = {'quests_completed': 0, 'monsters_killed': {}, 'gold_collected': 0}
         self.quest_manager = QuestManager()
 
     def start_new_game1(self):
@@ -134,11 +136,22 @@ class GameStateManager:
             return self.player.accept_quest(quest_id)
         return False
 
+    def show_ending_stats(self):
+        """Prepare final statistics for display"""
+        self.stats['gold_collected'] = self.player.gold if self.player else 0
+        print("\n=== Demo Complete! ===")
+        print(f"Days Survived: {self.current_day}")
+        print(f"Quests Completed: {self.stats['quests_completed']}")
+        print(f"Monsters Slain: {self.stats['monsters_killed']}")
+        print(f"Gold Collected: {self.stats['gold_collected']}")
+        print("===================\n")
+
     def complete_quest(self, quest_id: str):
         """Handle quest completion through the game state"""
         if self.player:
             rewards = self.quest_manager.check_quest_completion(quest_id, self.player, self.current_npc)
             if rewards:
+                self.stats['quests_completed'] += 1
                 self.player.complete_quest(quest_id)
                 return rewards
         return None
@@ -164,16 +177,6 @@ class GameStateManager:
         if self.player:
             self.quest_manager.update_quest_progress(condition_type, value)
 
-    def on_monster_death(self, monster):
-        """Handle monster death and quest updates"""
-        if not self.player:
-            return
-        # Update quest progress based on monster type
-        print(f"{monster.monster_type} dies")
-        self.update_quest_progress(f"kill_{monster.monster_type}s")
-        if monster.monster_type == "wolf":
-            self.player.inventory.append("wolf_pelt")
-
     def pass_night(self, fee=0):
         """Handle night passing effects"""
         # Check if player can afford lodging
@@ -183,8 +186,13 @@ class GameStateManager:
             return False
         print('night has passed')
         # Heal all entities with combat stats
+        self.current_day += 1
         self.player.heal_self()
         self.player.action_points = self.player.max_action_points
+        if self.current_day > DAY_GAME_ENDS:
+            self.show_ending_stats()
+            self.change_state(GameState.DEMO_COMPLETE)
+            return True
 
         # Heal NPCs and change their moods
         for entity in self.current_map.get_all_entities():
@@ -218,9 +226,24 @@ class GameStateManager:
                     self.current_map.move_entity_to(entity, new_pos[0], new_pos[1])
 
         # Spawn new goblin if positions available
-        if valid_positions:
-            spawn_pos = random.choice(valid_positions)
-            new_goblin = Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
-                sprite_path="MONSTER", name='Unknown Goblin', monster_type='goblin', game_state=self)
-            self.current_map.add_entity(new_goblin, spawn_pos[0], spawn_pos[1])
+        for day in range(self.current_day):
+
+            if valid_positions:
+                spawn_pos = random.choice(valid_positions)
+                new_goblin = Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
+                            sprite_path="MONSTER", name='Unknown Goblin', monster_type='goblin', game_state=self)
+                self.current_map.add_entity(new_goblin, spawn_pos[0], spawn_pos[1])
+                valid_positions.remove(spawn_pos)
+
+            if self.current_day == 2 and valid_positions:
+                spawn_pos = random.choice(valid_positions)
+                new_monster = self.create_blue_troll()
+                self.current_map.add_entity(new_monster, spawn_pos[0], spawn_pos[1])
         return True
+
+    def create_blue_troll(self):
+        return Monster(0, 0, "BLUE_TROLL", name='Trolliddrr', game_state=self, voice='i', ap=70,
+                       face_path=SPRITES["BLUE_TROLL_FACE"], monster_type='troll',
+                       description='big blue ugly hulking creature that loves jokes and riddles',
+                       hp=int(MONSTER_BASE_HP * 1.5), dmg=int(MONSTER_BASE_DAMAGE * 2),
+                       armor=int(MONSTER_BASE_ARMOR * 2))

@@ -88,6 +88,13 @@ class Monster(Entity):
         self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
         self.update_quest_progress()
 
+    def add_self_to_stats(self):
+        if self.monster_type in self.game_state.stats['monsters_killed']:
+            self.game_state.stats['monsters_killed'][self.monster_type] += 1
+        else:
+            self.game_state.stats['monsters_killed'][self.monster_type] = 1
+
+
     def should_flee(self):
         # More brave monsters will fight at lower health
         return self.combat_stats.get_hp_perc < self.chance_to_run

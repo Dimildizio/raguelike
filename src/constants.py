@@ -17,6 +17,7 @@ DISPLAY_TILE_SIZE = 128
 MAP_WIDTH = 20  # in tiles
 MAP_HEIGHT = 20  # in tiles
 
+DAY_GAME_ENDS = 2
 NUM_MONSTERS = 3
 NUM_NPCS = 2
 
@@ -62,7 +63,7 @@ SPRITES = {
     "DEAD_GOBLIN": os.path.join(ASSET_DIR, "goblin_dead1.png"),
     "BLUE_TROLL": os.path.join(ASSET_DIR, "sized_troll_1.png"),
     "BLUE_TROLL_FACE": os.path.join(ASSET_DIR, "blue_troll_face.png"),
-    "DEAD_BLUE_TROLL": os.path.join(ASSET_DIR, "sized_dead_troll_1.png"),
+    "DEAD_TROLL": os.path.join(ASSET_DIR, "sized_dead_troll_1.png"),
     "TREE_1": os.path.join(ASSET_DIR, "trees/tree_1.png"),
     "TREE_2": os.path.join(ASSET_DIR, "trees/tree_2.png"),
     "TREE_3": os.path.join(ASSET_DIR, "trees/tree_3.png"),
@@ -223,3 +224,4 @@ class GameState(Enum):
     DIALOG = 4
     INVENTORY = 5
     DEAD = 6
+    DEMO_COMPLETE = 7

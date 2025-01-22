@@ -84,6 +84,8 @@ class Game:
                 self.dialog_ui.draw(self.screen, self.state_manager.current_npc)
             elif self.state_manager.current_state == GameState.DEAD:
                 self.draw_death_screen()
+            elif self.state_manager.current_state == GameState.DEMO_COMPLETE:
+                self.draw_demo_complete_screen()
 
             pg.display.flip()
             self.sound_manager.update()
@@ -154,6 +156,8 @@ class Game:
             self.dialog_ui.handle_input(event)
         elif self.state_manager.current_state == GameState.DEAD:
             self.handle_death_input(event)
+        elif self.state_manager.current_state == GameState.DEMO_COMPLETE:
+            self.handle_demo_complete_input(event)
 
     def toggle_fullscreen(self):
         is_fullscreen = bool(self.screen.get_flags() & pg.FULLSCREEN)
@@ -218,6 +222,11 @@ class Game:
             elif event.key == pg.K_ESCAPE:  # Return to game if we were playing
                 if self.state_manager.player:  # If game is in progress
                     self.state_manager.change_state(GameState.PLAYING)
+
+    def handle_demo_complete_input(self, event):
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:  # Return to main menu
+                self.state_manager.change_state(GameState.MAIN_MENU)
 
     def handle_menu_selection(self):
         selected_option = MENU_OPTIONS[self.state_manager.selected_menu_item]
@@ -340,6 +349,32 @@ class Game:
         text_surface = font.render("You Died!", True, RED)
         text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))
         self.screen.blit(text_surface, text_rect)
+
+    def draw_demo_complete_screen(self):
+        self.screen.fill(BLACK)
+        font = pg.font.Font(None, MENU_FONT_SIZE * 2)
+
+        # Draw title
+        title = font.render("Demo Complete!", True, GREEN)
+        title_rect = title.get_rect(centerx=WINDOW_WIDTH // 2, y=WINDOW_HEIGHT // 4)
+        self.screen.blit(title, title_rect)
+
+        # Draw stats
+        stats_font = pg.font.Font(None, MENU_FONT_SIZE)
+        stats = [
+            f"Days Survived: {self.state_manager.current_day}",
+            f"Quests Completed: {self.state_manager.stats['quests_completed']}",
+            f"Monsters Slain: {self.state_manager.stats['monsters_killed']}",
+            f"Gold Collected: {self.state_manager.stats['gold_collected']}",
+            "",
+            "Press ESC to return to menu"
+        ]
+
+        for i, stat in enumerate(stats):
+            text = stats_font.render(stat, True, WHITE)
+            rect = text.get_rect(centerx=WINDOW_WIDTH // 2,
+                                 y=WINDOW_HEIGHT // 2 + i * MENU_SPACING)
+            self.screen.blit(text, rect)
 
 
 if __name__ == "__main__":

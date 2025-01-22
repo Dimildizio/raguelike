@@ -78,8 +78,8 @@ class DialogueProcessor:
             Format your response as JSON with these fields:
             - player_inappropriate_request (boolean)
             - further_action (string: "give_quest", "reward", "stop", "negotiate_reward", or "wait")
-            - quest_id (string, only if further_action is "give_quest", must be one of the available quest IDs listed above)
-            - negotiated_amount (integer, only if further_action is "negotiate_reward", acoont be more than max_reward gold amount)
+            - quest_id (string, only if further_action is "reward", @negotiate_reward" or "give_quest", must be one of the available quest IDs listed above)
+            - negotiated_amount (integer, only if further_action is "negotiate_reward", cannot be more than max_reward gold amount)
             - text (string: your in-character response)
             
             Quest giving rules:

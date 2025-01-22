@@ -74,6 +74,7 @@ class DialogUI:
         self.sound_engine.stop_narration()
         self.sentence_queue.clear()
         self.current_partial_sentence = ""
+        self.audio_buffer_queue = []
 
     def clear_dialogue_state(self):
         """Reset all dialogue-related state"""
@@ -214,6 +215,7 @@ class DialogUI:
                     json_parts = self.streaming_response.split('```json')
                     if len(json_parts) > 1:
                         json_text = json_parts[1].split('```')[0]
+                        print('not json', json_text)
                         final_response = json.loads(json_text)
                         self.process_final_response_output(final_response)
                 except json.JSONDecodeError as e:
@@ -226,6 +228,7 @@ class DialogUI:
 
     def process_final_response_output(self, final_response):
         if self.current_npc:
+            print(final_response)
             self.current_npc.last_response = final_response.get('text', '')
             # Handle quest-related actions
 
@@ -470,14 +473,14 @@ class DialogUI:
 
     def _replace_symbols(self, chunk):
         symbols_to_remove = [
-            '```', '``', '}', '"', '*', r'\n', '\n',  # Code and formatting
+            '```', '``', '}', '"', '*', r'\n', '\n', '/', '/n', "\\",  # Code and formatting
             '\U0001F600', '\U0001F601', '\U0001F602', '\U0001F603',  # Common emojis
             '\U0001F604', '\U0001F605', '\U0001F606', '\U0001F607',
             '\U0001F608', '\U0001F609', '\U0001F60A', '\U0001F60B',
             '\U0001F60C', '\U0001F60D', '\U0001F60E', '\U0001F60F'
         ]
         for symbol in symbols_to_remove:
-            chunk = chunk.replace(symbol, '')  # Remove common emojis and formatting
+            chunk = chunk.replace(symbol, ' ')  # Remove common emojis and formatting
         return chunk
 
     def start_house_dialog(self, house):
