@@ -27,6 +27,7 @@ class Character(Entity):
 
     def take_damage(self, amount):
         actual_damage = self.combat_stats.take_damage(amount)
+        self.get_floating_nums(f"-{int(actual_damage)}", color=RED)
         self.check_dead()
         return actual_damage
 
@@ -72,6 +73,8 @@ class Character(Entity):
             self.action_points -= ap_cost
             amount = amount or self.combat_stats.max_hp
             self.combat_stats.get_healed(amount)
+            self.get_floating_nums(f"+{int(amount)}", color=GREEN)
+
 
     def get_dialogue_context(self):
         context = {"player_health": self.combat_stats.get_status()}

@@ -106,6 +106,9 @@ class Entity(ABC):
     def can_do_action(self, action_price):
         return action_price <= self.action_points
 
+    def get_floating_nums(self, txt, color=RED):
+        self.game_state.floating_text_manager.add_text(txt, self.x + DISPLAY_TILE_SIZE // 2, self.y, color)
+
 class Remains(Entity):
     def __init__(self, x, y, sprite_path, name="remains", description="", game_state=None):
         super().__init__(x, y, sprite_path, None, game_state=game_state)  # No outline for remains

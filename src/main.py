@@ -65,6 +65,7 @@ class Game:
             if self.state_manager.current_state == GameState.PLAYING:
                 if self.state_manager.player:  # Check if player exists
                     self.state_manager.player.update()
+                    self.state_manager.floating_text_manager.update()
                     self.state_manager.current_map.update()
 
                     self.update_camera()
@@ -76,6 +77,7 @@ class Game:
             if self.state_manager.current_state == GameState.PLAYING:
                 if self.state_manager.player:  # Check if player exists
                     self.state_manager.current_map.draw(self.screen, self.camera_x, self.camera_y)
+                    self.state_manager.floating_text_manager.draw(self.screen, self.camera_x, self.camera_y)
                     self.draw_player_ui()
             elif self.state_manager.current_state == GameState.MAIN_MENU:
                 self.draw_menu()

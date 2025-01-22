@@ -6,6 +6,7 @@ from systems.quest import QuestManager
 from entities.monster import Monster
 from entities.entity import Tree, House
 from entities.npc import NPC
+from ui.floating_text import FloatingTextManager
 from constants import *
 import random
 
@@ -22,6 +23,7 @@ class GameStateManager:
         self.current_day = 1
         self.stats = {'quests_completed': 0, 'monsters_killed': {}, 'gold_collected': 0}
         self.quest_manager = QuestManager()
+        self.floating_text_manager = FloatingTextManager()
 
     def start_new_game1(self):
         self.player = None

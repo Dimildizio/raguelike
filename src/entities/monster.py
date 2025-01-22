@@ -70,6 +70,7 @@ class Monster(Entity):
 
     def take_damage(self, amount):
         actual_damage = self.combat_stats.take_damage(amount)
+        self.get_floating_nums(f"-{actual_damage}", color=RED)
         if not self.is_alive:
             self.on_death()
         return actual_damage
