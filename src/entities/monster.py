@@ -18,6 +18,7 @@ class Monster(Entity):
         self.can_talk = can_talk
         self.description = description
         self.dialog_cooldown = DIALOGUE_COOLDOWN
+        self.shout_cooldown = SHOUT_COOLDOWN
         self.set_stats(MONSTER_PERSONALITY_TYPES, dmg, armor, hp)
         self.face_surface = pg.image.load(face_path).convert_alpha()
         self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
@@ -49,6 +50,7 @@ class Monster(Entity):
         self.aggression = perc['aggression']
         self.chance_to_run = perc['bravery']
         self.dialogue_chance = perc['dialogue_chance']
+        self.shout_chance = perc['dialogue_chance']
         self.combat_stats = CombatStats(base_hp=hp * perc['hp'],
                                         base_armor=armor * perc['armor'],
                                         base_damage=dmg * perc['dmg'])
@@ -139,26 +141,26 @@ class Monster(Entity):
         }
         return context
 
+    def dist2player(self, player_pos, limit):
+        dx = abs(self.x - player_pos[0])
+        dy = abs(self.y - player_pos[1])
+        distance = math.sqrt(dx * dx + dy * dy)
+        return distance <= limit * DISPLAY_TILE_SIZE
+
+
     def try_initiate_dialog(self, player_pos):
         """Try to initiate dialog with player"""
         if not self.can_talk or not self.is_hostile:
             return False
         if hasattr(self.game_state, 'current_npc') and self.game_state.current_npc == self:
             return False
-        if self.dialog_cooldown > DIALOGUE_COOLDOWN:
-
-            # Calculate distance to player
-            dx = abs(self.x - player_pos[0])
-            dy = abs(self.y - player_pos[1])
-            distance = math.sqrt(dx * dx + dy * dy)
-
-            if distance <= DIALOGUE_DISTANCE * DISPLAY_TILE_SIZE:  # and self.should_flee():
-                rand = random.random()
-                if rand < self.dialogue_chance:
-                    print(rand, self.dialogue_chance)
-                    self.dialog_cooldown = 0
-                    return True
-            return False
+        if self.dialog_cooldown > DIALOGUE_COOLDOWN and self.dist2player(player_pos, DIALOGUE_DISTANCE):
+            # and self.should_flee():
+            rand = random.random()
+            if rand < self.dialogue_chance:
+                print(rand, self.dialogue_chance)
+                self.dialog_cooldown = 0
+                return True
 
     def update_quest_progress(self):
         """Update all relevant quest conditions when this monster dies"""
@@ -268,3 +270,22 @@ class Monster(Entity):
                 if any(isinstance(entity, Tree) for entity in tile.entities):
                     return True
         return False
+
+    def get_shout_prompt(self):
+        self.shout_cooldown = SHOUT_COOLDOWN
+        return  f"""You are a {self.personality} {self.monster_type} named {self.name}. 
+                    Extra info:{self.get_dialogue_context()}
+                    Generate a single short battle shout or taunt (max 6 words).
+                    Make it aggressive and characteristic for your monster type. You want to offend the player.
+                    DO NOT use quotes or any punctuation except ! and ? or emoji.
+                    You cannot include neither explanations nor descriptions nor actions.
+                    Examples:
+                    - Hell yeah, I'll kick uer arse!
+                    - You're a whiny little bitch!
+                    - Come here, cocksucker!
+                    - Bow down to me, {self.name}!
+                    - I will piss on your corpse!
+                    - Your skull be mine toilet!
+                    - Me smash puny human!
+                    - Sorry I have to do it!
+                    - You won't like it, dear!"""

@@ -211,15 +211,24 @@ class DialogueProcessor:
             self.logger.error(f"Error processing dialogue: {e}")
             return {"text": "Giant's butt says what?"}
 
-    def process_start_dialogue(self, player_input: str) -> Dict:
+    def process_start_dialogue(self, npc_input: str) -> Dict:
         try:
-            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': player_input}],
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': npc_input}],
                                       stream=False)['message']['content']
             return stream
-
         except Exception as e:
             self.logger.error(f"Error processing riddle dialogue: {e}")
             return {"text": "Hey there!"}
+
+    def process_shouts(self, monster_input: str) -> Dict:
+        try:
+
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': monster_input}],
+                                      stream=False, options={'max_tokens': 10})['message']['content'].strip()
+            return stream
+        except Exception as e:
+            self.logger.error(f"Error processing taunt: {e}")
+            return {"text": "Fuck you there!"}
 
     def process_riddle_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         try:

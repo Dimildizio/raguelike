@@ -36,7 +36,7 @@ class FloatingTextManager:
                 self.floating_texts.pop(i)
             else:
                 # Move text upward
-                text.y -= text.rise_speed * (1 / FPS)  # Assuming 60 FPS
+                text.y -= text.rise_speed * (3 / FPS)  # Assuming 60 FPS
                 # Fade out
                 text.alpha = int(255 * (1 - (elapsed / text.duration)))
 

@@ -1,4 +1,4 @@
-import re
+import random
 import pygame as pg
 from constants import *
 from utils.dialogue_processor import DialogueProcessor
@@ -489,11 +489,13 @@ class DialogUI:
         npc = self.current_npc
         if isinstance(npc, Monster):
             greetings = (f"You are a {npc.personality} {npc.description} {npc.monster_type}."
+                         f"You cannot include neither explanations nor descriptions nor actions." 
                          f"Generate a short greeting (1-2 sentences) since you need to talk to the adventurer")
             result = self.dialogue_processor.process_start_dialogue(greetings)
         elif isinstance(npc, NPC):
-            greetings = (f"You are {npc.description} named {npc.name}. Generate a short greeting (1-2 sentences) "
-                         f"appropriate for you and your current mood ({npc.mood})")
+            greetings = (f"You are {npc.description} named {npc.name}. Generate a short greeting (1-2 sentences)"
+                         f"appropriate for you and your current mood ({npc.mood}). "
+                         f"You cannot include neither explanations nor descriptions nor actions.")
             result = self.dialogue_processor.process_start_dialogue(greetings)
         elif isinstance(npc, House):
             result = f'A cozy village house promising a shelter and warmth for a meager {npc.fee} gold.'
@@ -658,3 +660,26 @@ class DialogUI:
 
             sound = pg.mixer.Sound(self.current_audio_buffer)
             self.sound_engine.play_narration(sound)
+
+    def try_shout(self, monster):
+        """Attempt to generate and display a shout"""
+        if monster.shout_cooldown > 0:
+            monster.shout_cooldown -= 1
+            return
+
+        if random.random() < monster.shout_chance:
+            try:
+                txt = monster.get_shout_prompt()
+                shout = self.dialogue_processor.process_shouts(txt).strip()
+                shout = " ".join(shout.split()[:min(6, len(shout))])
+                print('SHOUT:', shout)
+                audio_buffer = self.tts.generate_and_play_tts(shout, monster.voice)
+                if audio_buffer:
+                    sound = pg.mixer.Sound(audio_buffer)
+                    self.sound_engine.play_narration(sound)
+
+                # Display floating text
+                monster.get_floating_nums(shout, color=YELLOW)
+
+            except Exception as e:
+                print(f"Error generating shout: {e}")

@@ -125,6 +125,8 @@ class Game:
 
             # If no dialog initiated, proceed with normal monster turn
         elif monster.is_hostile:
+            if monster.dist2player((self.state_manager.player.x, self.state_manager.player.y), SHOUT_COOLDOWN):
+                self.dialog_ui.try_shout(monster)
             # If there's an animation playing, wait
             if hasattr(self.state_manager.current_map, 'combat_animation') and \
                     self.state_manager.current_map.combat_animation.is_playing:

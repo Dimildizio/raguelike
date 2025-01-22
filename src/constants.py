@@ -150,6 +150,7 @@ BREATHING_AMPLITUDE = 10  # degrees
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
+YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
@@ -178,7 +179,8 @@ MONSTER_PERSONALITY_TYPES = [
     "cowardly",      # Flees at higher health, attacks less often
     "territorial"    # Only aggressive when player is very close
 ]
-MOSNTER_DIALOG_CHANCE = {'goblin':0.001}
+SHOUT_COOLDOWN = 3
+MONSTER_DIALOG_CHANCE = {'goblin': 0.001}
 DIALOGUE_COOLDOWN = 3
 DIALOGUE_DISTANCE = 3
 SPAWN_DISTANCE = 5
