@@ -211,10 +211,18 @@ class DialogueProcessor:
             self.logger.error(f"Error processing dialogue: {e}")
             return {"text": "Giant's butt says what?"}
 
+    def process_start_dialogue(self, player_input: str) -> Dict:
+        try:
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': player_input}],
+                                      stream=False)['message']['content']
+            return stream
+
+        except Exception as e:
+            self.logger.error(f"Error processing riddle dialogue: {e}")
+            return {"text": "Hey there!"}
 
     def process_riddle_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         try:
-            print('doing riddle')
             system_prompt = f"""You are a playful monster {npc.monster_type} named {npc.name} in a fantasy RPG game. 
             Your personality is {npc.personality}. You need to reply as a {npc.monster_type} who loves riddles. 
             Sometimes you make mistakes in word forms and pronouns, speaking like a big and dumb creature.

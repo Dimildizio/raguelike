@@ -5,6 +5,7 @@ from utils.dialogue_processor import DialogueProcessor
 from utils.tts_helper import TTSHandler
 from entities.monster import Monster
 from entities.entity import House
+from entities.npc import NPC
 import json
 
 
@@ -59,8 +60,7 @@ class DialogUI:
         self.streaming_response = ""
         self.is_streaming = False
         self.stream = None
-        self.current_response = "Hello traveler! How can I help you today?" if not isinstance(
-                                npc, Monster) else "Hey you! We need talk!"
+        self.generate_greetings()
         self.selected_option = 0  # Reset selection
         self.current_partial_sentence = self.current_response
         self.sentence_queue.append(self.current_response)
@@ -71,6 +71,7 @@ class DialogUI:
     def stop_dialogue(self):
         self.should_exit = True
         self.current_audio_buffer = None
+
         self.sound_engine.stop_narration()
         self.sentence_queue.clear()
         self.current_partial_sentence = ""
@@ -482,6 +483,23 @@ class DialogUI:
         for symbol in symbols_to_remove:
             chunk = chunk.replace(symbol, ' ')  # Remove common emojis and formatting
         return chunk
+
+    def generate_greetings(self):
+        """Generate greetings for NPCs"""
+        npc = self.current_npc
+        if isinstance(npc, Monster):
+            greetings = (f"You are a {npc.personality} {npc.description} {npc.monster_type}."
+                         f"Generate a short greeting (1-2 sentences) since you need to talk to the adventurer")
+            result = self.dialogue_processor.process_start_dialogue(greetings)
+        elif isinstance(npc, NPC):
+            greetings = (f"You are {npc.description} named {npc.name}. Generate a short greeting (1-2 sentences) "
+                         f"appropriate for you and your current mood ({npc.mood})")
+            result = self.dialogue_processor.process_start_dialogue(greetings)
+        elif isinstance(npc, House):
+            result = f'A cozy village house promising a shelter and warmth for a meager {npc.fee} gold.'
+        else:
+            result = 'Hullow?'
+        self.current_response = result
 
     def start_house_dialog(self, house):
         """Initialize dialogue UI for house interaction"""
