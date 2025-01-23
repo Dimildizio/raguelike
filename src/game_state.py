@@ -3,7 +3,7 @@ from world.create_map import MapCreator
 from world.worldmap import WorldMap
 from entities.character import Character
 from systems.quest import QuestManager
-from entities.monster import Monster
+from entities.monster import Monster, GreenTroll, Dryad
 from entities.entity import Tree, House
 from entities.npc import NPC
 from ui.floating_text import FloatingTextManager
@@ -66,6 +66,7 @@ class GameStateManager:
 
         monsters.append(self.create_green_troll((0, 0)))
         monsters.append(self.create_blue_troll((0, 0)))
+        monsters.append(self.create_dryad((0, 0)))
 
         # Create NPCs with specific attributes
         npc_data = [
@@ -257,9 +258,13 @@ class GameStateManager:
                        armor=int(MONSTER_BASE_ARMOR * 2))
 
     def create_green_troll(self, spawn_pos):
-        return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, sprite_path="GREEN_TROLL",
-                       name='Gubdakrr', game_state=self, voice='g', ap=65,
-                       face_path=SPRITES["GREEN_TROLL_FACE"], monster_type='green_troll',
-                        description='big green ugly hulking foul-mouthed creature',
-                        hp=int(MONSTER_BASE_HP * 3), dmg=int(MONSTER_BASE_DAMAGE * 2),
-                        armor=int(MONSTER_BASE_ARMOR * 2))
+        return GreenTroll(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
+                          sprite_path="GREEN_TROLL", name='Gubdakrr', game_state=self, voice='g', ap=65,
+                          face_path=SPRITES["GREEN_TROLL_FACE"], monster_type='green_troll',
+                          description='big green ugly hulking foul-mouthed creature',
+                          hp=int(MONSTER_BASE_HP * 3), dmg=int(MONSTER_BASE_DAMAGE * 2),
+                          armor=int(MONSTER_BASE_ARMOR * 2))
+
+    def create_dryad(self, spawn_pos):
+        return Dryad(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, monster_type='dryad',
+                          sprite_path="DRYAD", name='Elindiara', game_state=self)

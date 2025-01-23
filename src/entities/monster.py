@@ -185,6 +185,24 @@ class Monster(Entity):
         if len(self.interaction_history) > 10:
             self.interaction_history.pop(0)
 
+    def decide_monster_action(self, distance):
+        """Decide what action the monster should take based on its personality and situation"""
+        # Should we flee?
+        if self.lost_resolve():
+                return "flee"
+        # Should we attack?
+        if distance == 1:  # Adjacent to player
+            # Aggressive monsters are more likely to attack
+            if random.random() < self.aggression:
+                return "attack"
+        # Should we approach?
+        if distance <= MONSTER_AGGRO_RANGE:
+            # Aggressive monsters are more likely to approach
+            result = random.random()
+            print(f'Lets attack: {result:.2f} vs {self.aggression:.2f}. flee: {result:.2f} vs {self.chance_to_run:.2f}')
+            if result < self.aggression:
+                return "approach"
+        return "none"
 
     def detect_nearby_monsters(self, current_map, radius=5):
         """
@@ -263,8 +281,8 @@ class Monster(Entity):
 
         # Check adjacent tiles for trees
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-            check_x = monster_x + dx
-            check_y = monster_y + dy
+            check_x = int(monster_x + dx)
+            check_y = int(monster_y + dy)
             if 0 <= check_x < current_map.width and 0 <= check_y < current_map.height:
                 tile = current_map.tiles[check_y][check_x]
                 if any(isinstance(entity, Tree) for entity in tile.entities):
@@ -300,3 +318,158 @@ class Monster(Entity):
                     - Me smash puny human!
                     - Sorry I have to do it!
                     - You won't like it, dear!"""
+
+
+class GreenTroll(Monster):
+    def __init__(self, x, y, game_state=None, sprite_path="GREEN_TROLL", name='Blaarggr', monster_type='green_troll',
+                 voice='g', can_talk=True, description="an ugly hulking creature who likes to offend", ap=60, money=120,
+                 dmg=MONSTER_BASE_DAMAGE *1.5, armor=MONSTER_BASE_ARMOR*1.5, hp=MONSTER_BASE_HP*1.5,
+                 face_path=SPRITES["GREEN_TROLL_FACE"]):
+        super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
+                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         dmg=dmg, armor=armor, hp=hp, face_path=face_path)
+        self.rage_chance = 0.1
+
+    def take_damage(self, amount):
+        actual_damage = self.combat_stats.take_damage(amount)
+        self.get_floating_nums(f"-{actual_damage}", color=RED)
+        if not self.is_alive:
+            self.on_death()
+        elif random.random() < self.rage_chance:
+            self.get_enrage(actual_damage)
+        return actual_damage
+
+    def get_enrage(self, damage):
+        print(f'{self.name} is enraged!')
+        rage = damage / self.combat_stats.max_hp
+        self.combat_stats.get_healed(self.combat_stats.current_hp * rage)
+        self.combat_stats.damage += self.combat_stats.damage * rage
+        self.combat_stats.armor += self.combat_stats.armor * rage
+        self.rage_chance /= 2
+
+    def decide_monster_action(self, distance):
+        """Decide what action the monster should take based on its personality and situation"""
+        if distance == 1:  # Adjacent to player
+            # Aggressive monsters are more likely to attack
+            if random.random() < self.aggression:
+                return "attack"
+        # Should we approach?
+        if distance <= MONSTER_AGGRO_RANGE:
+            # Aggressive monsters are more likely to approach
+            result = random.random()
+            print(f'Lets attack: {result:.2f} vs {self.aggression:.2f}. flee: {result:.2f} vs {self.chance_to_run:.2f}')
+            if result < self.aggression:
+                return "approach"
+        return "none"
+
+class Dryad(Monster):
+    def __init__(self, x, y, game_state=None, sprite_path="DRYAD", name='Elleinara', monster_type='dryad',
+                 voice='j', can_talk=True, description="A mysterious tempting forest spirit", ap=70, money=100,
+                 dmg=MONSTER_BASE_DAMAGE *0.8, armor=MONSTER_BASE_ARMOR*0.8, hp=MONSTER_BASE_HP*0.8,
+                 face_path=SPRITES["DRYAD_FACE"]):
+        super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
+                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         dmg=dmg, armor=armor, hp=hp, face_path=face_path)
+
+        self.transformed = False
+        self.at_tree = False
+        self.dialogue_chance = 0.5
+        self.dialog_cooldown = 1
+
+    def try_initiate_dialog(self, player_pos):
+        """Override to make Dryad more likely to talk near trees"""
+        if not self.can_talk or not self.is_hostile or self.transformed:
+            return False
+        if hasattr(self.game_state, 'current_npc') and self.game_state.current_npc == self:
+            return False
+
+        if self.dialog_cooldown > DIALOGUE_COOLDOWN and self.dist2player(player_pos, DIALOGUE_DISTANCE * 2):
+            # Check if near a tree to increase dialogue chance
+            self.at_tree = self.is_near_tree(self.game_state.current_map)
+            if random.random() < self.dialogue_chance:
+                self.dialog_cooldown = 0
+                return True
+        return False
+
+    def can_transform(self):
+        """Check if conditions are met for transformation"""
+        if self.transformed or not self.is_near_tree(self.game_state.current_map):
+            return False
+
+        player = self.game_state.player
+        # Check if player is within 2 tiles
+        player_x = player.x // DISPLAY_TILE_SIZE
+        player_y = player.y // DISPLAY_TILE_SIZE
+        monster_x = self.x // DISPLAY_TILE_SIZE
+        monster_y = self.y // DISPLAY_TILE_SIZE
+
+        distance_to_player = math.sqrt(abs(player_x - monster_x)**2 + abs(player_y - monster_y)**2)
+        return distance_to_player <= 2
+
+
+    def transform(self):
+        """Transform into powerful form or disappear with rewards"""
+        if not self.transformed and self.at_tree:
+            if random.random() < 0.4:  # 40% chance to be friendly
+                # Give rewards and disappear
+                self.is_hostile = False
+                self.game_state.player.money += self.money
+                self.game_state.player.combat_stats.get_healed()
+                self.game_state.current_map.remove_entity(self)
+
+                return "friendly"
+            else:
+                # Transform into powerful form
+                self.transformed = True
+                self.combat_stats.max_hp *= 3
+                self.combat_stats.current_hp = self.combat_stats.max_hp
+                self.combat_stats.damage *= 2
+                self.combat_stats.armor *= 2
+                return "hostile"
+        return None
+
+    def get_dialogue_context(self):
+        """Add additional context for dialogue"""
+        context = super().get_dialogue_context()
+        context.update({
+            "at_tree": self.at_tree,
+            "transformed": self.transformed
+        })
+        return context
+
+    def is_near_tree(self, current_map):
+        """Check if monster is next to any tree"""
+        monster_x = self.x // DISPLAY_TILE_SIZE
+        monster_y = self.y // DISPLAY_TILE_SIZE
+        # Check adjacent tiles for trees (including diagonals)
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue
+                check_x = int(monster_x + dx)
+                check_y = int(monster_y + dy)
+                if 0 <= check_x < current_map.width and 0 <= check_y < current_map.height:
+                    tile = current_map.tiles[check_y][check_x]
+                    if any(isinstance(entity, Tree) for entity in tile.entities):
+                        return True
+        return False
+
+    def update(self):
+        if not self.transformed:  # Check for transformation conditions
+            if self.can_transform():
+                self.transform()
+            else:
+                self.update_breathing()  # Just do basic animations if not transformed
+            return
+        # Normal monster behavior after transformation
+        super().update()
+
+    def decide_monster_action(self, distance):
+        """Decide what action the monster should take based on its personality and situation"""
+        if not self.transformed:
+            if distance == 1 and random.random() < self.aggression:
+                return "attack"
+            else:
+                self.combat_stats.get_healed()
+            return 'none'
+        return super().decide_monster_action(distance)

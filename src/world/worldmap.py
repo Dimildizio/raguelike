@@ -227,7 +227,7 @@ class WorldMap:
         distance = abs(dx) + abs(dy)
 
         # DECISION-MAKING PHASE
-        decision = self.decide_monster_action(monster, distance)
+        decision = monster.decide_monster_action(distance)
 
         # ACTION EXECUTION PHASE
         result = False
@@ -244,26 +244,6 @@ class WorldMap:
         # If monster couldn't act or is out of AP, it's done
         return False
 
-
-    def decide_monster_action(self, monster, distance):
-        """Decide what action the monster should take based on its personality and situation"""
-        # Should we flee?
-        if monster.lost_resolve():
-                return "flee"
-        # Should we attack?
-        if distance == 1:  # Adjacent to player
-            # Aggressive monsters are more likely to attack
-            if random.random() < monster.aggression:
-                return "attack"
-
-        # Should we approach?
-        if distance <= MONSTER_AGGRO_RANGE:
-            # Aggressive monsters are more likely to approach
-            result = random.random()
-            print(f'Lets attack: {result:.2f} vs {monster.aggression:.2f}. flee: {result:.2f} vs {monster.chance_to_run:.2f}')
-            if result < monster.aggression:
-                return "approach"
-        return "none"
 
     def execute_attack(self, monster, player):
         """Execute attack action"""

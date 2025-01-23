@@ -177,6 +177,8 @@ class DialogUI:
             self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
         elif npc.monster_type == "troll":
             self.stream = self.dialogue_processor.process_riddle_dialogue(text, npc, self.game_state_manager)
+        elif npc.monster_type == "dryad":
+            self.stream = self.dialogue_processor.process_dryad_dialogue(text, npc, self.game_state_manager)
 
     def update(self):
         """Update dialogue state"""
