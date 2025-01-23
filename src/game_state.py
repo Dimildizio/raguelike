@@ -63,10 +63,9 @@ class GameStateManager:
         # Create monsters
         monsters = [Monster(0, 0, "MONSTER", name=f'Monster_{n}', game_state=self, voice=random.choice(
                             [x[0] for x in VOICE_MAP.values() if x[1] == 'f'])) for n in range(NUM_MONSTERS)]
-        monsters.append(Monster(0, 0, "BLUE_TROLL", name='Trolliddrr', game_state=self, voice='i', ap=70,
-                        face_path=SPRITES["BLUE_TROLL_FACE"], monster_type='troll',
-                        description='big blue ugly hulking creature that loves jokes and riddles',
-                        hp=int(MONSTER_BASE_HP*1.5), dmg=int(MONSTER_BASE_DAMAGE*2), armor=int(MONSTER_BASE_ARMOR*2)))
+
+        monsters.append(self.create_green_troll((0, 0)))
+        monsters.append(self.create_blue_troll((0, 0)))
 
         # Create NPCs with specific attributes
         npc_data = [
@@ -229,23 +228,38 @@ class GameStateManager:
 
         # Spawn new goblin if positions available
         for day in range(self.current_day):
-
             if valid_positions:
-                spawn_pos = random.choice(valid_positions)
-                new_goblin = Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
-                            sprite_path="MONSTER", name='Unknown Goblin', monster_type='goblin', game_state=self)
-                self.current_map.add_entity(new_goblin, spawn_pos[0], spawn_pos[1])
-                valid_positions.remove(spawn_pos)
+                self.spawn_monster(self.create_goblin, valid_positions)
+            if self.current_day >= 2 and valid_positions:
+                self.spawn_monster(self.create_green_troll, valid_positions)
+            if self.current_day >= 3 and valid_positions:
+                self.spawn_monster(self.create_blue_troll, valid_positions)
 
-            if self.current_day == 2 and valid_positions:
-                spawn_pos = random.choice(valid_positions)
-                new_monster = self.create_blue_troll()
-                self.current_map.add_entity(new_monster, spawn_pos[0], spawn_pos[1])
         return True
 
-    def create_blue_troll(self):
-        return Monster(0, 0, "BLUE_TROLL", name='Trolliddrr', game_state=self, voice='i', ap=70,
+    def spawn_monster(self, spawn_func, valid_positions):
+        spawn_pos = random.choice(valid_positions)
+        monster = spawn_func(spawn_pos)
+        self.current_map.add_entity(monster, spawn_pos[0], spawn_pos[1])
+        valid_positions.remove(spawn_pos)
+        return monster
+
+    def create_goblin(self, spawn_pos):
+        return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
+                        sprite_path="MONSTER", name='Unknown Goblin', monster_type='goblin', game_state=self)
+
+    def create_blue_troll(self, spawn_pos):
+        return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, sprite_path="BLUE_TROLL",
+                       name='Trolliddrr', game_state=self, voice='i', ap=70,
                        face_path=SPRITES["BLUE_TROLL_FACE"], monster_type='troll',
                        description='big blue ugly hulking creature that loves jokes and riddles',
                        hp=int(MONSTER_BASE_HP * 1.5), dmg=int(MONSTER_BASE_DAMAGE * 2),
                        armor=int(MONSTER_BASE_ARMOR * 2))
+
+    def create_green_troll(self, spawn_pos):
+        return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, sprite_path="GREEN_TROLL",
+                       name='Gubdakrr', game_state=self, voice='g', ap=65,
+                       face_path=SPRITES["GREEN_TROLL_FACE"], monster_type='green_troll',
+                        description='big green ugly hulking foul-mouthed creature',
+                        hp=int(MONSTER_BASE_HP * 1.5), dmg=int(MONSTER_BASE_DAMAGE * 1.5),
+                        armor=int(MONSTER_BASE_ARMOR * 1.5))
