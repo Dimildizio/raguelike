@@ -171,9 +171,9 @@ NPC_BASE_ARMOR = 5
 NPC_MOOD = ['playful', 'drunk', 'happy', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
 
 # Monster settings
-MONSTER_BASE_HP = 50
+MONSTER_BASE_HP = 35
 MONSTER_BASE_ARMOR = 5
-MONSTER_BASE_DAMAGE = 15
+MONSTER_BASE_DAMAGE = 10
 MONSTER_AGGRO_RANGE = 5
 MONSTER_FLEE_HEALTH = 0.3      # Percentage of health when monster tries to flee
 MONSTER_CHAT_CHANCE = 0.1

@@ -261,5 +261,5 @@ class GameStateManager:
                        name='Gubdakrr', game_state=self, voice='g', ap=65,
                        face_path=SPRITES["GREEN_TROLL_FACE"], monster_type='green_troll',
                         description='big green ugly hulking foul-mouthed creature',
-                        hp=int(MONSTER_BASE_HP * 1.5), dmg=int(MONSTER_BASE_DAMAGE * 1.5),
-                        armor=int(MONSTER_BASE_ARMOR * 1.5))
+                        hp=int(MONSTER_BASE_HP * 3), dmg=int(MONSTER_BASE_DAMAGE * 2),
+                        armor=int(MONSTER_BASE_ARMOR * 2))
