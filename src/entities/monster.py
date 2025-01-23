@@ -271,9 +271,16 @@ class Monster(Entity):
                     return True
         return False
 
+    def can_shout(self):
+        """Check if monster can attempt to shout"""
+        if self.shout_cooldown <= 0 and random.random() < self.shout_chance * 10:
+            self.shout_cooldown = SHOUT_COOLDOWN
+            return True
+
     def get_shout_prompt(self):
         self.shout_cooldown = SHOUT_COOLDOWN
         return  f"""You are a {self.personality} {self.monster_type} named {self.name}. 
+                    You cannot use emoji.
                     Extra info:{self.get_dialogue_context()}
                     Generate a single short battle shout or taunt (max 6 words).
                     Make it aggressive and characteristic for your monster type. You want to offend the player.

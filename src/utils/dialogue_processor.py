@@ -222,13 +222,12 @@ class DialogueProcessor:
 
     def process_shouts(self, monster_input: str) -> Dict:
         try:
-
             stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': monster_input}],
-                                      stream=False, options={'max_tokens': 10})['message']['content'].strip()
+                                      stream=False, options={'max_tokens': 16})['message']['content'].strip()
             return stream
         except Exception as e:
             self.logger.error(f"Error processing taunt: {e}")
-            return {"text": "Fuck you there!"}
+            return {"text": "Fuck you there! And here!"}
 
     def process_riddle_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         try:
@@ -252,7 +251,7 @@ class DialogueProcessor:
             {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                         indent=2) if npc.interaction_history else "No recent interactions."}
             Make sure not to give any more riddles if the player has already answered one or change the riddle if the player is wrong.
-
+            Do not include \\n symbols.
             Respond in character as {npc.name}, considering your playful nature and love for riddles.
             If this is the first interaction, present a new riddle.
             If the player has answered, evaluate their answer and stop giving riddles if they are correct. 
@@ -265,8 +264,7 @@ class DialogueProcessor:
 
             Player says: {player_input}"""
 
-            stream = self.client.chat(model=self.model,
-                                      messages=[{'role': 'system', 'content': system_prompt}],
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
                                       stream=True)
             return stream
 

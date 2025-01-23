@@ -4,6 +4,7 @@ import time
 import gc
 from game_state import GameStateManager
 from systems.sound_manager import SoundManager
+from utils.async_requests_handler import AsyncRequestHandler
 from constants import *
 from entities.entity import House
 from entities.monster import Monster
@@ -22,6 +23,7 @@ class Game:
         self.sound_manager = SoundManager(SOUND_DIR)
         self.state_manager = GameStateManager(self.sound_manager)
         self.dialog_ui = DialogUI(self.state_manager, self.sound_manager)
+        self.async_handler = AsyncRequestHandler()
         self.monsters_queue = None
         self.camera_x = None
         self.camera_y = None
@@ -50,6 +52,12 @@ class Game:
         self.dialog_ui.clear_dialogue_state()
         self.state_manager.change_state(GameState.PLAYING)
 
+    def check_async_requests(self):
+        self.async_handler.process_requests(self.dialog_ui.dialogue_processor)
+        completed_requests = self.async_handler.get_completed_requests()
+        for request in completed_requests:
+            self.dialog_ui.handle_async_response(request)
+
     def run(self):
         running = True
         while running:
@@ -67,11 +75,10 @@ class Game:
                     self.state_manager.player.update()
                     self.state_manager.floating_text_manager.update()
                     self.state_manager.current_map.update()
-
+                    self.check_async_requests()
                     self.update_camera()
                     if hasattr(self, 'monsters_queue') and self.monsters_queue:
                         self.process_next_monster()
-
             # Draw
             self.screen.fill(BLACK)
             if self.state_manager.current_state == GameState.PLAYING:
@@ -105,6 +112,9 @@ class Game:
         # Reset action points for all monsters
         for monster in self.monsters_queue:
             monster.reset_action_points()
+            monster.shout_cooldown = max(0, monster.shout_cooldown - 1)
+            print(monster.name, 'COOLDOWN', monster.shout_cooldown)
+
         # Start processing the first monster
         self.process_next_monster()
 
@@ -125,8 +135,9 @@ class Game:
 
             # If no dialog initiated, proceed with normal monster turn
         elif monster.is_hostile:
-            if monster.dist2player((self.state_manager.player.x, self.state_manager.player.y), SHOUT_COOLDOWN):
-                self.dialog_ui.try_shout(monster)
+            if monster.dist2player((self.state_manager.player.x, self.state_manager.player.y), DIALOGUE_DISTANCE)\
+            and monster.can_shout():
+                self.async_handler.add_request('shout', monster)
             # If there's an animation playing, wait
             if hasattr(self.state_manager.current_map, 'combat_animation') and \
                     self.state_manager.current_map.combat_animation.is_playing:

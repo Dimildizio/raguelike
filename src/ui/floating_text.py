@@ -4,7 +4,7 @@ from constants import FPS, RED
 
 
 class FloatingText:
-    def __init__(self, text, x, y, color=RED, duration=1.0, rise_speed=40):
+    def __init__(self, text, x, y, color=RED, duration=3.0, rise_speed=20):
         self.text = text
         self.x = x
         self.y = y
@@ -20,7 +20,7 @@ class FloatingTextManager:
     def __init__(self):
         self.floating_texts = []
 
-    def add_text(self, text, x, y, color=RED, duration=1.0, rise_speed=40):
+    def add_text(self, text, x, y, color=RED, duration=3.0, rise_speed=20):
         """Add a new floating text at the specified position"""
         self.floating_texts.append(FloatingText(text, x, y, color, duration, rise_speed))
 
@@ -36,7 +36,7 @@ class FloatingTextManager:
                 self.floating_texts.pop(i)
             else:
                 # Move text upward
-                text.y -= text.rise_speed * (3 / FPS)  # Assuming 60 FPS
+                text.y -= text.rise_speed * (1 / FPS)  # Assuming 60 FPS
                 # Fade out
                 text.alpha = int(255 * (1 - (elapsed / text.duration)))
 

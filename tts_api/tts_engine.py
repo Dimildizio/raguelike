@@ -46,7 +46,9 @@ class KokoroTTSHandler:
 
     def generate_audio(self, text: str, voice_type: str) -> bytes:
         try:
-            audio, _ = generate(self.model, text, self.voices[voice_type].voice, lang=self.voices[voice_type].name[0])
+            txt = ' '.join([x.strip() for x in text.replace(r'\n', '').split()])
+            print(txt)
+            audio, _ = generate(self.model, txt, self.voices[voice_type].voice, lang=self.voices[voice_type].name[0])
             byte_io = io.BytesIO()
             wav.write(byte_io, self.sample_rate, audio.astype(np.float32))
             return byte_io.getvalue()

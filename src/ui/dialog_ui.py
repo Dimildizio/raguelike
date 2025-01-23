@@ -19,7 +19,6 @@ class DialogUI:
         self.selected_option = 0
         self.should_exit = False
         self.current_npc = None
-        self.current_response = None
         self.dialogue_processor = DialogueProcessor()
         self.tts = TTSHandler()
         self.current_audio_buffer = None
@@ -661,25 +660,20 @@ class DialogUI:
             sound = pg.mixer.Sound(self.current_audio_buffer)
             self.sound_engine.play_narration(sound)
 
-    def try_shout(self, monster):
-        """Attempt to generate and display a shout"""
-        if monster.shout_cooldown > 0:
-            monster.shout_cooldown -= 1
-            return
+    def handle_async_response(self, response):
+        """Handle completed async requests"""
+        if hasattr(response, 'request_type'):
+            if response.request_type == 'shout':
+                monster = response.entity
+                shout = response.content
+                if monster and monster.is_alive:
+                    # Clean up the shout and limit to first 6 words
+                    shout = " ".join(shout.split()[:min(10, len(shout.split()))])
+                    print('SHOUT:', shout)
+                    # Display floating text and play TTS
+                    audio_buffer = self.tts.generate_and_play_tts(shout, monster.voice)
+                    if audio_buffer:
+                        sound = pg.mixer.Sound(audio_buffer)
+                        self.sound_engine.play_narration(sound)
+                    monster.get_floating_nums(shout, color=YELLOW)
 
-        if random.random() < monster.shout_chance:
-            try:
-                txt = monster.get_shout_prompt()
-                shout = self.dialogue_processor.process_shouts(txt).strip()
-                shout = " ".join(shout.split()[:min(6, len(shout))])
-                print('SHOUT:', shout)
-                audio_buffer = self.tts.generate_and_play_tts(shout, monster.voice)
-                if audio_buffer:
-                    sound = pg.mixer.Sound(audio_buffer)
-                    self.sound_engine.play_narration(sound)
-
-                # Display floating text
-                monster.get_floating_nums(shout, color=YELLOW)
-
-            except Exception as e:
-                print(f"Error generating shout: {e}")
