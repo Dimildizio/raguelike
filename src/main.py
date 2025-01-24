@@ -214,6 +214,7 @@ class Game:
                 quest_status = self.state_manager.quest_manager.format_all_quests_status()
                 print("\n" + quest_status + "\n")
                 print('money:', self.state_manager.player.gold)
+                self.state_manager.achievement_manager.unlock_achievement('goblin_slayer')
             if event.key == pg.K_h:
                 self.state_manager.player.heal_self()
 

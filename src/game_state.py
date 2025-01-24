@@ -8,6 +8,7 @@ from entities.entity import Tree, House
 from entities.npc import NPC
 from ui.log_ui import MessageLog
 from ui.floating_text import FloatingTextManager
+from utils.achievements import AchievementManager
 from constants import *
 import random
 
@@ -16,6 +17,7 @@ class GameStateManager:
     def __init__(self, sound_manager):
         self.current_state = GameState.MAIN_MENU
         self.sound_manager = sound_manager
+        self.achievement_manager = AchievementManager()
         self.message_log = None
         self.selected_menu_item = 0  # Track which menu item is selected
         self.current_map = WorldMap(self)
@@ -167,6 +169,7 @@ class GameStateManager:
             if rewards:
                 self.stats['quests_completed'] += 1
                 self.player.complete_quest(quest_id)
+                self.achievement_manager.check_achievements(self.stats)
                 return rewards
         return None
 

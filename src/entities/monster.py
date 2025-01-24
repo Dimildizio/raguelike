@@ -349,10 +349,10 @@ class GreenTroll(Monster):
         if not self.is_alive:
             self.on_death()
         elif random.random() < self.rage_chance:
-            self.get_enrage(actual_damage)
+            self.get_enraged(actual_damage)
         return actual_damage
 
-    def get_enrage(self, damage):
+    def get_enraged(self, damage):
         print(f'{self.name} is enraged!')
         self.game_state.add_message(f"{self.monster_type} {self.name} is enraged!", color=YELLOW)
         rage = damage / self.combat_stats.max_hp

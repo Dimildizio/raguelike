@@ -78,7 +78,6 @@ class WorldMap:
             self.combat_animation.draw(screen, camera_x, camera_y)
 
 
-
     def get_facing_tile_position(self, player):
         """Get the tile position that the player is facing"""
         player_tile_x = int(player.x // self.tile_size)
@@ -132,6 +131,7 @@ class WorldMap:
 
                     if not blocking_entity.is_alive:
                         destination_tile.remove_entity(blocking_entity)
+                        self.state_manager.achievement_manager.check_achievements(self.state_manager.stats)
                         if blocking_entity in self.entities:
                             self.entities.remove(blocking_entity)
                     return True
