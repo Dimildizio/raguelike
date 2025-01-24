@@ -67,8 +67,8 @@ class GameStateManager:
         self.player = Character(0, 0, "PLAYER", game_state=self, voice='c')
 
         # Create monsters
-        monsters = [Monster(0, 0, "MONSTER", name=f'Monster_{n}', game_state=self, voice=random.choice(
-                            [x[0] for x in VOICE_MAP.values() if x[1] == 'f'])) for n in range(NUM_MONSTERS)]
+        monsters = [Monster(0, 0, "MONSTER", name=f'Monster_{n}', monster_type='goblin', game_state=self,
+                            voice=random.choice([x[0] for x in VOICE_MAP.values() if x[1] == 'f'])) for n in range(NUM_MONSTERS)]
 
         monsters.append(self.create_green_troll((0, 0)))
         monsters.append(self.create_blue_troll((0, 0)))
@@ -111,7 +111,7 @@ class GameStateManager:
 
         # Place house at random valid position from MapCreator
         for (h_x, h_y) in house_pos:
-            self.current_map.add_entity(House(h_x, h_y, voice=random.choice([VOICE_MAP.keys()])), h_x, h_y)
+            self.current_map.add_entity(House(h_x, h_y, voice=random.choice([x for x in VOICE_MAP.keys()])), h_x, h_y)
         # Place NPCs at their designated positions from MapCreator
         for npc, position in zip(npcs, npc_positions):
             x, y = position

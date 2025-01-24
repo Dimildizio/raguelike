@@ -193,6 +193,33 @@ MONSTER_DIALOG_CHANCE = {'goblin': 0.001}
 DIALOGUE_COOLDOWN = 3
 DIALOGUE_DISTANCE = 3
 SPAWN_DISTANCE = 5
+MONSTER_NAMES = {"orkoids": ['Skritch', 'Boggath', 'Snargle', 'Gribble', 'Shroomshriek', 'Grimfang', 'Muckbreath',
+                             'Scuttle', 'Flitter', 'Twitchwarp', 'Grimnir', 'Blorf', 'Jukku', 'Skargath', 'Tarkon',
+                             'Gronk', 'Cragtooth', 'Borin', 'Skrall', 'Uggr', 'Grotfang', 'Scourb', 'Snargle',
+                             'Chittertooth', 'Skreesh', 'Craggoth', 'Rattlejaw', 'Grimskin', 'Festermaw', 'Whispclaw',
+                              'Gorggoth', 'Grulk', 'Scrugg', 'Karkath', 'Grokk', 'Skarrk', 'Blorgh', 'Bogrim',
+                              'Doomfist', "Crag'maw", 'Witheringfang', 'Fangsmoke', 'Mortifer', 'Shardshadow',
+                             'Gloamfall', 'Whisperwind', 'Cinderheart', 'Silverskin', 'Thornwood', 'Moonsnare'],
+                'dryad': ['Corvyl', 'Morwenna', 'Skara', 'Rixell', 'Aethel', 'Lyravan', 'Vanyel', 'Nyxys', 'Tristana',
+                          'Whisperwind', 'Veridian Dusk', 'Lamentfang Briar', 'Whisperwood Vixen', 'Shadowsong Nymph',
+                           "Ironbark's Bride", 'Nightshade Whisper', 'Oakblood Scion', 'Moonfall Corvus',
+                          "Raven's Thorn", 'Wisteria Shade'],
+                 'bard': ['Whisperbane', 'Grimlyre', 'Shadowmourn', 'Cinderblight', 'Mourningshadow', 'Dreadsong',
+                          'Harbinger', 'Corruptedson', 'Festeringword', 'Nightblood', 'Khargoth the Frayed Tongue',
+                          'Grimehammer Quillfang', 'Crimstone Balladbane', 'Rimewing Sorrowsong', 'Ironbark Gloomweaver',
+                          'Duskwind Scarstrider', 'Sorrowborn Bardric', 'Shadowglass Whisperer', 'Bloodthorn Lyric',
+                          'Whisper of Broken Dreams', 'Grimlyrdil', 'Shadowsong', 'Whisperingbane', 'Corvus the Faded',
+                          'Nightsong', 'Ironheart', 'Blackmoon', 'Raventhorn', 'Mourningtide', 'Bloodrune'
+                          ],
+                 'spirit': ['Whispering Wraith', 'Crimson Shade', 'The Ashen Echo', 'Blackthorn Specter',
+                            'Solstice Shadow', 'Bloodtide Phantom', "Morlock's Glimmer", 'Nightwalker Shriek',
+                            "Ironheart's Lament", 'Ashfallen Vision', 'Whisperbane', 'Scourgewind', 'Duskmaw',
+                            'Nightwraith', 'Corruptor', 'Wraithwalker', 'Spectreborn', 'Bleedtide', 'Shadowhand',
+                            'The Silent One', 'Ashenveil Wraith', 'Gloomspeaker', 'Wailing Shadow', 'Corpseborn Echo',
+                            'Drowned Sorrow', 'Whisperwind Revenant', 'Duskwalker Shade', 'Nightshadow Vowell',
+                            'Bloodtide Spectre', 'Sorrowfall']
+                 }
+
 SLEEP_FEE = 5
 
 # Dialog settings

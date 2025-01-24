@@ -273,49 +273,75 @@ class DialogueProcessor:
             return {"text": "The monster seems confused and unable to think clearly."}
 
 
-def process_dryad_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
-    try:
-        system_prompt = f"""You are a seductive dryad named {npc.name} in a fantasy RPG game. 
-        You are {npc.description}. You need to reply as a dryad who tries to lure the adventurer closer to you.
+    def process_dryad_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
+        try:
+            system_prompt = f"""You are a seductive dryad named {npc.name} in a fantasy RPG game. 
+            You are {npc.description}. You need to reply as a dryad who tries to lure the adventurer closer to you.
+    
+            You are aware of the following information:
+            - You are a forest spirit who can either reward or punish those who approach
+            - You are currently {'' if npc.is_near_tree(game_state.current_map) else 'not'} near a tree
+            - The player is too far from you: {self.dist2player(game_state.player.x, game_state.player.x), 2}
+            - You have {npc.money} gold to potentially give as a reward
+            - You want to lure the player to come closer to you near a tree
+            - If they do, you might reward them or transform into a more powerful form but you do not mention the latter
+    
+            Your status:
+            {npc.get_dialogue_context()}
+    
+            Player status:
+            {game_state.player.get_dialogue_context()}
+    
+            Recent conversation history:
+            {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
+                        indent=2) if npc.interaction_history else "No recent interactions."}
+    
+            Respond in character as {npc.name}, using seductive and mysterious language to lure the player.
+            - Promise rewards, riches, or even yourself
+            - Be mysterious and alluring
+            - Encourage the player to come closer to you near the trees
+            - Don't reveal your true intentions
+            - Speak in a poetic, nature-themed way
+    
+            Format your response as JSON with these fields:
+            - player_friendly (boolean: True if player has earned your trust, False otherwise)
+            - give_money (integer: amount of gold to give, usually 0 unless near final reward)
+            - text (string: your in-character response)
+    
+            Do not provide explanation on your decisions about building JSON.
+    
+            Player says: {player_input}"""
 
-        You are aware of the following information:
-        - You are a forest spirit who can either reward or punish those who approach
-        - You are currently {'' if npc.is_near_tree(game_state.current_map) else 'not'} near a tree
-        - The player is too far from you: {self.dist2player(game_state.player.x, game_state.player.x), 2}
-        - You have {npc.money} gold to potentially give as a reward
-        - You want to lure the player to come closer to you near a tree
-        - If they do, you might reward them or transform into a more powerful form but you do not mention the latter
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
+                                      stream=True)
+            return stream
 
-        Your status:
-        {npc.get_dialogue_context()}
+        except Exception as e:
+            self.logger.error(f"Error processing dryad dialogue: {e}")
+            return {"text": "The forest spirit's voice fades into whispers..."}
 
-        Player status:
-        {game_state.player.get_dialogue_context()}
+    def generate_monster_name(self, monster_type: str, description: str) -> str:
+        """Generate a single-word name for a monster"""
+        try:
+            system_prompt = f"""You are naming a {monster_type}. {description}
+            Generate TEN fantasy names appropriate for this creature type.
+            The names should sound menacing and fantasy-like.
+            Format response as JSON with single field 'name' with list of names.
+            DO NOT include explanations, descriptions, or any other text.
+            Example: {{"name": ["Grukthak", "Erendirr", ...]}}"""
 
-        Recent conversation history:
-        {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
-                    indent=2) if npc.interaction_history else "No recent interactions."}
+            response = self.client.chat(
+                model=self.model,
+                messages=[{'role': 'system', 'content': system_prompt}],
+                stream=False,
+            )['message']['content']
 
-        Respond in character as {npc.name}, using seductive and mysterious language to lure the player.
-        - Promise rewards, riches, or even yourself
-        - Be mysterious and alluring
-        - Encourage the player to come closer to you near the trees
-        - Don't reveal your true intentions
-        - Speak in a poetic, nature-themed way
+            try:
+                name_data = json.loads(response.strip())
+                return name_data.get('name', '')
+            except json.JSONDecodeError:
+                return ''
 
-        Format your response as JSON with these fields:
-        - player_friendly (boolean: True if player has earned your trust, False otherwise)
-        - give_money (integer: amount of gold to give, usually 0 unless near final reward)
-        - text (string: your in-character response)
-
-        Do not provide explanation on your decisions about building JSON.
-
-        Player says: {player_input}"""
-
-        stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
-                                  stream=True)
-        return stream
-
-    except Exception as e:
-        self.logger.error(f"Error processing dryad dialogue: {e}")
-        return {"text": "The forest spirit's voice fades into whispers..."}
+        except Exception as e:
+            self.logger.error(f"Error generating monster name: {e}")
+            return ''

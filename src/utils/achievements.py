@@ -7,10 +7,10 @@ from constants import WINDOW_WIDTH, WINDOW_HEIGHT
 
 class AchievementManager:
     # Achievement display constants as percentages of screen size
-    DISPLAY_WIDTH_PCT = 0.2  # 20% of screen width
-    DISPLAY_HEIGHT_PCT = 0.15  # 15% of screen height
+    DISPLAY_WIDTH_PCT = 0.4  # 20% of screen width
+    DISPLAY_HEIGHT_PCT = 0.25  # 15% of screen height
     MARGIN_PCT = 0.02  # 2% margin from screen edges
-    ICON_SIZE_PCT = 0.1  # 10% of screen height for icon size
+    ICON_SIZE_PCT = 0.2  # 10% of screen height for icon size
 
     def __init__(self, save_file="data/achievements.json"):
         self.save_file = save_file
@@ -52,23 +52,58 @@ class AchievementManager:
                 self.achievement_images[achievement_id] = fallback
 
     def draw(self, screen):
-        """Draw active achievements"""
+        """Draw active achievements with dynamic sizing"""
         current_time = pg.time.get_ticks()
         remaining_achievements = []
 
-        # Calculate dimensions based on screen size
-        display_width = int(WINDOW_WIDTH * self.DISPLAY_WIDTH_PCT)
-        display_height = int(WINDOW_HEIGHT * self.DISPLAY_HEIGHT_PCT)
+        # Base dimensions
         margin = int(WINDOW_WIDTH * self.MARGIN_PCT)
         icon_size = int(min(WINDOW_WIDTH, WINDOW_HEIGHT) * self.ICON_SIZE_PCT)
-
-        # Calculate text area dimensions
-        text_area_width = display_width - icon_size - margin
+        min_height = icon_size + margin * 2
 
         for achievement in self.active_achievements:
             elapsed = current_time - achievement['start_time']
 
             if elapsed < self.display_time:
+                # Start with initial font sizes
+                title_font_size = int(min_height * 0.2)
+                desc_font_size = int(min_height * 0.15)
+
+                # Dynamically adjust font sizes and measure text
+                title_font = pg.font.Font(None, title_font_size)
+                desc_font = pg.font.Font(None, desc_font_size)
+
+                name_text = achievement['data']['name']
+                desc_text = achievement['data']['description']
+
+                # Calculate required width for text
+                name_width = title_font.size(name_text)[0]
+                desc_width = desc_font.size(desc_text)[0]
+
+                # Calculate required display width based on text and icon
+                text_width = max(name_width, desc_width)
+                display_width = icon_size + text_width + margin * 4
+
+                # Limit width to maximum percentage of screen width
+                max_width = int(WINDOW_WIDTH * self.DISPLAY_WIDTH_PCT)
+                if display_width > max_width:
+                    display_width = max_width
+                    # Recalculate font sizes to fit width
+                    available_text_width = max_width - icon_size - margin * 4
+                    scale_factor = min(available_text_width / name_width,
+                                       available_text_width / desc_width)
+                    title_font_size = int(title_font_size * scale_factor)
+                    desc_font_size = int(desc_font_size * scale_factor)
+                    title_font = pg.font.Font(None, max(12, title_font_size))  # Minimum size of 12
+                    desc_font = pg.font.Font(None, max(10, desc_font_size))  # Minimum size of 10
+
+                # Calculate text heights with adjusted fonts
+                name_height = title_font.size(name_text)[1]
+                desc_height = desc_font.size(desc_text)[1]
+
+                # Calculate required display height
+                display_height = max(min_height, name_height + desc_height + margin * 3)
+
                 # Calculate position (top-right corner)
                 x = WINDOW_WIDTH - display_width - margin
                 y = margin
@@ -89,28 +124,23 @@ class AchievementManager:
                 if achievement_id in self.achievement_images:
                     icon = self.achievement_images[achievement_id]
                     icon.set_alpha(achievement['alpha'])
-                    surface.blit(icon, (margin, (display_height - icon_size) // 2))
+                    icon_y = (display_height - icon_size) // 2
+                    surface.blit(icon, (margin, icon_y))
 
-                # Draw achievement text
-                font_size = int(display_height * 0.25)  # Dynamic font size
-                font = pg.font.Font(None, font_size)
-
-                # Name text
-                name_text = font.render(achievement['data']['name'], True, (255, 255, 255))
-                name_text.set_alpha(achievement['alpha'])
-
-                # Description text (slightly smaller)
-                desc_font = pg.font.Font(None, int(font_size * 0.8))
-                desc_text = desc_font.render(achievement['data']['description'], True, (200, 200, 200))
-                desc_text.set_alpha(achievement['alpha'])
+                # Render text with adjusted fonts
+                name_surface = title_font.render(name_text, True, (255, 255, 255))
+                desc_surface = desc_font.render(desc_text, True, (200, 200, 200))
+                name_surface.set_alpha(achievement['alpha'])
+                desc_surface.set_alpha(achievement['alpha'])
 
                 # Position text next to icon
                 text_x = icon_size + margin * 2
-                name_y = margin
-                desc_y = display_height // 2
+                name_y = (display_height - (name_height + desc_height + margin)) // 2
+                desc_y = name_y + name_height + margin
 
-                surface.blit(name_text, (text_x, name_y))
-                surface.blit(desc_text, (text_x, desc_y))
+                # Draw text
+                surface.blit(name_surface, (text_x, name_y))
+                surface.blit(desc_surface, (text_x, desc_y))
 
                 screen.blit(surface, (x, y))
                 remaining_achievements.append(achievement)
@@ -150,9 +180,9 @@ class AchievementManager:
             self.unlock_achievement('quest_master')
 
     def unlock_achievement(self, achievement_id):
-            """Unlock an achievement and add it to display queue"""
-            #if achievement_id in self.achievements and not self.achievements[achievement_id]['completed']:
-            #self.achievements[achievement_id]['completed'] = True
+        """Unlock an achievement and add it to display queue"""
+        if achievement_id in self.achievements and not self.achievements[achievement_id]['completed']:
+            self.achievements[achievement_id]['completed'] = True
             self.active_achievements.append({
                 'data': self.achievements[achievement_id],
                 'start_time': pg.time.get_ticks(),

@@ -11,7 +11,7 @@ class Monster(Entity):
                  can_talk=True, description="vile greenskin creature", ap=60, money=40, dmg=MONSTER_BASE_DAMAGE,
                  armor=MONSTER_BASE_ARMOR, hp=MONSTER_BASE_HP, face_path=SPRITES["NPC_FACE_3"]):
         super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=ap, game_state=game_state, voice=voice)
-        self.name = name
+        self.name = random.choice(MONSTER_NAMES['orkoids'])
         self.monster_type = monster_type
         self.is_hostile = True
         self.is_fleeing = False
@@ -93,6 +93,7 @@ class Monster(Entity):
         print('created', type(dead))
         self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
         self.update_quest_progress()
+        self.add_self_to_stats()
         self.game_state.add_message(f"{self.monster_type} dies", WHITE)
 
     def add_self_to_stats(self):
@@ -385,6 +386,7 @@ class Dryad(Monster):
                          voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
                          dmg=dmg, armor=armor, hp=hp, face_path=face_path)
 
+        self.name = random.choice(MONSTER_NAMES['dryad'])
         self.transformed = False
         self.at_tree = False
         self.dialogue_chance = 0.5

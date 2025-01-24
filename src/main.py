@@ -77,6 +77,7 @@ class Game:
                     self.state_manager.current_map.update()
                     self.check_async_requests()
                     self.update_camera()
+                    self.state_manager.achievement_manager.check_achievements(self.state_manager.stats)
                     if hasattr(self, 'monsters_queue') and self.monsters_queue:
                         self.process_next_monster()
             # Draw
@@ -88,6 +89,7 @@ class Game:
                     self.draw_player_ui()
                     if self.state_manager.message_log:
                         self.state_manager.message_log.draw(self.screen)
+                    self.state_manager.achievement_manager.draw(self.screen)
             elif self.state_manager.current_state == GameState.MAIN_MENU:
                 self.draw_menu()
             elif self.state_manager.current_state == GameState.DIALOG:
@@ -214,7 +216,7 @@ class Game:
                 quest_status = self.state_manager.quest_manager.format_all_quests_status()
                 print("\n" + quest_status + "\n")
                 print('money:', self.state_manager.player.gold)
-                self.state_manager.achievement_manager.unlock_achievement('goblin_slayer')
+                print(self.state_manager.stats)
             if event.key == pg.K_h:
                 self.state_manager.player.heal_self()
 
