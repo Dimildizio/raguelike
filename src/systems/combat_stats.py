@@ -12,7 +12,7 @@ class CombatStats:
     def take_damage(self, amount):
         if self.current_hp <= 0:
             return 0
-        actual_damage = max(1, amount - self.armor)  # Minimum 1 damage
+        actual_damage = int(max(1, amount - self.armor))  # Minimum 1 damage
         self.current_hp -= actual_damage
         if self.current_hp <= 0:
             self.current_hp = 0

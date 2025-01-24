@@ -66,6 +66,7 @@ class Monster(Entity):
 
         if random.random() < crit_chance:
             base_damage *= 2
+            self.game_state.add_message(f"Critical hit!", RED)
 
         actual_damage = target.take_damage(base_damage)
         return actual_damage
@@ -73,6 +74,7 @@ class Monster(Entity):
     def take_damage(self, amount):
         actual_damage = self.combat_stats.take_damage(amount)
         self.get_floating_nums(f"-{actual_damage}", color=RED)
+        self.game_state.add_message(f"{self.name} got hit for {int(actual_damage)} dmg", WHITE)
         if not self.is_alive:
             self.on_death()
         return actual_damage
@@ -82,6 +84,7 @@ class Monster(Entity):
             self.action_points -= ap_cost
             amount = amount or self.combat_stats.max_hp
             self.combat_stats.get_healed(amount)
+            self.game_state.add_message(f"{self.monster_type} got healed for {amount}", WHITE)
 
 
     def on_death(self):
@@ -90,6 +93,7 @@ class Monster(Entity):
         print('created', type(dead))
         self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
         self.update_quest_progress()
+        self.game_state.add_message(f"{self.monster_type} dies", WHITE)
 
     def add_self_to_stats(self):
         if self.monster_type in self.game_state.stats['monsters_killed']:
@@ -110,10 +114,13 @@ class Monster(Entity):
                 if self.is_fleeing:
                     self.chance_to_run = max(0, self.chance_to_run - 0.1)
                     self.is_fleeing = False
+                    self.game_state.add_message(f"{self.monster_type} routed", WHITE)
                     print(self.name, 'routed')
             else:
                 self.is_fleeing = True
                 print(self.name, 'is fleeing')
+
+                self.game_state.add_message(f"{self.monster_type} flees for dear life", WHITE)
             return self.is_fleeing
 
     def count_dialogue_turns(self):
@@ -127,7 +134,8 @@ class Monster(Entity):
         self.is_hostile = is_hostile
         # Update outline color based on hostility
         self.outline, self.pil_outline = self.sprite_loader.load_sprite(SPRITES["OUTLINE_RED"] if is_hostile else SPRITES["OUTLINE_YELLOW"])
-
+        self.game_state.add_message(f"{self.monster_type} {self.name} is "
+                                    f"{'hostile' if self.is_hostile else 'friendly'}", YELLOW)
 
     def get_dialogue_context(self):
         """Get context for dialog based on monster's state"""
@@ -159,6 +167,8 @@ class Monster(Entity):
             rand = random.random()
             if rand < self.dialogue_chance:
                 print(rand, self.dialogue_chance)
+                self.game_state.add_message(
+                    f"{self.monster_type} {self.name} initiates dialogue", WHITE)
                 self.dialog_cooldown = 0
                 return True
 
@@ -173,6 +183,9 @@ class Monster(Entity):
                     print(
                         f"Monster {self.monster_type} killed, updating condition {condition.type} "
                         f"for quest {quest.quest_id}")
+                    self.game_state.add_message(
+                        f"Monster {self.monster_type} killed, updating condition {condition.type} "
+                        f"for quest {quest.quest_id}", YELLOW)
                     condition.current_value += 1
 
     def add_to_history(self, player_text, npc_response):
@@ -341,6 +354,7 @@ class GreenTroll(Monster):
 
     def get_enrage(self, damage):
         print(f'{self.name} is enraged!')
+        self.game_state.add_message(f"{self.monster_type} {self.name} is enraged!", color=YELLOW)
         rage = damage / self.combat_stats.max_hp
         self.combat_stats.get_healed(self.combat_stats.current_hp * rage)
         self.combat_stats.damage += self.combat_stats.damage * rage
@@ -410,11 +424,14 @@ class Dryad(Monster):
     def transform(self):
         """Transform into powerful form or disappear with rewards"""
         if not self.transformed and self.at_tree:
+
+            self.game_state.add_message(f"{self.monster_type} {self.name} transforms!", color=YELLOW)
             if random.random() < 0.4:  # 40% chance to be friendly
                 # Give rewards and disappear
                 self.is_hostile = False
-                self.game_state.player.money += self.money
+                self.game_state.player.gold += self.money
                 self.game_state.player.combat_stats.get_healed()
+                self.game_state.add_message(f"{self.monster_type} {self.name} disappears!", color=YELLOW)
                 self.game_state.current_map.remove_entity(self)
 
                 return "friendly"
@@ -425,6 +442,7 @@ class Dryad(Monster):
                 self.combat_stats.current_hp = self.combat_stats.max_hp
                 self.combat_stats.damage *= 2
                 self.combat_stats.armor *= 2
+                self.game_state.add_message(f"{self.monster_type} {self.name} became more powerful!", color=YELLOW)
                 return "hostile"
         return None
 

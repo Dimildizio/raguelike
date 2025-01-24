@@ -6,6 +6,7 @@ from systems.quest import QuestManager
 from entities.monster import Monster, GreenTroll, Dryad
 from entities.entity import Tree, House
 from entities.npc import NPC
+from ui.log_ui import MessageLog
 from ui.floating_text import FloatingTextManager
 from constants import *
 import random
@@ -15,6 +16,7 @@ class GameStateManager:
     def __init__(self, sound_manager):
         self.current_state = GameState.MAIN_MENU
         self.sound_manager = sound_manager
+        self.message_log = None
         self.selected_menu_item = 0  # Track which menu item is selected
         self.current_map = WorldMap(self)
         self.player = None  # Don't create player until game starts
@@ -49,6 +51,8 @@ class GameStateManager:
         # Create and setup map
         self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
         self.current_map.generate_map()
+
+
         # Place all entities
         self.current_map.place_entities(self.player, monsters, npcs)
         self.change_state(GameState.MAIN_MENU)
@@ -96,6 +100,9 @@ class GameStateManager:
 
         # Create and setup map with MapCreator
         self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
+        if not self.message_log and self.current_map:
+            self.message_log = MessageLog()
+            self.message_log.add_message("Welcome to the game!", WHITE)
         map_creator = MapCreator(self.current_map.sprite_loader)
         tiles, house_pos, npc_positions, tree_positions = map_creator.create_map()
         self.current_map.tiles = tiles
@@ -131,6 +138,11 @@ class GameStateManager:
 
     def change_state(self, new_state):
         self.current_state = new_state
+
+    def add_message(self, message, color=YELLOW):
+        """Add a message to the log"""
+        if self.message_log:
+            self.message_log.add_message(message, color)
 
     def accept_quest(self, quest_id: str) -> bool:
         """Handle quest acceptance through the game state"""

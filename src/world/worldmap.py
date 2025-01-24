@@ -376,6 +376,7 @@ class WorldMap:
             return False
         # Check if monster is next to edge tree
         if monster.is_at_edge_tree(self):
+            self.state_manager.add_message(f"{monster.monster_type} {monster.name} ran away!", color=YELLOW)
             self.remove_entity(monster)
             monster.combat_stats.hp = 0
             monster.action_points = 0

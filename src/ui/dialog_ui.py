@@ -635,16 +635,19 @@ class DialogUI:
         """Process sentences and generate TTS regardless of playback status"""
         if (whole_dialogue and not self.current_partial_sentence) or (not whole_dialogue and not self.sentence_queue):
             return
+        try:
+            # Generate TTS for next sentence if we have one
+            if self.sentence_queue:
+                sentence = self.current_partial_sentence if whole_dialogue else self.sentence_queue.pop(0)
+                if sentence:
+                    sentence = self._replace_symbols(sentence)
+                    audio_buffer = self.tts.generate_and_play_tts(sentence, self.current_npc.voice)
+                    if audio_buffer:
+                        print('sentence added to buffer', sentence)
+                        self.audio_buffer_queue.append(audio_buffer)
+        except Exception as e:
+            print('process sentence_queue', e)
 
-        # Generate TTS for next sentence if we have one
-        if self.sentence_queue:
-            sentence = self.current_partial_sentence if whole_dialogue else self.sentence_queue.pop(0)
-            if sentence:
-                sentence = self._replace_symbols(sentence)
-                audio_buffer = self.tts.generate_and_play_tts(sentence, self.current_npc.voice)
-                if audio_buffer:
-                    print('sentence added to buffer', sentence)
-                    self.audio_buffer_queue.append(audio_buffer)
 
     def play_queue_audio(self):
         # Play next audio if nothing is currently playing
@@ -678,4 +681,5 @@ class DialogUI:
                         sound = pg.mixer.Sound(audio_buffer)
                         self.sound_engine.play_narration(sound)
                     monster.get_floating_nums(shout, color=YELLOW)
+                    self.game_state_manager.add_message(f"{monster.monster_type} {monster.name} shouts: {shout}", WHITE)
 

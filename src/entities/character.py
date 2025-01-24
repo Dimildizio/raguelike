@@ -28,6 +28,7 @@ class Character(Entity):
     def take_damage(self, amount):
         actual_damage = self.combat_stats.take_damage(amount)
         self.get_floating_nums(f"-{int(actual_damage)}", color=RED)
+        self.game_state.add_message(f"You get hit for {int(actual_damage)} dmg", RED)
         self.check_dead()
         return actual_damage
 
@@ -39,6 +40,7 @@ class Character(Entity):
         """Accept a new quest if not already active or completed"""
         if quest_id not in self.active_quests and quest_id not in self.completed_quests:
             self.active_quests.append(quest_id)
+            self.game_state.add_message(f"Quest {quest_id} accepted", YELLOW)
             return True
         return False
 
@@ -47,6 +49,7 @@ class Character(Entity):
         if quest_id in self.active_quests:
             self.active_quests.remove(quest_id)
             self.completed_quests.append(quest_id)
+            self.game_state.add_message(f"{quest_id} completed!", color=GREEN)
 
     def has_active_quest(self, quest_id: str) -> bool:
         """Check if a specific quest is active"""
@@ -59,12 +62,14 @@ class Character(Entity):
     def add_gold(self, amount):
         """Add money to character's purse"""
         self.gold += amount
+        self.game_state.add_message(f"Received {amount} gold", YELLOW)
         return self.gold
 
     def spend_gold(self, amount):
         """Try to spend money, return True if successful"""
         if self.gold >= amount:
             self.gold -= amount
+            self.game_state.add_message(f"Lost {amount} gold", YELLOW)
             return True
         return False
 
@@ -74,6 +79,7 @@ class Character(Entity):
             amount = amount or self.combat_stats.max_hp
             self.combat_stats.get_healed(amount)
             self.get_floating_nums(f"+{int(amount)}", color=GREEN)
+            self.game_state.add_message(f"You get healed by {amount}", GREEN)
 
 
     def get_dialogue_context(self):

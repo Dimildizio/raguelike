@@ -86,6 +86,8 @@ class Game:
                     self.state_manager.current_map.draw(self.screen, self.camera_x, self.camera_y)
                     self.state_manager.floating_text_manager.draw(self.screen, self.camera_x, self.camera_y)
                     self.draw_player_ui()
+                    if self.state_manager.message_log:
+                        self.state_manager.message_log.draw(self.screen)
             elif self.state_manager.current_state == GameState.MAIN_MENU:
                 self.draw_menu()
             elif self.state_manager.current_state == GameState.DIALOG:
@@ -165,6 +167,8 @@ class Game:
     def handle_input(self, event):
         if self.state_manager.current_state == GameState.PLAYING:
             self.handle_playing_input(event)
+            if self.state_manager.message_log:
+                self.state_manager.message_log.handle_event(event)
         elif self.state_manager.current_state == GameState.MAIN_MENU:
             self.handle_menu_input(event)
         elif self.state_manager.current_state == GameState.DIALOG:
