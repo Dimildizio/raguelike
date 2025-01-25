@@ -21,7 +21,7 @@ class Game:
         self.clock = pg.time.Clock()
         self.last_action_time = 0
         self.sound_manager = SoundManager(SOUND_DIR)
-        self.state_manager = GameStateManager(self.sound_manager)
+        self.state_manager = GameStateManager(self.sound_manager, self)
         self.dialog_ui = DialogUI(self.state_manager, self.sound_manager)
         self.async_handler = AsyncRequestHandler()
         self.monsters_queue = None

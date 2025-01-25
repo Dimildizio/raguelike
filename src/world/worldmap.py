@@ -238,7 +238,6 @@ class WorldMap:
         elif decision == "approach":
             result = self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
         elif decision == 'moveto':
-            print('she moves')
             dx, dy = monster.locate_target(self)
             result = self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
 
@@ -440,6 +439,38 @@ class WorldMap:
             for tile in row:
                 entities.extend(tile.entities)
         return entities
+
+    def get_random_nearby_tile(self, entity, radius=4):
+        """Get a random free tile within specified radius of the entity
+
+        Args:
+            entity: The entity to find nearby tiles for
+            radius: How far to look for free tiles (default 4)
+
+        Returns:
+            tuple: (x, y) tile coordinates or None if no free tiles found
+        """
+        # Get entity's current tile position
+        current_x = entity.x // DISPLAY_TILE_SIZE
+        current_y = entity.y // DISPLAY_TILE_SIZE
+
+        # Get all possible tiles within radius
+        possible_tiles = []
+        for y in range(max(0, current_y - radius), min(self.height, current_y + radius + 1)):
+            for x in range(max(0, current_x - radius), min(self.width, current_x + radius + 1)):
+                # Skip current tile
+                if x == current_x and y == current_y:
+                    continue
+
+                # Check if tile is passable and empty
+                if (self.tiles[y][x].passable and
+                        not any(isinstance(e, Monster) for e in self.tiles[y][x].entities)):
+                    possible_tiles.append((x, y))
+
+        # Return random tile if any found
+        if possible_tiles:
+            return random.choice(possible_tiles)
+        return None
 
     def move_entity_to(self, entity, new_x, new_y):
         """Move entity to specific tile coordinates"""

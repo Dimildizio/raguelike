@@ -161,7 +161,7 @@ class DialogueProcessor:
             self.logger.error(f"Error storing interaction: {e}")
 
     def process_monster_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
-
+        print('processing dialogue', npc.monster_type)
         try:
             #Other monsters around that can fight the adventurer: {[x[1] for x in npc.detect_nearby_monsters(
             #                                                                          game_state.current_map)]}
@@ -400,7 +400,8 @@ class DialogueProcessor:
                     {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                                 indent=2) if npc.interaction_history else "No recent interactions."}
                     Since the player has already answered you are here just for a little talk.
-                    
+                    Do not provide explanation on your decisions about building JSON.
+            
                     Format your response as JSON with these fields:
                     - text (string: your in-character response)
         
@@ -461,7 +462,8 @@ class DialogueProcessor:
                 Recent conversation history:
                 {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                             indent=2) if npc.interaction_history else "No recent interactions."}
-
+                
+                Do not provide explanation on your decisions about building JSON.
                 Format your response as JSON with these fields:
                 - text (string: your friendly, poetic response)
 
@@ -474,3 +476,111 @@ class DialogueProcessor:
         except Exception as e:
             self.logger.error(f"Error processing hell bard dialogue: {e}")
             return {"text": "The bard strums a discordant note..."}
+
+
+    def process_willow_whisper_dialogue(self, player_input: str, npc, game_state) -> Dict:
+        try:
+            story = npc.death_story
+            discovered_new = npc.check_truth_discovery(player_input)
+
+            if not npc.has_found_truth:
+                system_prompt = f"""You are the spirit of {story['victim_name']}, who died under tragic circumstances.
+                You are trying to find peace by having someone understand your death.
+
+                Your death story:
+                - Location: {story['location']}
+                - Cause: {story['cause']}
+                - Key details: {', '.join(story['key_details'])}
+                - Perpetrator: {story['perpetrator']}
+                - Your story: {story['text']}
+
+                Currently discovered clues: {list(npc.discovered_clues)}
+                Still hidden clues: {set(story['key_details']) - npc.discovered_clues}
+
+                Interaction rules:
+                - Answer questions about your death in metaphor
+                - Explicitly say that you want an answer to how you died
+                - If players message is unrelated to your story (like hello or what do you want) - tell that the player needs to solve your mistery
+                - If player guesses something correctly, acknowledge it
+                - Do not directly say undiscovered key details let player derive them from your answers
+                - If all truths are discovered, express gratitude and peace
+
+                Recent conversation history:
+                {json.dumps(npc.interaction_history[-3:], indent=2) if npc.interaction_history else "No recent interactions."}
+                
+                Do not provide explanation on your decisions about building JSON.
+                Format your response as JSON with these fields:
+                - correctly_answered (boolean: if you think the player has at least vaguely discovered the story of your death)
+                - key_details (list: list of important single word clues taken from the player's answer)
+                - text (string: your ghostly response)
+
+                Player says: {player_input}"""
+            else:
+                system_prompt = f"""You are the spirit of {story['victim_name']}, now at peace.
+                Express gratitude and share your story summary {story['text']}  before departing.
+                
+                Do not provide explanation on your decisions about building JSON.
+                Format your response as JSON with these fields:
+                - text (string: your gratitude, story summary and farewell)
+
+                Player says: {player_input}"""
+
+            stream = self.client.chat(
+                model=self.model,
+                messages=[{'role': 'system', 'content': system_prompt}],
+                stream=True
+            )
+            return stream
+
+        except Exception as e:
+            self.logger.error(f"Error processing will'o'whisper dialogue: {e}")
+            return {"text": "The spirit flickers dimly..."}
+
+
+    def generate_death_story(self):
+        """Generate a unique death story for this spirit using LLM"""
+        fallback = {"victim_name": "Unknown Soul",
+                    "location": "the old crossroads",
+                    "cause": "mysterious circumstances",
+                    "key_details": ["alone", "cold", "betrayed", "crossroad", "beloved"],
+                    "perpetrator": "your beloved Geoffrey",
+                    "text": "You were betrayed at the crossroad by your beloved one who left you to die cold and alone"}
+        try:
+            system_prompt = """Create a tragic death story for a ghost character in a fantasy RPG so the player could ask it questions about it.
+            The story should:
+            - Include specific details about time, place, and circumstances
+            - Have five to eight simple key elements that need to be discovered
+            - Be solvable through asking questions
+            - Include a motive or perpetrator if murder
+            
+            IMPORTANT: key_details must be SINGLE WORDS that are crucial to the story.
+                                
+            Do not provide explanation on your decisions about building JSON.
+            Format the response as JSON with these fields:
+            - victim_name (string: the ghost's original name)
+            - location (string: where they died)
+            - cause (string: how they died)
+            - key_details (array: list of from five to eight SINGLE-WORD crucial facts about the death)
+            - perpetrator (string: who caused the death, if any)
+            - text (string: summary of your story)
+            """
+
+            response = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}])
+            content = response['message']['content'].replace('```json', '').replace('```', '')
+            print('response', content)
+            start_idx = content.find('{')
+            end_idx = content.rfind('}')
+            if start_idx != -1 and end_idx != -1:
+                content = content[start_idx:end_idx + 1]
+
+            try:
+                story = json.loads(content)
+                print(story)
+            except json.JSONDecodeError:
+                print('json error')
+                return fallback
+            return story
+
+        except Exception as e:
+            print(f"Error generating death story: {e}")
+            return fallback

@@ -103,6 +103,8 @@ class Monster(Entity):
         else:
             self.game_state.stats['monsters_killed'][self.monster_type] = 1
 
+    def locate_target(self, current_map):
+        pass
 
     def should_flee(self):
         # More brave monsters will fight at lower health
@@ -304,6 +306,7 @@ class Monster(Entity):
                     return True
         return False
 
+
     def can_shout(self):
         """Check if monster can attempt to shout"""
         if self.shout_cooldown <= 0:
@@ -431,7 +434,7 @@ class Dryad(Monster):
             self.game_state.add_message(f"{self.monster_type} {self.name} transforms!", color=YELLOW)
             if random.random() < 0.4:  # 40% chance to be friendly
                 # Give rewards and disappear
-                self.is_hostile = False
+                self.set_hostility(False)
                 self.game_state.player.gold += self.money
                 self.game_state.player.combat_stats.get_healed()
                 self.game_state.add_message(f"{self.monster_type} {self.name} disappears!", color=YELLOW)
@@ -576,7 +579,8 @@ class KoboldTeacher(Monster):
     def words_hurt(self, player, answer=False):
         if self.has_passed_test or answer:
             self.has_passed_test = True
-            self.is_hostile = False
+
+            self.set_hostility(False)
             print("player passed the test")
         else:
             player.spend_ap(self.combat_stats.damage)
@@ -607,7 +611,7 @@ class HellBard(KoboldTeacher):
     def words_hurt(self, player, rhymed=False):
         if self.has_passed_test or rhymed:
             self.has_passed_test = True
-            self.is_hostile = False
+            self.set_hostility(False)
             print("player passed the rhyme test")
         else:
             gold = int(max(0, player.gold - self.combat_stats.damage))
@@ -617,3 +621,69 @@ class HellBard(KoboldTeacher):
             self.combat_stats.max_hp *= 1.1
             self.combat_stats.damage *= 1.1
 
+
+class WillowWhisper(Monster):
+    def __init__(self, x, y, game_state=None, sprite_path="WOLLOW", name='Lost Spirit',
+                 monster_type='willow_whisper', voice='w', can_talk=True,
+                 description="a faint, translucent figure surrounded by ethereal wisps",
+                 ap=40, money=0, dmg=1, armor=MONSTER_BASE_ARMOR * 0.2,
+                 hp=MONSTER_BASE_HP * 4, face_path=SPRITES["WILLOW_FACE"]):
+        super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type,
+                         sprite_path=sprite_path, voice=voice, can_talk=can_talk, description=description,
+                         ap=ap, money=money, dmg=dmg, armor=armor, hp=hp, face_path=face_path)
+
+        self.dialog_cooldown = 1
+        self.dialogue_chance = 0.3
+        self.has_found_truth = False
+        self.death_story = self.game_state.game.dialog_ui.dialogue_processor.generate_death_story()
+        self.name = f"Spirit of {self.death_story['victim_name']}"
+        self.discovered_clues = set()  # Track what the player has learned
+        self.truth_requirements = 3
+
+
+
+    def check_truth_discovery(self, player_input: str) -> bool:
+        """Check if player's question/statement reveals new truth"""
+        story = self.death_story
+        new_discoveries = set()
+
+        # Check each key detail against player input
+        for detail in story['key_details']:
+            if detail.lower() in player_input.lower() and detail not in self.discovered_clues:
+                new_discoveries.add(detail)
+
+        self.discovered_clues.update(new_discoveries)
+        print('discovered clues: ', self.discovered_clues, 'story:', story['key_details'])
+        # Check if player has discovered enough
+        if len(self.discovered_clues) >= self.truth_requirements:
+            self.has_found_truth = True
+            self.set_hostility(False)
+            return True
+
+        return bool(new_discoveries)
+
+
+    def decide_monster_action(self, distance):
+        """Decide what action the monster should take based on its personality and situation"""
+        # Should we flee?
+        if self.is_hostile:
+            self.words_hurt(self.game_state.player)
+            return 'moveto'
+        return "none"
+
+    def locate_target(self, current_map):
+        return current_map.get_random_nearby_tile(self)
+
+    def words_hurt(self, player, discovered_new=False):
+        """Spiritual damage when player fails to help or leaves too soon"""
+        if self.has_found_truth or discovered_new or len(self.discovered_clues) >= self.truth_requirements:
+            self.set_hostility(False)
+        else:
+            player.take_damage(self.combat_stats.damage, armor=False)
+            self.heal_self(self.combat_stats.damage)
+            self.game_state.add_message(f"The spirit's sorrow drains your life force!", RED)
+
+    def update_breathing(self):
+        """Override default breathing with continuous rotation"""
+        # Increment rotation angle (adjust speed by changing the increment)
+        self.rotation = (self.rotation + 0.5) % 360

@@ -25,8 +25,8 @@ class Character(Entity):
     def set_facing(self, direction):
         self.facing = direction
 
-    def take_damage(self, amount):
-        actual_damage = self.combat_stats.take_damage(amount)
+    def take_damage(self, amount, armor=True):
+        actual_damage = self.combat_stats.take_damage(amount, armor)
         self.get_floating_nums(f"-{int(actual_damage)}", color=RED)
         self.game_state.add_message(f"You get hit for {int(actual_damage)} dmg", RED)
         self.check_dead()

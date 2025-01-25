@@ -3,7 +3,7 @@ from world.create_map import MapCreator
 from world.worldmap import WorldMap
 from entities.character import Character
 from systems.quest import QuestManager
-from entities.monster import Monster, GreenTroll, Dryad, KoboldTeacher, HellBard
+from entities.monster import Monster, GreenTroll, Dryad, KoboldTeacher, HellBard, WillowWhisper
 from entities.entity import Tree, House
 from entities.npc import NPC
 from ui.log_ui import MessageLog
@@ -14,7 +14,8 @@ import random
 
 
 class GameStateManager:
-    def __init__(self, sound_manager):
+    def __init__(self, sound_manager, game):
+        self.game = game
         self.current_state = GameState.MAIN_MENU
         self.sound_manager = sound_manager
         self.achievement_manager = AchievementManager()
@@ -29,40 +30,9 @@ class GameStateManager:
         self.quest_manager = QuestManager()
         self.floating_text_manager = FloatingTextManager()
 
-    def start_new_game1(self):
-        self.player = None
-        self.current_map = None
-
-        # Create player
-        self.player = Character(0, 0, "PLAYER", game_state=self)
-
-        # Create monsters
-        monsters = [
-            Monster(0, 0, "MONSTER", name=f'Monster_{n}', game_state=self) for n in range(NUM_MONSTERS)
-        ]
-
-        # Create NPCs
-        npc_imgs = [{'name': 'Villager Amelia', 'sprite': 'NPC_1', 'face': 'NPC_FACE_1', 'description': 'young girl'},
-                    {'name': 'Merchant Tom', 'sprite': 'NPC_2', 'face': 'NPC_FACE_2', 'description': 'old tired merchant'},
-                    {'name': 'Elara the Elara', 'sprite': 'NPC_3', 'face': 'NPC_FACE_3', 'description': 'middle aged half ork woman'},]
-        npcs = [
-            NPC(0, 0, npc_imgs[n]['sprite'], face_path=npc_imgs[n]['face'], name=npc_imgs[n]['name'],
-                mood=random.choice(NPC_MOOD), game_state=self, description=npc_imgs[n]['description'],
-                ) for n in range(NUM_NPCS)]
-
-        # Create and setup map
-        self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
-        self.current_map.generate_map()
-
-
-        # Place all entities
-        self.current_map.place_entities(self.player, monsters, npcs)
-        self.change_state(GameState.MAIN_MENU)
-
     def start_new_game(self):
         self.player = None
         self.current_map = None
-
         # Create player
         self.player = Character(0, 0, "PLAYER", game_state=self, voice='c')
 
@@ -75,6 +45,7 @@ class GameStateManager:
         monsters.append(self.create_dryad((0, 0)))
         monsters.append(self.create_kobold_teacher((0, 0)))
         monsters.append(self.create_hell_bard((0, 0)))
+        monsters.append(self.create_willow_whisper((0, 0)))
 
         # Create NPCs with specific attributes
         npc_data = [
@@ -305,3 +276,8 @@ class GameStateManager:
     def create_hell_bard(self, spawn_pos):
         return HellBard(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
                         sprite_path="DEMON_BARD", name='Versifer', game_state=self, voice='c')
+
+    def create_willow_whisper(self, spawn_pos):
+        return WillowWhisper(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
+                             sprite_path="WILLOW", name='Whecretio', voice='a', game_state=self,
+                             face_path=SPRITES["WILLOW_FACE"], monster_type='willow_whisper')

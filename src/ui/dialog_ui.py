@@ -3,7 +3,7 @@ import pygame as pg
 from constants import *
 from utils.dialogue_processor import DialogueProcessor
 from utils.tts_helper import TTSHandler
-from entities.monster import Monster, KoboldTeacher
+from entities.monster import Monster, KoboldTeacher, WillowWhisper
 from entities.entity import House
 from entities.npc import NPC
 import json
@@ -155,7 +155,7 @@ class DialogUI:
                     self.game_state_manager.pass_night(npc.fee)
                     return
             elif isinstance(npc, Monster):
-                self.stream = self.process_monster(text, npc) #self.stream = self.process_monster_types_dialogue(text, npc)
+                self.stream = self.process_monster(text, npc)
             else:
                 # Get the response stream
                 self.stream = self.dialogue_processor.process_dialogue(
@@ -187,6 +187,8 @@ class DialogUI:
             return self.dialogue_processor.process_kobold_dialogue(text, npc, self.game_state_manager)
         elif npc.monster_type == "demon_bard":
             return self.dialogue_processor.process_demon_bard_dialogue(text, npc, self.game_state_manager)
+        elif npc.monster_type == 'willow_whisper':
+            return self.dialogue_processor.process_willow_whisper_dialogue(text, npc, self.game_state_manager)
 
     def update(self):
         """Update dialogue state"""
@@ -288,9 +290,15 @@ class DialogUI:
                             self.current_response += "\nI'm sorry, but I can't pay you right now."
 
             else:
-                if isinstance(self.current_npc, KoboldTeacher):
+                if isinstance(self.current_npc, KoboldTeacher) or isinstance(self.current_npc, WillowWhisper):
                     answer = final_response.get('correctly_answered', False)
                     self.current_npc.words_hurt(self.game_state_manager.player, answer)
+                if isinstance(self.current_npc, WillowWhisper):
+                    answer = final_response.get('key_details', [])
+                    if answer:
+                        self.current_response += f"\n(Clues added: {', '.join(answer)}) "
+                        for clue in answer:
+                            self.current_npc.discovered_clues.add(clue)
 
                 if final_response.get('riddle_solved', False):
                     self.current_response += "\n (Riddle solved! "

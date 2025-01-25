@@ -101,9 +101,9 @@ SPRITES = {
     "DEMON_BARD_FACE": os.path.join(ASSET_DIR, "creatures/monsters/bard_face.png"),
     "DEAD_DEMON_BARD": os.path.join(ASSET_DIR, "creatures/monsters/dead_bard.png"),
 
-    "WILLOWHISPER": os.path.join(ASSET_DIR, "creatures/monsters/willow.png"),
-    "WILLOWHISPER_FACE": os.path.join(ASSET_DIR, "creatures/monsters/willow_face.png"),
-    "DEAD_WILLOWHISPER": os.path.join(ASSET_DIR, "creatures/monsters/dead_willow.png"),
+    "WILLOW": os.path.join(ASSET_DIR, "creatures/monsters/willow.png"),
+    "WILLOW_FACE": os.path.join(ASSET_DIR, "creatures/monsters/willow_face.png"),
+    "DEAD_WILLOW": os.path.join(ASSET_DIR, "creatures/monsters/dead_willow.png"),
 
     "TREE_1": os.path.join(ASSET_DIR, "textures/trees/tree_1.png"),
     "TREE_2": os.path.join(ASSET_DIR, "textures/trees/tree_2.png"),
