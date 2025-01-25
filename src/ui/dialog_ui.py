@@ -275,9 +275,9 @@ class DialogUI:
                                 if reward['type'] == 'gold':
                                     amount = reward['amount']
                                     # Add the gold to player's inventory
-                                    received = self.game_state_manager.player.add_gold(amount)
-                                    total_received += received
-                                    reward_texts.append(f"{received} gold")
+                                    self.game_state_manager.player.add_gold(amount)
+                                    total_received += amount
+                                    reward_texts.append(f"{amount} gold")
 
                             if total_received > 0:
                                 self.current_response += f"\nReceived: {', '.join(reward_texts)}"

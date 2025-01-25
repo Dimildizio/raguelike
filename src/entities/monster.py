@@ -26,6 +26,7 @@ class Monster(Entity):
 
         self.interaction_history = []
         self.money = money
+        self.entity_id = f"{monster_type}_{self.name}_{id(self)}"
 
     def set_stats(self, personality_types, dmg, armor, hp):
         # Set personality-based traits
@@ -96,6 +97,8 @@ class Monster(Entity):
         self.update_quest_progress()
         self.add_self_to_stats()
         self.game_state.add_message(f"{self.monster_type} dies", WHITE)
+        if hasattr(self, 'rag_manager'):
+            self.rag_manager.remove_entity_knowledge(self.entity_id)
 
     def add_self_to_stats(self):
         if self.monster_type in self.game_state.stats['monsters_killed']:
@@ -201,6 +204,8 @@ class Monster(Entity):
         self.interaction_history.append(interaction)
         if len(self.interaction_history) > 10:
             self.interaction_history.pop(0)
+        if hasattr(self, 'rag_manager'):
+            self.rag_manager.add_interaction(self.entity_id, interaction)
 
     def decide_monster_action(self, distance):
         """Decide what action the monster should take based on its personality and situation"""

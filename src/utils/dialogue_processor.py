@@ -19,6 +19,52 @@ class DialogueProcessor:
             self.logger.error(f"Failed to initialize DialogueProcessor: {e}")
             raise
 
+    def _get_relevant_knowledge(self, entity_id: str, current_input: str,
+                                interaction_history: list = None, k: int = 5) -> str:
+        """Get formatted relevant knowledge for an entity"""
+        try:
+            # Create combined query from history and current input
+            combined_query = current_input
+            if interaction_history:
+                last_interaction = interaction_history[-1]
+                # Handle both NPC and monster interactions
+                npc_response = last_interaction.get('npc', last_interaction.get('monster', ''))
+                combined_query = f"{last_interaction['player']} {npc_response} {current_input}"
+
+            # Query the knowledge base
+            relevant_info = self.rag_manager.query(entity_id, combined_query, k=k)
+
+            # Format the knowledge with proper prefixes
+            context_from_rag = "\nRelevant information:\n"
+            for info, score, source in relevant_info:
+                #print(info, score, source)
+                if score < 100:  # Only include relevant matches
+                    # Debug information
+                    self.logger.debug(f"\nSource: {source}")
+                    self.logger.debug(f"Similarity Score: {score}")
+                    self.logger.debug(f"Content: {info[:200]}...")  # Preview
+
+                    # Format based on source type
+                    prefix = self._get_knowledge_prefix(source, entity_id)
+                    context_from_rag += f"{prefix}{info}\n"
+
+            return context_from_rag
+
+        except Exception as e:
+            self.logger.error(f"Error getting relevant knowledge: {e}")
+            return "\nNo relevant information available.\n"
+
+    def _get_knowledge_prefix(self, source: str, entity_id: str) -> str:
+        """Get appropriate prefix for knowledge source"""
+        if source == 'world':
+            return "General knowledge: "
+        elif source == 'monster_base':
+            return "Monster knowledge: "
+        else:
+            # Get entity name from id (handle both NPCs and monsters)
+            entity_name = entity_id.split('_')[1] if '_' in entity_id else entity_id
+            return f"{entity_name}'s knowledge: "
+
     def process_dialogue(self,
                          player_input: str,
                          npc: Any,
@@ -31,27 +77,18 @@ class DialogueProcessor:
 
         try:
             # Create a combined query using current input and last interaction if available
-            combined_query = player_input
-            if interaction_history:
-                last_interaction = interaction_history[-1]
-                combined_query = f"{last_interaction['player']} {last_interaction['npc']} {player_input}"
+            context_from_rag = self._get_relevant_knowledge(npc_id, player_input, interaction_history)
 
-            # Query using the combined context
-            relevant_info = self.rag_manager.query(npc_id, combined_query)
-            relevant_dialogues = [d[0] for d in self.rag_manager.query_dialogue_history(npc_id, combined_query, k=5)]
-
-            # Format relevant information
-            context_from_rag = "\nRelevant information:\n"
-            for info, score, source in relevant_info:
-                if score < 100:  # Only include if similarity score is good enough
-                    print(f"\nSource: {source}")
-                    print(f"Similarity Score: {score}")
-                    print(f"Content: {info[:200]}...")  # First 200 chars for preview
-
-                    prefix = "General knowledge: " if source == 'world' else f"{npc.name}'s knowledge: "
-                    context_from_rag += f"{prefix}{info}\n"
-
+            # Get quest information
             quest_info = game_state.quest_manager.format_quest_status(npc_id)
+            active_quests = [
+                quest for quest in game_state.quest_manager.get_active_quests()
+                if quest.giver_npc == npc_id
+            ]
+            current_quest_context = ""
+            if active_quests:
+                quest = active_quests[0]  # Assuming one active quest per NPC for now
+                current_quest_context = f"\nCurrent active quest ID: {quest.quest_id}"
 
             # Construct the system prompt
             system_prompt = f"""You are an NPC named {npc.name} in a fantasy RPG game. 
@@ -70,8 +107,6 @@ class DialogueProcessor:
             {json.dumps(interaction_history[-min(5, len(interaction_history)):], 
                         indent=2) if interaction_history else "No recent interactions."}
             
-            Relevant dialogues with player:
-            {relevant_dialogues}
             
             Respond in character as {npc.name}, {npc.description}, considering your mood, the player's reputation, and your knowledge.
                     
@@ -94,7 +129,7 @@ class DialogueProcessor:
               * Set negotiated_amount to the agreed amount (must be less than or equal to original reward)
               * You cannot promise more gold than you currently have or the quest max_reward: 'gold' 'amount' indicates but you can try to negotiate less
               * Consider player's reputation in negotiation
-            - If player reports completing a quest and meets conditions, use "reward"
+            - If player reports completing a quest and meets conditions, use "reward" and related "quest_id"
             - You can only negotiate rewards for quests that haven't been negotiated yet
 
             Do not provide explanation on your decisions about building JSON.
@@ -160,9 +195,20 @@ class DialogueProcessor:
         except Exception as e:
             self.logger.error(f"Error storing interaction: {e}")
 
+    def process_shouts(self, monster_input: str) -> Dict:
+        try:
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': monster_input}],
+                                      stream=False, options={'max_tokens': 16})['message']['content'].strip()
+            return stream
+        except Exception as e:
+            self.logger.error(f"Error processing taunt: {e}")
+            return {"text": "Fuck you there! And here!"}
+
     def process_monster_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         print('processing dialogue', npc.monster_type)
         try:
+            context_from_rag = self._get_relevant_knowledge(npc.entity_id, player_input, npc.interaction_history)
+
             #Other monsters around that can fight the adventurer: {[x[1] for x in npc.detect_nearby_monsters(
             #                                                                          game_state.current_map)]}
 
@@ -183,6 +229,8 @@ class DialogueProcessor:
             Player status:
             {game_state.player.get_dialogue_context()}
             
+            Other relevant information including your knowledge and memories:
+            {context_from_rag}
             
             Recent conversation history:
             {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
@@ -211,32 +259,17 @@ class DialogueProcessor:
             self.logger.error(f"Error processing dialogue: {e}")
             return {"text": "Giant's butt says what?"}
 
-    def _deprecated_process_start_dialogue(self, npc_input: str) -> Dict:
-        # Not used
-        try:
-            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': npc_input}],
-                                      stream=True)
-            return stream
-        except Exception as e:
-            self.logger.error(f"Error processing start dialogue: {e}")
-            return {"text": "Hey there!"}
-
-    def process_shouts(self, monster_input: str) -> Dict:
-        try:
-            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': monster_input}],
-                                      stream=False, options={'max_tokens': 16})['message']['content'].strip()
-            return stream
-        except Exception as e:
-            self.logger.error(f"Error processing taunt: {e}")
-            return {"text": "Fuck you there! And here!"}
 
     def process_riddle_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         try:
+            context_from_rag = self._get_relevant_knowledge(npc.entity_id, player_input, npc.interaction_history)
+
             system_prompt = f"""You are a playful monster {npc.monster_type} named {npc.name} in a fantasy RPG game. 
             Your personality is {npc.personality}. You need to reply as a {npc.monster_type} who loves riddles. 
             Sometimes you make mistakes in word forms and pronouns, speaking like a big and dumb creature.
 
             You are aware of the following information:
+            - {context_from_rag}
             - You have challenged the adventurer to solve your riddle
             - If they solve it correctly, you'll give them all your money ({npc.money} gold) and leave
             - If they get it wrong, you'll continue with your riddle game
@@ -264,7 +297,7 @@ class DialogueProcessor:
             - text (string: your in-character response, including another riddle if previous wasn't solved)
 
             Player says: {player_input}"""
-
+            print(system_prompt)
             stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
                                       stream=True)
             print(stream)
@@ -277,10 +310,13 @@ class DialogueProcessor:
 
     def process_dryad_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         try:
+            context_from_rag = self._get_relevant_knowledge(npc.entity_id, player_input, npc.interaction_history)
+
             system_prompt = f"""You are a seductive dryad named {npc.name} in a fantasy RPG game. 
             You are {npc.description}. You need to reply as a dryad who tries to lure the adventurer closer to you.
     
             You are aware of the following information:
+            - {context_from_rag}
             - You are a forest spirit who can either reward or punish those who approach
             - You are currently {'' if npc.is_near_tree(game_state.current_map) else 'not'} near a tree
             - The player is too far from you: {npc.dist2player((game_state.player.x, game_state.player.x), 2)}
@@ -313,7 +349,7 @@ class DialogueProcessor:
             Do not provide explanation on your decisions about building JSON.
     
             Player says: {player_input}"""
-
+            print(system_prompt)
             stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
                                       stream=True)
             return stream
@@ -322,42 +358,19 @@ class DialogueProcessor:
             self.logger.error(f"Error processing dryad dialogue: {e}")
             return {"text": "The forest spirit's voice fades into whispers..."}
 
-    def generate_monster_name(self, monster_type: str, description: str) -> str:
-        """Generate a single-word name for a monster"""
-        try:
-            system_prompt = f"""You are naming a {monster_type}. {description}
-            Generate TEN fantasy names appropriate for this creature type.
-            The names should sound menacing and fantasy-like.
-            Format response as JSON with single field 'name' with list of names.
-            DO NOT include explanations, descriptions, or any other text.
-            Example: {{"name": ["Grukthak", "Erendirr", ...]}}"""
-
-            response = self.client.chat(
-                model=self.model,
-                messages=[{'role': 'system', 'content': system_prompt}],
-                stream=False,
-            )['message']['content']
-
-            try:
-                name_data = json.loads(response.strip())
-                return name_data.get('name', '')
-            except json.JSONDecodeError:
-                return ''
-
-        except Exception as e:
-            self.logger.error(f"Error generating monster name: {e}")
-            return ''
-
 
     def process_kobold_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         # Unfortunately gemma doesn't support tool use
         try:
+            context_from_rag = self._get_relevant_knowledge(npc.entity_id, player_input, npc.interaction_history)
+
             if not npc.has_passed_test:
                 system_prompt = f"""You are a kobold English teacher named {npc.name} in a fantasy RPG game and the player
                     has been a lazy and annoying student. 
                     Your personality is strict but fair. You need to reply as a kobold who tests adventurers' English.
         
                     You are aware of the following information:
+                    - {context_from_rag}
                     - You are a small reptilian creature who loves teaching English 
                     - You have {npc.money} gold
                     - You have already tested the player: {npc.has_passed_test}
@@ -395,6 +408,7 @@ class DialogueProcessor:
                     - You have {npc.money} gold
                     - You have already tested the player: {npc.has_passed_test}
                     - Once they answer correctly once, you become friendly and stop testing them
+                    - {context_from_rag}
         
                     Recent conversation history:
                     {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
@@ -407,7 +421,7 @@ class DialogueProcessor:
         
                     Player says: {player_input}
                 """
-
+            print(system_prompt)
             stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
                                       stream=True)
             return stream
@@ -419,6 +433,8 @@ class DialogueProcessor:
 
     def process_demon_bard_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
         try:
+            context_from_rag = self._get_relevant_knowledge(npc.entity_id, player_input, npc.interaction_history)
+
             if not npc.has_passed_test:
                 player_word, demon_word ='', ''
                 if npc.interaction_history:
@@ -430,6 +446,7 @@ class DialogueProcessor:
                 Your personality is melancholic and overdramatic. You test adventurers with rhymes.
 
                 You are aware of the following information:
+                - {context_from_rag}
                 - You are a damned poet who must make others appreciate poetry
                 - You have {npc.money} gold
                 - You have already tested the player: {npc.has_passed_test}
@@ -455,20 +472,21 @@ class DialogueProcessor:
                 - text (string: your in-character three lines of verse, only if starting new verse on a current topic)
 
                 Player says: {player_input}"""
+
             else:
                 system_prompt = f"""You are a tragic poet bard from hell named {npc.name} who has found a kindred spirit.
                 The player has proven their worth with rhyme. You keep talking to the player in rhymes. 
-
+                You also know {context_from_rag}
                 Recent conversation history:
                 {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                             indent=2) if npc.interaction_history else "No recent interactions."}
-                
+                                
                 Do not provide explanation on your decisions about building JSON.
                 Format your response as JSON with these fields:
                 - text (string: your friendly, poetic response)
 
                 Player says: {player_input}"""
-
+            print(system_prompt)
             stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
                                       stream=True)
             return stream
@@ -524,12 +542,9 @@ class DialogueProcessor:
                 - text (string: your gratitude, story summary and farewell)
 
                 Player says: {player_input}"""
-
-            stream = self.client.chat(
-                model=self.model,
-                messages=[{'role': 'system', 'content': system_prompt}],
-                stream=True
-            )
+            print(system_prompt)
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
+                     stream=True)
             return stream
 
         except Exception as e:
@@ -584,3 +599,29 @@ class DialogueProcessor:
         except Exception as e:
             print(f"Error generating death story: {e}")
             return fallback
+
+    def generate_monster_name(self, monster_type: str, description: str) -> str:
+        """Generate a single-word name for a monster"""
+        try:
+            system_prompt = f"""You are naming a {monster_type}. {description}
+            Generate TEN fantasy names appropriate for this creature type.
+            The names should sound menacing and fantasy-like.
+            Format response as JSON with single field 'name' with list of names.
+            DO NOT include explanations, descriptions, or any other text.
+            Example: {{"name": ["Grukthak", "Erendirr", ...]}}"""
+
+            response = self.client.chat(
+                model=self.model,
+                messages=[{'role': 'system', 'content': system_prompt}],
+                stream=False,
+            )['message']['content']
+
+            try:
+                name_data = json.loads(response.strip())
+                return name_data.get('name', '')
+            except json.JSONDecodeError:
+                return ''
+
+        except Exception as e:
+            self.logger.error(f"Error generating monster name: {e}")
+            return ''

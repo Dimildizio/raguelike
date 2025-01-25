@@ -83,7 +83,7 @@ SPRITES = {
 
     "BLUE_TROLL": os.path.join(ASSET_DIR, "creatures/monsters/sized_troll_1.png"),
     "BLUE_TROLL_FACE": os.path.join(ASSET_DIR, "creatures/monsters/blue_troll_face.png"),
-    "DEAD_TROLL": os.path.join(ASSET_DIR, "creatures/monsters/sized_dead_troll_1.png"),
+    "DEAD_BLUE_TROLL": os.path.join(ASSET_DIR, "creatures/monsters/sized_dead_troll_1.png"),
 
     "GREEN_TROLL": os.path.join(ASSET_DIR, "creatures/monsters/sized_troll_2.png"),
     "GREEN_TROLL_FACE": os.path.join(ASSET_DIR, "creatures/monsters/green_troll_face.png"),

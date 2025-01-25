@@ -34,6 +34,7 @@ class NPC(Entity):
 
         self.money = 100  # Default starting money
         self.negotiated_rewards = {}  # Format: {quest_id: {"gold": amount, "items": [...]}}
+        self.entity_id = f"{self.monster_type}_{self.name}_{id(self)}"
 
     def negotiate_reward(self, quest_id: str, negotiated_amount: int):
         """Record negotiated reward amount for a quest"""
@@ -87,3 +88,5 @@ class NPC(Entity):
         if len(self.interaction_history) > 10:
             self.interaction_history.pop(0)
         print(f'line added {interaction}.\nmood: {self.mood}')
+        if hasattr(self, 'rag_manager'):
+            self.rag_manager.add_interaction(self.entity_id, interaction)

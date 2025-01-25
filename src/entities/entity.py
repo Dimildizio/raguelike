@@ -40,6 +40,12 @@ class Entity(ABC):
         self.action_points = ap
         self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10)
 
+        self.entity_id = f"{self.__class__.__name__.lower()}_{id(self)}"
+
+        if game_state and hasattr(game_state.game.dialog_ui.dialogue_processor, 'rag_manager'):
+            self.rag_manager = game_state.game.dialog_ui.dialogue_processor.rag_manager
+            if hasattr(self, 'can_talk') and self.can_talk:
+                self.rag_manager._create_entity_index(self.entity_id, self.__class__.__name__.lower())
 
     def __repr__(self):
         return self.name

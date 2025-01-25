@@ -272,6 +272,7 @@ class QuestManager:
         """Format quest status information for an NPC into a readable string"""
         quest_status = self.get_npc_quest_status(npc_id)
         quest_info = []
+        print('QUEST STATUS: {0}'.format(quest_status))
 
         if quest_status["in_progress"]:
             quest_info.append("\nOngoing quests:")
