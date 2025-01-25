@@ -2,7 +2,7 @@ import json
 import os
 from typing import Dict, List
 import pygame as pg
-from constants import WINDOW_WIDTH, WINDOW_HEIGHT
+from constants import WINDOW_WIDTH, WINDOW_HEIGHT, SPRITES
 
 
 class AchievementManager:
@@ -18,13 +18,13 @@ class AchievementManager:
             "goblin_slayer": {
                 "name": "Goblin Slayer",
                 "description": "Kill 10 goblins",
-                "image": "assets/achievements/goblin_slayer.png",
+                "image": SPRITES['ACHIEVEMENT_GOBLIN_SLAYER'],
                 "completed": False
             },
             "quest_master": {
                 "name": "Quest Master",
                 "description": "Complete your first quest",
-                "image": "assets/achievements/quest_master.png",
+                "image": SPRITES['ACHIEVEMENT_QUEST_MASTER'],
                 "completed": False
             }
         }

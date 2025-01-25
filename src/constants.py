@@ -46,9 +46,9 @@ SPRITES = {
     "PLAYER": os.path.join(ASSET_DIR, "creatures/character/player.png"),
     "HERO_FACE": os.path.join(ASSET_DIR, "creatures/character/hero_face.png"),
     "FLOOR": os.path.join(ASSET_DIR, "textures/floor_tile.png"),
-    "NPC_1": os.path.join(ASSET_DIR, "creatures/npcs/npc_1.png"),
+    "NPC_1": os.path.join(ASSET_DIR, "creatures/npcs/npc_amelia.png"),
     "NPC_FACE_1": os.path.join(ASSET_DIR, "creatures/npcs/villager_face_1.png"),
-    "NPC_2": os.path.join(ASSET_DIR, "creatures/npcs/npc_2.png"),
+    "NPC_2": os.path.join(ASSET_DIR, "creatures/npcs/npc_tom.png"),
     "NPC_FACE_2": os.path.join(ASSET_DIR, "creatures/npcs/villager_face_2.png"),
     "NPC_3": os.path.join(ASSET_DIR, "creatures/npcs/npc_3.png"),
     "NPC_FACE_3": os.path.join(ASSET_DIR, "creatures/npcs/villager_face_2.png"),
@@ -67,8 +67,8 @@ SPRITES = {
 
     "GOBLIN_GIRL_1": os.path.join(ASSET_DIR, "creatures/monsters/smaller_goblin_girl_1.png"),
     "GOBLIN_GIRL_2": os.path.join(ASSET_DIR, "creatures/monsters/smaller_goblin_girl_2.png"),
-    "DEAD_GOBLIN_GIRL_1": os.path.join(ASSET_DIR, "creatures/monsters/goblin_girl_f.png"),
-    "DEAD_GOBLIN_GIRL_2": os.path.join(ASSET_DIR, "creatures/monsters/goblin_girl_f.png"),
+    "DEAD_GOBLIN_GIRL_1": os.path.join(ASSET_DIR, "creatures/monsters/dead_goblin_f.png"),
+    "DEAD_GOBLIN_GIRL_2": os.path.join(ASSET_DIR, "creatures/monsters/dead_goblin_f.png"),
     "GOBLIN_GIRL_FACE": os.path.join(ASSET_DIR, "creatures/monsters/goblin_girl_face.png"),
 
     "GOBLIN_1": os.path.join(ASSET_DIR, "creatures/monsters/smaller_goblin_1.png"),
@@ -108,6 +108,9 @@ SPRITES = {
     "TREE_1": os.path.join(ASSET_DIR, "textures/trees/tree_1.png"),
     "TREE_2": os.path.join(ASSET_DIR, "textures/trees/tree_2.png"),
     "TREE_3": os.path.join(ASSET_DIR, "textures/trees/tree_3.png"),
+
+    "ACHIEVEMENT_QUEST_MASTER": os.path.join(ASSET_DIR, "achievements/quest_master.png"),
+    "ACHIEVEMENT_GOBLIN_SLAYER": os.path.join(ASSET_DIR, "achievements/goblin_slayer.png"),
 }
 
 SPRITES.update({

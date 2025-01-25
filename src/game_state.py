@@ -67,9 +67,9 @@ class GameStateManager:
         self.player = Character(0, 0, "PLAYER", game_state=self, voice='c')
 
         # Create monsters
-        monsters = [Monster(0, 0, "MONSTER", name=f'Monster_{n}', monster_type='goblin', game_state=self,
-                            voice=random.choice([x[0] for x in VOICE_MAP.values() if x[1] == 'f'])) for n in range(NUM_MONSTERS)]
-
+        monsters = []
+        for n in range(NUM_MONSTERS):
+            monsters.append(self.create_goblin((0,0)))
         monsters.append(self.create_green_troll((0, 0)))
         monsters.append(self.create_blue_troll((0, 0)))
         monsters.append(self.create_dryad((0, 0)))
@@ -263,8 +263,20 @@ class GameStateManager:
         return monster
 
     def create_goblin(self, spawn_pos):
-        return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
-                        sprite_path="MONSTER", name='Unknown Goblin', monster_type='goblin', game_state=self)
+        if random.random() > 0.7:
+            voice = random.choice([x[0] for x in VOICE_MAP.values() if x[1] == 'f'])
+            sprite = random.choice(['GOBLIN_GIRL_1', 'GOBLIN_GIRL_2'])
+            return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, voice=voice,
+                           sprite_path=sprite, name='Unknown Goblin', monster_type='goblin', game_state=self,
+                           face_path=SPRITES['GOBLIN_GIRL_FACE'], description='small and vicious green female creature')
+        else:
+
+            voice = random.choice([x[0] for x in VOICE_MAP.values() if x[1] != 'f'])
+            sprite = random.choice(['GOBLIN_1', 'GOBLIN_2', 'GOBLIN_3'])
+            face = SPRITES[random.choice(['GOBLIN_FACE_1', 'GOBLIN_FACE_2', 'GOBLIN_FACE_3'])]
+            return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, voice=voice,
+                           sprite_path=sprite, name='Unknown Goblin', monster_type='goblin', game_state=self,
+                           face_path=face, description='small, vile and hateful greenskin creature')
 
     def create_blue_troll(self, spawn_pos):
         return Monster(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, sprite_path="BLUE_TROLL",
