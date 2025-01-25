@@ -13,6 +13,7 @@ class Monster(Entity):
         super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=ap, game_state=game_state, voice=voice)
         self.name = random.choice(MONSTER_NAMES['orkoids'])
         self.monster_type = monster_type
+        self.sprite_path = sprite_path
         self.is_hostile = True
         self.is_fleeing = False
         self.can_talk = can_talk
@@ -88,7 +89,7 @@ class Monster(Entity):
 
 
     def on_death(self):
-        dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.monster_type.upper()}"], name=f"Dead {self.monster_type}",
+        dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_path.upper()}"], name=f"Dead {self.monster_type}",
                        description=f"The remains of a {self.monster_type} {self.name}",game_state=self.game_state)
         print('created', type(dead))
         self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
