@@ -73,6 +73,18 @@ SPRITES = {
     "DRYAD_FACE": os.path.join(ASSET_DIR, "dryad_face.png"),
     "DEAD_DRYAD": os.path.join(ASSET_DIR, "sized_dead_dryad_1.png"),
 
+    "KOBOLD": os.path.join(ASSET_DIR, "lizard.png"),
+    "KOBOLD_FACE": os.path.join(ASSET_DIR, "lizard_face.png"),
+    "DEAD_KOBOLD": os.path.join(ASSET_DIR, "dead_lizard.png"),
+
+    "DEMON_BARD": os.path.join(ASSET_DIR, "bard.png"),
+    "DEMON_BARD_FACE": os.path.join(ASSET_DIR, "bard_face.png"),
+    "DEAD_DEMON_BARD": os.path.join(ASSET_DIR, "dead_bard.png"),
+
+    "WILLOWHISPER": os.path.join(ASSET_DIR, "willow.png"),
+    "WILLOWHISPER_FACE": os.path.join(ASSET_DIR, "willow_face.png"),
+    "DEAD_WILLOWHISPER": os.path.join(ASSET_DIR, "dead_willow.png"),
+
     "TREE_1": os.path.join(ASSET_DIR, "trees/tree_1.png"),
     "TREE_2": os.path.join(ASSET_DIR, "trees/tree_2.png"),
     "TREE_3": os.path.join(ASSET_DIR, "trees/tree_3.png"),

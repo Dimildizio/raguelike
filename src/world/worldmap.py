@@ -237,6 +237,11 @@ class WorldMap:
             result = self.execute_attack(monster, player)
         elif decision == "approach":
             result = self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
+        elif decision == 'moveto':
+            print('she moves')
+            dx, dy = monster.locate_target(self)
+            result = self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
+
 
         # If monster still has AP and made a successful action, it can act again next frame
         if monster.action_points > 0 and result:

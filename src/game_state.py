@@ -3,7 +3,7 @@ from world.create_map import MapCreator
 from world.worldmap import WorldMap
 from entities.character import Character
 from systems.quest import QuestManager
-from entities.monster import Monster, GreenTroll, Dryad
+from entities.monster import Monster, GreenTroll, Dryad, KoboldTeacher, HellBard
 from entities.entity import Tree, House
 from entities.npc import NPC
 from ui.log_ui import MessageLog
@@ -73,6 +73,8 @@ class GameStateManager:
         monsters.append(self.create_green_troll((0, 0)))
         monsters.append(self.create_blue_troll((0, 0)))
         monsters.append(self.create_dryad((0, 0)))
+        monsters.append(self.create_kobold_teacher((0, 0)))
+        monsters.append(self.create_hell_bard((0, 0)))
 
         # Create NPCs with specific attributes
         npc_data = [
@@ -283,3 +285,11 @@ class GameStateManager:
     def create_dryad(self, spawn_pos):
         return Dryad(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, monster_type='dryad',
                           sprite_path="DRYAD", name='Elindiara', game_state=self)
+
+    def create_kobold_teacher(self, spawn_pos):
+        return KoboldTeacher(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
+                             monster_type='kobold', sprite_path="KOBOLD", name='Teacherr', game_state=self)
+
+    def create_hell_bard(self, spawn_pos):
+        return HellBard(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
+                        sprite_path="DEMON_BARD", name='Versifer', game_state=self, voice='c')

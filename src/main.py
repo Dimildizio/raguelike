@@ -47,9 +47,8 @@ class Game:
     def exit_dialogue(self):
         print('EXITING DIALOGUE')
         self.dialog_ui.should_exit = False  # Reset flag
-        self.state_manager.current_npc = None
-        self.dialog_ui.current_npc = None
         self.dialog_ui.clear_dialogue_state()
+        self.state_manager.current_npc = None
         self.state_manager.change_state(GameState.PLAYING)
 
     def check_async_requests(self):
@@ -133,8 +132,9 @@ class Game:
             # Monster wants to talk - switch to dialog state
             self.dialog_ui.current_npc = monster
             self.state_manager.current_npc = monster
-            self.dialog_ui.start_dialog(monster)
+
             self.state_manager.change_state(GameState.DIALOG)
+            self.dialog_ui.start_dialog(monster)
             self.monsters_queue.pop(0)
 
             # If no dialog initiated, proceed with normal monster turn
@@ -354,14 +354,15 @@ class Game:
             if isinstance(entity, NPC):
                 self.dialog_ui.current_npc = entity
                 self.state_manager.current_npc = entity
-                self.dialog_ui.start_dialog(entity)
                 self.state_manager.change_state(GameState.DIALOG)
+                self.dialog_ui.start_dialog(entity)
+
                 return True
             elif isinstance(entity, House):
                 self.dialog_ui.current_npc = entity  # Reuse NPC dialogue UI for house
                 self.state_manager.current_npc = entity
-                self.dialog_ui.start_house_dialog(entity)  # New method for house dialogue
                 self.state_manager.change_state(GameState.DIALOG)
+                self.dialog_ui.start_house_dialog(entity)  # New method for house dialogue
                 return True
         return False
 

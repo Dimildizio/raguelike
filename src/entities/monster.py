@@ -30,19 +30,19 @@ class Monster(Entity):
         # Set personality-based traits
         personalities = {'aggressive': {'aggression': random.uniform(1.0, 1.6),
                                         'bravery': random.uniform(0.1, 0.2),
-                                        'dialogue_chance': 0.01,
+                                        'dialogue_chance': 0.001,
                                         'dmg': 1.2, 'armor': 1, 'hp': 1},
                          'cautious': {'aggression': random.uniform(0.8, 1.4),
                                       'bravery': random.uniform(0.3, 0.5),
-                                      'dialogue_chance': 0.05,
+                                      'dialogue_chance': 0.005,
                                       'dmg': 1, 'armor': 1.2, 'hp': 1},
                          'territorial': {'aggression': random.uniform(1.2, 1.5),
                                          'bravery': random.uniform(0.2, 0.4),
-                                         'dialogue_chance': 0.02,
+                                         'dialogue_chance': 0.002,
                                          'dmg': 1, 'armor': 1, 'hp': 1},
                          'cowardly': {'aggression': random.uniform(0.7, 1.3),
                                       'bravery': random.uniform(0.4, 0.6),
-                                      'dialogue_chance': 0.1,
+                                      'dialogue_chance': 0.01,
                                       'dmg': 1, 'armor': 1, 'hp': 1.2}}
 
         self.personality = random.choice(personality_types)
@@ -474,6 +474,29 @@ class Dryad(Monster):
                         return True
         return False
 
+    def find_nearest_tree(self, current_map):
+        """Find coordinates of the nearest tree"""
+        monster_x = self.x // DISPLAY_TILE_SIZE
+        monster_y = self.y // DISPLAY_TILE_SIZE
+        nearest_tree = None
+        min_distance = float('inf')
+
+        # Search all tiles for trees
+        for y in range(current_map.height):
+            for x in range(current_map.width):
+                tile = current_map.tiles[y][x]
+                if any(isinstance(entity, Tree) for entity in tile.entities):
+                    distance = abs(x - monster_x) + abs(y - monster_y)
+                    if distance < min_distance and distance > 0:  # Ensure we don't target the tree we're already at
+                        min_distance = distance
+                        nearest_tree = (x, y)
+
+        return nearest_tree
+
+    def locate_target(self, current_map):
+        return self.find_nearest_tree(current_map)
+
+
     def update(self):
         if not self.transformed:  # Check for transformation conditions
             if self.can_transform():
@@ -485,11 +508,111 @@ class Dryad(Monster):
         super().update()
 
     def decide_monster_action(self, distance):
-        """Decide what action the monster should take based on its personality and situation"""
+        """Decide what action the dryad should take"""
         if not self.transformed:
+            current_map = self.game_state.current_map
+            near_tree = self.is_near_tree(current_map)
+
+            # Update tree status
+            self.at_tree = near_tree
+
+            # If near a tree, consider transformation or healing
+            if near_tree:
+                if self.can_transform():
+                    self.transform()
+                    return "none"
+                else:
+                    self.combat_stats.get_healed()  # Heal when near trees
+
+                # If player is close, consider attacking
+                if distance == 1 and random.random() < self.aggression:
+                    return "attack"
+                return "none"
+
+            # If not near a tree, try to find one
+            nearest_tree = self.find_nearest_tree(current_map)
+            if nearest_tree:
+                # Calculate distance to tree and player
+                tree_x, tree_y = nearest_tree
+                monster_x = self.x // DISPLAY_TILE_SIZE
+                monster_y = self.y // DISPLAY_TILE_SIZE
+                tree_distance = abs(tree_x - monster_x) + abs(tree_y - monster_y)
+
+                # If player is closer than the tree and aggressive, might attack
+                if distance < tree_distance and distance == 1 and random.random() < self.aggression:
+                    return "attack"
+                return "moveto"
+
+            # If no trees found and player is close, might attack
             if distance == 1 and random.random() < self.aggression:
                 return "attack"
-            else:
-                self.combat_stats.get_healed()
-            return 'none'
+            return "none"
+
+        # If transformed, use standard monster behavior
         return super().decide_monster_action(distance)
+
+
+class KoboldTeacher(Monster):
+    def __init__(self, x, y, game_state=None, sprite_path="KOBOLD", name='Teacherrr', monster_type='kobold', voice='b',
+                 can_talk=True, description="a small reptilian creature wearing tiny glasses", ap=45, money=3,
+                 dmg=MONSTER_BASE_DAMAGE * 2, armor=MONSTER_BASE_ARMOR * 0.6, hp=MONSTER_BASE_HP * 0.6,
+                 face_path=SPRITES["KOBOLD_FACE"]):
+        super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
+                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         dmg=dmg, armor=armor, hp=hp, face_path=face_path)
+        self.dialog_cooldown = 1  # Override default cooldown
+        self.has_passed_test = False
+        self.dialogue_chance = 0.3  # More likely to initiate dialogue
+
+    def get_dialogue_context(self):
+        """Add additional context for dialogue"""
+        context = super().get_dialogue_context()
+        context.update({
+            "has_passed_test": self.has_passed_test
+        })
+        return context
+
+    def words_hurt(self, player, answer=False):
+        if self.has_passed_test or answer:
+            self.has_passed_test = True
+            self.is_hostile = False
+            print("player passed the test")
+        else:
+            player.spend_ap(self.combat_stats.damage)
+            player.take_damage(self.combat_stats.damage)
+            self.game_state.add_message('Words hurt you!')
+
+class HellBard(KoboldTeacher):
+    def __init__(self, x, y, game_state=None, sprite_path="DEMON_BARD", name='Versifer', monster_type='demon_bard',
+                 voice='d', can_talk=True, description="a melancholic figure in scorched robes holding a charred lute",
+                 ap=66, money=666, dmg=MONSTER_BASE_DAMAGE * 0.5, armor=MONSTER_BASE_ARMOR * 0.5,
+                 hp=MONSTER_BASE_HP * 0.5, face_path=SPRITES["DEMON_BARD_FACE"]):
+        super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
+                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         dmg=dmg, armor=armor, hp=hp, face_path=face_path)
+        self.dialogue_chance = 0.4  # Very chatty
+        self.current_verse = None
+        self.name = name
+
+    def get_dialogue_context(self):
+        """Add additional context for dialogue"""
+        context = super().get_dialogue_context()
+        context.update({
+            "has_passed_rhyme": self.has_passed_test,
+            "current_verse": self.current_verse
+        })
+        return context
+
+    def words_hurt(self, player, rhymed=False):
+        if self.has_passed_test or rhymed:
+            self.has_passed_test = True
+            self.is_hostile = False
+            print("player passed the rhyme test")
+        else:
+            gold = int(max(0, player.gold - self.combat_stats.damage))
+            self.game_state.add_message(f'Rhymes hurt! You lost {int(player.gold-gold)} gold and {self.name} got stronger')
+            player.gold = gold
+            self.combat_stats.current_hp *= 1.1
+            self.combat_stats.max_hp *= 1.1
+            self.combat_stats.damage *= 1.1
+

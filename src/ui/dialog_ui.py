@@ -3,7 +3,7 @@ import pygame as pg
 from constants import *
 from utils.dialogue_processor import DialogueProcessor
 from utils.tts_helper import TTSHandler
-from entities.monster import Monster
+from entities.monster import Monster, KoboldTeacher
 from entities.entity import House
 from entities.npc import NPC
 import json
@@ -59,7 +59,10 @@ class DialogUI:
         self.streaming_response = ""
         self.is_streaming = False
         self.stream = None
-        self.generate_greetings()
+        if isinstance(npc, Monster):
+            self.current_response = 'Hey you!'
+        elif isinstance(npc, NPC):
+            self.current_response = 'Hello traveler!'
         self.selected_option = 0  # Reset selection
         self.current_partial_sentence = self.current_response
         self.sentence_queue.append(self.current_response)
@@ -70,22 +73,25 @@ class DialogUI:
     def stop_dialogue(self):
         self.should_exit = True
         self.current_audio_buffer = None
-
         self.sound_engine.stop_narration()
         self.sentence_queue.clear()
         self.current_partial_sentence = ""
         self.audio_buffer_queue = []
 
+
     def clear_dialogue_state(self):
         """Reset all dialogue-related state"""
         self.current_response = None
-        self.current_npc = None
         self.input_text = ""
         self.streaming_response = ""
         self.is_streaming = False
         self.stream = None
         if self.game_state_manager:
+            if isinstance(self.current_npc, KoboldTeacher):
+                print('words hurt!')
+                self.current_npc.words_hurt(self.game_state_manager.player)
             self.game_state_manager.current_npc = None
+        self.current_npc = None
 
     @staticmethod
     def is_valid_char(char):
@@ -136,10 +142,7 @@ class DialogUI:
                 self.input_text += event.unicode
 
     def process_monster(self, text, npc):
-        if 'troll' in npc.monster_type:
-            return self.dialogue_processor.process_riddle_dialogue(text, npc, self.game_state_manager)
-        else:
-            return self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
+        return self.process_monster_types_dialogue(text, npc)
 
     def process_input(self, text, npc):
         """Process player input and get NPC response"""
@@ -173,12 +176,17 @@ class DialogUI:
             self.current_response = "Sorry, I didn't quite understand that."
 
     def process_monster_types_dialogue(self, text, npc):
-        if npc.should_flee():
-            self.stream = self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
+        if npc.should_flee() and npc.monster_type not in ['dryad']:
+            print(npc.monster_type)
+            return self.dialogue_processor.process_monster_dialogue(text, npc, self.game_state_manager)
         elif npc.monster_type == "troll":
-            self.stream = self.dialogue_processor.process_riddle_dialogue(text, npc, self.game_state_manager)
+            return self.dialogue_processor.process_riddle_dialogue(text, npc, self.game_state_manager)
         elif npc.monster_type == "dryad":
-            self.stream = self.dialogue_processor.process_dryad_dialogue(text, npc, self.game_state_manager)
+            return self.dialogue_processor.process_dryad_dialogue(text, npc, self.game_state_manager)
+        elif npc.monster_type == "kobold":
+            return self.dialogue_processor.process_kobold_dialogue(text, npc, self.game_state_manager)
+        elif npc.monster_type == "demon_bard":
+            return self.dialogue_processor.process_demon_bard_dialogue(text, npc, self.game_state_manager)
 
     def update(self):
         """Update dialogue state"""
@@ -217,7 +225,6 @@ class DialogUI:
                     json_parts = self.streaming_response.split('```json')
                     if len(json_parts) > 1:
                         json_text = json_parts[1].split('```')[0]
-                        print('not json', json_text)
                         final_response = json.loads(json_text)
                         self.process_final_response_output(final_response)
                 except json.JSONDecodeError as e:
@@ -281,6 +288,10 @@ class DialogUI:
                             self.current_response += "\nI'm sorry, but I can't pay you right now."
 
             else:
+                if isinstance(self.current_npc, KoboldTeacher):
+                    answer = final_response.get('correctly_answered', False)
+                    self.current_npc.words_hurt(self.game_state_manager.player, answer)
+
                 if final_response.get('riddle_solved', False):
                     self.current_response += "\n (Riddle solved! "
                     money = self.current_npc.money
@@ -484,25 +495,6 @@ class DialogUI:
         for symbol in symbols_to_remove:
             chunk = chunk.replace(symbol, ' ')  # Remove common emojis and formatting
         return chunk
-
-    def generate_greetings(self):
-        """Generate greetings for NPCs"""
-        npc = self.current_npc
-        if isinstance(npc, Monster):
-            greetings = (f"You are a {npc.personality} {npc.description} {npc.monster_type}."
-                         f"You cannot include neither explanations nor descriptions nor actions." 
-                         f"Generate a short greeting (1-2 sentences) since you need to talk to the adventurer")
-            result = self.dialogue_processor.process_start_dialogue(greetings)
-        elif isinstance(npc, NPC):
-            greetings = (f"You are {npc.description} named {npc.name}. Generate a short greeting (1-2 sentences)"
-                         f"appropriate for you and your current mood ({npc.mood}). "
-                         f"You cannot include neither explanations nor descriptions nor actions.")
-            result = self.dialogue_processor.process_start_dialogue(greetings)
-        elif isinstance(npc, House):
-            result = f'A cozy village house promising a shelter and warmth for a meager {npc.fee} gold.'
-        else:
-            result = 'Hullow?'
-        self.current_response = result
 
     def start_house_dialog(self, house):
         """Initialize dialogue UI for house interaction"""

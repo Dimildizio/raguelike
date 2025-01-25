@@ -211,13 +211,14 @@ class DialogueProcessor:
             self.logger.error(f"Error processing dialogue: {e}")
             return {"text": "Giant's butt says what?"}
 
-    def process_start_dialogue(self, npc_input: str) -> Dict:
+    def _deprecated_process_start_dialogue(self, npc_input: str) -> Dict:
+        # Not used
         try:
             stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': npc_input}],
-                                      stream=False)['message']['content']
+                                      stream=True)
             return stream
         except Exception as e:
-            self.logger.error(f"Error processing riddle dialogue: {e}")
+            self.logger.error(f"Error processing start dialogue: {e}")
             return {"text": "Hey there!"}
 
     def process_shouts(self, monster_input: str) -> Dict:
@@ -266,6 +267,7 @@ class DialogueProcessor:
 
             stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
                                       stream=True)
+            print(stream)
             return stream
 
         except Exception as e:
@@ -281,7 +283,7 @@ class DialogueProcessor:
             You are aware of the following information:
             - You are a forest spirit who can either reward or punish those who approach
             - You are currently {'' if npc.is_near_tree(game_state.current_map) else 'not'} near a tree
-            - The player is too far from you: {self.dist2player(game_state.player.x, game_state.player.x), 2}
+            - The player is too far from you: {npc.dist2player((game_state.player.x, game_state.player.x), 2)}
             - You have {npc.money} gold to potentially give as a reward
             - You want to lure the player to come closer to you near a tree
             - If they do, you might reward them or transform into a more powerful form but you do not mention the latter
@@ -345,3 +347,130 @@ class DialogueProcessor:
         except Exception as e:
             self.logger.error(f"Error generating monster name: {e}")
             return ''
+
+
+    def process_kobold_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
+        # Unfortunately gemma doesn't support tool use
+        try:
+            if not npc.has_passed_test:
+                system_prompt = f"""You are a kobold English teacher named {npc.name} in a fantasy RPG game and the player
+                    has been a lazy and annoying student. 
+                    Your personality is strict but fair. You need to reply as a kobold who tests adventurers' English.
+        
+                    You are aware of the following information:
+                    - You are a small reptilian creature who loves teaching English 
+                    - You have {npc.money} gold
+                    - You have already tested the player: {npc.has_passed_test}
+                    - If player hasn't passed test yet, you must give them a simple A2 level English test
+                    - If they answer incorrectly or say goodbye before passing, you hurt them
+                    - If they answer incorrectly you say the correct answer but give them another test
+                    - Once they answer correctly once, you become friendly and stop testing them
+        
+                    Recent conversation history:
+                    {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
+                                indent=2) if npc.interaction_history else "No recent interactions."}
+                    Make sure you do NOT use the same tasks or words for the task as you used in your interaction history
+        
+                    Example test questions (use similar format and difficulty but every time it should be different question):
+                    You can give player an example of a sentence where he need to put the correct past form or third person in present simple.
+                    You can give a sentence where player needs to say if there should be present simple or present continuous.
+                    You can give a task to complete the phrase with a correct form of a verb.
+                    You are free to give any other kinds of tasks. 
+                    
+                    If you are not sure the player is correct - check if the word you wanted him to use is in his reply. If yes - the answer is correct.
+            
+                    Players questions may vary or contain other information besides the answer, you need to figure out if there is a correct answer in players reply.
+                    If the player answers in one word and that word is a correct form of your given example - count that as a correct answer.
+                    Format your response as JSON with these fields:
+                    - correctly_answered (bool: True if player's answer was correct otherwise False)
+                    - text (string: your in-character response, including the test question if not friendly)
+        
+                    Player says: The correct answer is - {player_input}"""
+            else:
+                system_prompt = f"""
+                    You are a kobold English teacher named {npc.name} in a fantasy RPG game and the player
+                    has been a lazy and annoying student but he gave a correct answer recently so you are happy about it.
+        
+                    - You are a small reptilian creature who loves teaching English 
+                    - You have {npc.money} gold
+                    - You have already tested the player: {npc.has_passed_test}
+                    - Once they answer correctly once, you become friendly and stop testing them
+        
+                    Recent conversation history:
+                    {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
+                                indent=2) if npc.interaction_history else "No recent interactions."}
+                    Since the player has already answered you are here just for a little talk.
+                    
+                    Format your response as JSON with these fields:
+                    - text (string: your in-character response)
+        
+                    Player says: {player_input}
+                """
+
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
+                                      stream=True)
+            return stream
+
+        except Exception as e:
+            self.logger.error(f"Error processing kobold dialogue: {e}")
+            return {"text": "The kobold adjusts its tiny glasses nervously..."}
+
+
+    def process_demon_bard_dialogue(self, player_input: str, npc: Any, game_state: Any) -> Dict:
+        try:
+            if not npc.has_passed_test:
+                player_word, demon_word ='', ''
+                if npc.interaction_history:
+                    player_word = npc.interaction_history[-1]['player'].strip().split()[-1]
+                    demon_word = npc.interaction_history[-1]['monster'].strip().split()[-1]
+                    print(player_word, '==',demon_word)
+
+                system_prompt = f"""You are a tragic poet bard from hell named {npc.name} in a fantasy RPG game. 
+                Your personality is melancholic and overdramatic. You test adventurers with rhymes.
+
+                You are aware of the following information:
+                - You are a damned poet who must make others appreciate poetry
+                - You have {npc.money} gold
+                - You have already tested the player: {npc.has_passed_test}
+                - You always answer in three lines
+                - Player must complete the verse with a fourth line that rhymes
+                - If they fail to rhyme or say goodbye before passing, you hurt them
+                - Once they create a good rhyme once, you become friendly
+                - You are not too strict - is the last word of the answer rhymes with the last word of yours - that is good enough as well
+        
+                Recent conversation history:
+                {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
+                            indent=2) if npc.interaction_history else "No recent interactions."}
+                
+                Do not repeat yourself and you cannot say more than three lines
+                Rules for evaluating player's rhyme:
+                1. The last word of player's line should rhyme with your last line's word
+                2. Be somewhat lenient - if it's close to rhyming, accept it
+                3. The line doesn't need to be perfect poetry
+                4. make sure to evaluate as a correct answer the last word of your last line - ({demon_word}) rhymes with players last word - ({player_word})
+
+                Format your response as JSON with these fields:
+                - correctly_answered (boolean: True if player's word rhymes with your last line's word)
+                - text (string: your in-character three lines of verse, only if starting new verse on a current topic)
+
+                Player says: {player_input}"""
+            else:
+                system_prompt = f"""You are a tragic poet bard from hell named {npc.name} who has found a kindred spirit.
+                The player has proven their worth with rhyme. You keep talking to the player in rhymes. 
+
+                Recent conversation history:
+                {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
+                            indent=2) if npc.interaction_history else "No recent interactions."}
+
+                Format your response as JSON with these fields:
+                - text (string: your friendly, poetic response)
+
+                Player says: {player_input}"""
+
+            stream = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
+                                      stream=True)
+            return stream
+
+        except Exception as e:
+            self.logger.error(f"Error processing hell bard dialogue: {e}")
+            return {"text": "The bard strums a discordant note..."}

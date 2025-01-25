@@ -32,6 +32,10 @@ class Character(Entity):
         self.check_dead()
         return actual_damage
 
+    def spend_ap(self, val):
+        self.action_points -= val
+        self.action_points = max(self.action_points, 0)
+
     def check_dead(self):
         if not self.is_alive:
             self.game_state.change_state(GameState.DEAD)
