@@ -288,6 +288,7 @@ FOREST_EDGE_THICKNESS = 1
 FOREST_EDGE_WIDTH = 4
 RANDOM_TREE_CHANCE = 0.05
 
+replacer = lambda x: x.replace('.', '').replace(',', '').replace('!', '').replace('?', '').replace('`', '')
 
 class GameState(Enum):
     MAIN_MENU = 1

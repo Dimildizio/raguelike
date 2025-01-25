@@ -106,15 +106,12 @@ class Monster(Entity):
         else:
             self.game_state.stats['monsters_killed'][self.monster_type] = 1
 
-    def locate_target(self, current_map):
-        pass
-
     def should_flee(self):
         # More brave monsters will fight at lower health
-        return self.combat_stats.get_hp_perc < self.chance_to_run
+        return self.combat_stats.get_hp_perc < self.chance_to_run and random.random() < self.chance_to_run
 
     def lost_resolve(self):
-        if(self.should_flee() and random.random() < self.chance_to_run) or self.is_fleeing:
+        if self.should_flee()  or self.is_fleeing:
             num = random.random()
             print(num, 'vs', self.chance_to_run)
             if num < self.chance_to_run * 0.05 and self.is_fleeing:  # chance to regain it
@@ -162,6 +159,9 @@ class Monster(Entity):
         distance = math.sqrt(dx * dx + dy * dy)
         return distance <= limit * DISPLAY_TILE_SIZE
 
+
+    def locate_target(self, current_map):
+        return current_map.get_random_nearby_tile(self)
 
     def try_initiate_dialog(self, player_pos):
         """Try to initiate dialog with player"""
@@ -224,7 +224,38 @@ class Monster(Entity):
             print(f'Lets attack: {result:.2f} vs {self.aggression:.2f}. flee: {result:.2f} vs {self.chance_to_run:.2f}')
             if result < self.aggression:
                 return "approach"
-        return "none"
+        return "moveto"
+
+    def decide_monster_action_llm(self, distance):
+        """Decide what action the monster should take using LLM
+        WARNING: Use only if got fast gpu since every action and every step any monster takes goes through llm"""
+        # Get context for decision
+        try:
+            context = self.get_dialogue_context()
+            context.update({
+                'distance': distance,
+                'dialog_cooldown': self.dialog_cooldown,
+                'player_health': self.game_state.player.combat_stats.get_status(),
+                'nearby_monsters': self.detect_nearby_monsters(self.game_state.current_map)
+            })
+
+            # Get decision from LLM
+            decision = self.game_state.game.dialog_ui.dialogue_processor.decision_maker.get_decision(context)
+
+            # Handle the decision
+            if decision == 'flee' or self.lost_resolve():
+                return 'flee'
+            elif decision == 'talk' and self.can_talk and not self.dialog_cooldown:
+                if self.try_initiate_dialog((self.game_state.player.x, self.game_state.player.y)):
+                    return 'none'  # Dialog initiated, no other action needed
+            elif decision == 'attack' and distance == 1:
+                return 'attack'
+            elif decision == 'approach' and distance <= MONSTER_AGGRO_RANGE:
+                return 'approach'
+            return 'none'  # Default to no action if decision can't be executed
+        except Exception as e:
+            print(f"Error in LLM decision: {str(e)}")
+            return self.decide_monster_action_auto(distance)
 
     def detect_nearby_monsters(self, current_map, radius=5):
         """
@@ -503,8 +534,9 @@ class Dryad(Monster):
         return nearest_tree
 
     def locate_target(self, current_map):
-        return self.find_nearest_tree(current_map)
-
+        if not self.at_tree:
+            return self.find_nearest_tree(current_map)
+        return 0, 0
 
     def update(self):
         if not self.transformed:  # Check for transformation conditions
@@ -676,8 +708,6 @@ class WillowWhisper(Monster):
             return 'moveto'
         return "none"
 
-    def locate_target(self, current_map):
-        return current_map.get_random_nearby_tile(self)
 
     def words_hurt(self, player, discovered_new=False):
         """Spiritual damage when player fails to help or leaves too soon"""

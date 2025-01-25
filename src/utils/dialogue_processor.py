@@ -3,6 +3,8 @@ import json
 from typing import Dict, Optional, Any
 import logging
 from .rag_manager import RAGManager
+from systems.monsters_decisions import MonsterDecisionMaker
+from constants import replacer
 
 
 
@@ -15,6 +17,7 @@ class DialogueProcessor:
             self.client = ollama.Client(host=host)
             self.model = model
             self.rag_manager = RAGManager()
+            self.decision_maker = MonsterDecisionMaker(self)
         except Exception as e:
             self.logger.error(f"Failed to initialize DialogueProcessor: {e}")
             raise
@@ -222,12 +225,16 @@ class DialogueProcessor:
             - You want to live so you need to use any negotiation tricks, lies, manipulations and bribery. 
             
             You currently have {npc.money} gold."
+        
             
             Your status:
             {npc.get_dialogue_context()}
             
             Player status:
             {game_state.player.get_dialogue_context()}
+            
+            Your nearby allies:
+            {npc.detect_nearby_monsters(npc.game_state.current_map)}
             
             Other relevant information including your knowledge and memories:
             {context_from_rag}
@@ -280,6 +287,9 @@ class DialogueProcessor:
 
             Player status:
             {game_state.player.get_dialogue_context()}
+            
+            Your nearby allies:
+            {npc.detect_nearby_monsters(npc.game_state.current_map)}
 
             Recent conversation history:
             {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
@@ -330,6 +340,9 @@ class DialogueProcessor:
             Player status:
             {game_state.player.get_dialogue_context()}
     
+            Your nearby allies:
+            {npc.detect_nearby_monsters(npc.game_state.current_map)}
+            
             Recent conversation history:
             {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                         indent=2) if npc.interaction_history else "No recent interactions."}
@@ -436,14 +449,18 @@ class DialogueProcessor:
             context_from_rag = self._get_relevant_knowledge(npc.entity_id, player_input, npc.interaction_history)
 
             if not npc.has_passed_test:
-                player_word, demon_word ='', ''
+                player_word, demon_word = '', ''
                 if npc.interaction_history:
-                    player_word = npc.interaction_history[-1]['player'].strip().split()[-1]
-                    demon_word = npc.interaction_history[-1]['monster'].strip().split()[-1]
-                    print(player_word, '==',demon_word)
+                    player_word = replacer(npc.interaction_history[-1]['player'].strip().split()[-1])
+                    demon_word = replacer(npc.interaction_history[-1]['monster'].strip().split()[-1])
+                    print(player_word, '==', demon_word)
 
                 system_prompt = f"""You are a tragic poet bard from hell named {npc.name} in a fantasy RPG game. 
                 Your personality is melancholic and overdramatic. You test adventurers with rhymes.
+
+                    
+                Your nearby allies:
+                {npc.detect_nearby_monsters(npc.game_state.current_map)}
 
                 You are aware of the following information:
                 - {context_from_rag}
@@ -451,22 +468,24 @@ class DialogueProcessor:
                 - You have {npc.money} gold
                 - You have already tested the player: {npc.has_passed_test}
                 - You always answer in three lines
-                - Player must complete the verse with a fourth line that rhymes
+                - Player must complete the verse after your third line with a fourth line that rhymes
                 - If they fail to rhyme or say goodbye before passing, you hurt them
                 - Once they create a good rhyme once, you become friendly
-                - You are not too strict - is the last word of the answer rhymes with the last word of yours - that is good enough as well
-        
+                - You are not strict - is the last word of the answer rhymes with the last word of yours - that is good enough as well
+                - You never repeat your line from previous interaction and recent conversations
+                
                 Recent conversation history:
                 {json.dumps(npc.interaction_history[-min(5, len(npc.interaction_history)):],
                             indent=2) if npc.interaction_history else "No recent interactions."}
                 
                 Do not repeat yourself and you cannot say more than three lines
+                
                 Rules for evaluating player's rhyme:
                 1. The last word of player's line should rhyme with your last line's word
                 2. Be somewhat lenient - if it's close to rhyming, accept it
                 3. The line doesn't need to be perfect poetry
                 4. make sure to evaluate as a correct answer the last word of your last line - ({demon_word}) rhymes with players last word - ({player_word})
-
+            
                 Format your response as JSON with these fields:
                 - correctly_answered (boolean: True if player's word rhymes with your last line's word)
                 - text (string: your in-character three lines of verse, only if starting new verse on a current topic)
