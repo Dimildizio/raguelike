@@ -108,7 +108,11 @@ class DialogUI:
 
     def handle_input(self, event):
         if event.type == pg.KEYDOWN:
-            if event.key == pg.K_RETURN:
+            if event.key == pg.K_ESCAPE:
+                self.stop_dialogue()
+            elif event.key == pg.K_BACKQUOTE:
+                self.game_state_manager.stt.handle_record_button()
+            elif event.key == pg.K_RETURN:
                 if self.input_text:
                     self.play_audio(self.input_text, self.game_state_manager.player.voice)
                     if self.input_text.lower() in ["bye", "goodbye", "see you", "leave"]:
@@ -131,7 +135,6 @@ class DialogUI:
                         print(f"Player chose: {selected_text}")
                         if isinstance(self.current_npc, House):
                             self.stop_dialogue()
-
 
             elif event.key == pg.K_BACKSPACE:
                 self.input_text = self.input_text[:-1]
@@ -447,6 +450,8 @@ class DialogUI:
                 pg.draw.line(screen, WHITE,
                                  (cursor_pos, input_rect.centery - 10),
                                  (cursor_pos, input_rect.centery + 10))
+
+        self.input_text = self.game_state_manager.stt.dialog_use_voice(self.max_input_length, screen) or self.input_text
 
 
     def _calculate_text_height(self, text, max_width):

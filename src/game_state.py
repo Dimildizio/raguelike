@@ -284,8 +284,7 @@ class GameStateManager:
                              sprite_path="WILLOW", name='Whecretio', voice='a', game_state=self,
                              face_path=SPRITES["WILLOW_FACE"], monster_type='willow_whisper')
 
-    def draw_progress_voice(self, screen, game_mode):
+    def draw_progress_voice(self, screen):
         text = self.stt.draw_voice_recording(screen)
         if text:
-            if game_mode == GameState.PLAYING:
-                self.player.get_floating_nums(text, color=YELLOW)
+            self.player.get_floating_nums(text, color=YELLOW)

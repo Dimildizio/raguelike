@@ -84,3 +84,11 @@ class STTHandler:
         if not self.is_recording:
             if self.start_recording():
                 print("Started recording...")
+
+    def dialog_use_voice(self, max_input_length, screen):
+        if self.is_recording:
+            self.draw_recording_bar(screen)
+            if self.get_progress() >= 1.0:
+                text = self.stop_recording()
+                if text:
+                    return text.strip()[:max_input_length]
