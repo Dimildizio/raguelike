@@ -112,11 +112,11 @@ class DialogueProcessor:
             
             
             Respond in character as {npc.name}, {npc.description}, considering your mood, the player's reputation, and your knowledge.
-                    
+            Try to include proper from mentioned above list of quest_id if the topic is related to the quest.
             Format your response as JSON with these fields:
             - player_inappropriate_request (boolean)
             - further_action (string: "give_quest", "reward", "stop", "negotiate_reward", or "wait")
-            - quest_id (string, only if further_action is "reward", @negotiate_reward" or "give_quest", must be one of the available quest IDs listed above)
+            - quest_id (string, if further_action is "reward" or "negotiate_reward" or "give_quest", must be one of the available quest IDs listed above)
             - negotiated_amount (integer, only if further_action is "negotiate_reward", cannot be more than max_reward gold amount)
             - text (string: your in-character response)
             
@@ -128,12 +128,13 @@ class DialogueProcessor:
             - If player shows interest but hasn't agreed, describe quest details and use "wait"
             - You can offer less reward for the quest when you give the quest
             - If player tries to negotiate quest reward:
-              * Use "negotiate_reward" as further_action
-              * Set negotiated_amount to the agreed amount (must be less than or equal to original reward)
+              * Use "negotiate_reward" as further_action but don't forget to indicate "quest_id"
+              * Set negotiated_amount to the agreed amount (must be less than or equal to original reward) and state "quest_id"
               * You cannot promise more gold than you currently have or the quest max_reward: 'gold' 'amount' indicates but you can try to negotiate less
               * Consider player's reputation in negotiation
             - If player reports completing a quest and meets conditions, use "reward" and related "quest_id"
             - You can only negotiate rewards for quests that haven't been negotiated yet
+            - If player talks about the reward - try to assign related to te topic "quest_id"
 
             Do not provide explanation on your decisions about building JSON.
 
@@ -644,3 +645,26 @@ class DialogueProcessor:
         except Exception as e:
             self.logger.error(f"Error generating monster name: {e}")
             return ''
+
+    def get_summary(self, npc):
+        """Generate a summary"""
+        if hasattr(npc, 'interaction_history') and npc.interaction_history and len(npc.interaction_history) > 1:
+            try:
+                # Generate summary using LLM
+                system_prompt = f"""Summarize this conversation between {npc.monster_type} {npc.name} and the player in 1-2 sentences.
+                Focus on the key points, decisions, or agreements made.
+    
+                Recent conversation:
+                {json.dumps(npc.interaction_history, indent=2)}
+    
+                Format response as a single string without any JSON special formatting nor explanations."""
+
+                response = self.client.chat(model=self.model, messages=[{'role': 'system', 'content': system_prompt}],
+                    stream=False)
+                if response and 'message' in response and 'content' in response['message']:
+                    summary = response['message']['content'].strip()
+                    print(summary)
+                    return summary
+                    # Add summary to game messages
+            except Exception as e:
+                print(f"Error generating conversation summary: {e}")

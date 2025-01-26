@@ -86,7 +86,13 @@ class DialogUI:
         self.streaming_response = ""
         self.is_streaming = False
         self.stream = None
+
         if self.game_state_manager:
+            summary = self.dialogue_processor.get_summary(self.current_npc)
+            if summary:
+                self.game_state_manager.add_message(f"Conversation summary: {summary}", WHITE)
+                self.current_npc.notify_nearby_entities(summary)
+
             if isinstance(self.current_npc, KoboldTeacher):
                 print('words hurt!')
                 self.current_npc.words_hurt(self.game_state_manager.player)

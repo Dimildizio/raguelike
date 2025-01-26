@@ -154,3 +154,4 @@ class House(Entity):
     def draw(self, screen, offset_x=0, offset_y=0):
         # No draw implementation needed since house tiles has visualization
         pass
+

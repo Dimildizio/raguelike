@@ -2,6 +2,7 @@ import math
 import random
 import pygame
 from .entity import Entity
+from .monster import Monster
 from constants import *
 from systems.combat_stats import CombatStats
 
@@ -85,8 +86,49 @@ class NPC(Entity):
             f"npc": npc_response
         }
         self.interaction_history.append(interaction)
-        if len(self.interaction_history) > 10:
+        if len(self.interaction_history) > MEMORY_LIMIT:
             self.interaction_history.pop(0)
         print(f'line added {interaction}.\nmood: {self.mood}')
         if hasattr(self, 'rag_manager'):
             self.rag_manager.add_interaction(self.entity_id, interaction)
+
+    def notify_nearby_entities(self, summary):
+        """
+        Notify all entities within 3 tiles of a conversation summary
+
+        Args:
+            summary: The conversation summary to share
+        """
+        if not (hasattr(self, 'x') and hasattr(self, 'y')):
+            return
+
+        # Get source entity's tile coordinates
+        entity_tile_x = self.x // DISPLAY_TILE_SIZE
+        entity_tile_y = self.y // DISPLAY_TILE_SIZE
+
+        # Check all tiles within 3 tile radius
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                check_x = entity_tile_x + dx
+                check_y = entity_tile_y + dy
+
+                # Skip if outside map bounds
+                if not (0 <= check_x < self.game_state.current_map.width and
+                        0 <= check_y < self.game_state.current_map.height):
+                    continue
+
+                # Check entities in tile
+                tile = self.game_state.current_map.tiles[check_y][check_x]
+                for entity in tile.entities:
+                    if (entity != self and
+                            (isinstance(entity, Monster) or (hasattr(entity, 'monster_type')
+                                                             and entity.monster_type=='npc')
+                            and hasattr(entity, 'interaction_history'))):
+                        # Add overheard conversation to entity's knowledge
+                        overheard = {
+                            "type": "overheard",
+                            "summary": f"Overheard nearby: {self.name} - {summary}"
+                        }
+                        if hasattr(entity, 'rag_manager'):
+                            entity.rag_manager.add_interaction(entity.entity_id, overheard)
+                        print(f'{entity.name} overheard that {overheard}')
