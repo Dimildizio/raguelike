@@ -86,6 +86,7 @@ class Game:
                     self.state_manager.current_map.draw(self.screen, self.camera_x, self.camera_y)
                     self.state_manager.floating_text_manager.draw(self.screen, self.camera_x, self.camera_y)
                     self.draw_player_ui()
+                    self.state_manager.draw_progress_voice(self.screen)
                     if self.state_manager.message_log:
                         self.state_manager.message_log.draw(self.screen)
                     self.state_manager.achievement_manager.draw(self.screen)
@@ -94,6 +95,7 @@ class Game:
             elif self.state_manager.current_state == GameState.DIALOG:
                 self.dialog_ui.update()
                 self.dialog_ui.draw(self.screen, self.state_manager.current_npc)
+
             elif self.state_manager.current_state == GameState.DEAD:
                 self.draw_death_screen()
             elif self.state_manager.current_state == GameState.DEMO_COMPLETE:
@@ -204,6 +206,9 @@ class Game:
                 self.state_manager.player.reset_action_points()
                 self.handle_monster_turns()
                 return
+            if event.key == pg.K_BACKQUOTE:  # ` key record
+                self.state_manager.stt.handle_record_button()
+
 
             # Movement
             if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):

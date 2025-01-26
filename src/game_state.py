@@ -9,6 +9,7 @@ from entities.npc import NPC
 from ui.log_ui import MessageLog
 from ui.floating_text import FloatingTextManager
 from utils.achievements import AchievementManager
+from utils.stt_helper import STTHandler
 from constants import *
 import random
 
@@ -29,6 +30,7 @@ class GameStateManager:
         self.stats = {'quests_completed': 0, 'monsters_killed': {}, 'gold_collected': 0}
         self.quest_manager = QuestManager()
         self.floating_text_manager = FloatingTextManager()
+        self.stt = STTHandler()
 
     def start_new_game(self):
         self.player = None
@@ -281,3 +283,9 @@ class GameStateManager:
         return WillowWhisper(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
                              sprite_path="WILLOW", name='Whecretio', voice='a', game_state=self,
                              face_path=SPRITES["WILLOW_FACE"], monster_type='willow_whisper')
+
+    def draw_progress_voice(self, screen, game_mode):
+        text = self.stt.draw_voice_recording(screen)
+        if text:
+            if game_mode == GameState.PLAYING:
+                self.player.get_floating_nums(text, color=YELLOW)
