@@ -110,6 +110,7 @@ Currently in active development with core systems implemented and functioning. A
 - Character abilities and skills GUI
 - Save/Load functionality
 - Refactor broken Kokoro dependencies
+- Generate a better hero sprite
 
 
 ## Run
