@@ -668,3 +668,42 @@ class DialogueProcessor:
                     # Add summary to game messages
             except Exception as e:
                 print(f"Error generating conversation summary: {e}")
+
+    def evaluate_intimidation(self, text: str) -> int:
+        try:
+            system_prompt = f"""You are an expert in evaluating intimidating phrases in a fantasy RPG setting.
+            Rate the following phrase on a scale from 0 to 10, where:
+            0 = not intimidating at all, casual phrase
+            5 = common threats like "I'll kill you" or basic profanity like "Fuck you"
+            10 = extremely creative and terrifying intimidation that would strike fear into enemies
+
+            Rules:
+            - Consider creativity, psychological impact, and delivery
+            - Generic threats should score low (4-6)
+            - High scores (7-10) require unique, creative, or particularly menacing content
+            - Short intimidation is better
+            - Fantasy/magical references can enhance score if used creatively
+
+            Format response as JSON with single field:
+            - intimidation_level (integer between 1 and 10)
+            DO NOT include explanations, descriptions, or any other text.
+
+            
+            Phrase to evaluate: {text}"""
+
+            response = self.client.chat(
+                model=self.model,
+                messages=[{'role': 'system', 'content': system_prompt}]
+            )
+
+            content = response['message']['content']
+            print(content)
+            start_idx = content.find('{')
+            end_idx = content.rfind('}')
+            if start_idx != -1 and end_idx != -1:
+                content = content[start_idx:end_idx + 1]
+            result = json.loads(content)
+            return int(result.get('intimidation_level', 0))
+        except Exception as e:
+            print(f"Error evaluating intimidation: {e}")
+            return 0

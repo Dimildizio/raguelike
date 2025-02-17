@@ -19,7 +19,9 @@ class NPC(Entity):
         self.combat_stats = CombatStats(
             base_hp=PLAYER_START_HP,
             base_armor=PLAYER_START_ARMOR,
-            base_damage=PLAYER_BASE_DAMAGE
+            base_damage=PLAYER_BASE_DAMAGE,
+            max_damage=PLAYER_MAX_DAMAGE,
+            ap=PLAYER_BASE_AP
         )
         # Slower, gentler breathing for NPCs
         self.breath_speed *= 0.7

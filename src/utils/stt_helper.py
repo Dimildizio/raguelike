@@ -10,10 +10,17 @@ class STTHandler:
         self.is_recording = False
         self.start_time = 0
         self.duration = VOICE_DURATION  # seconds
+        self.shout_mode = False
         self.BAR_BACKGROUND = (128, 128, 128, 100)  # Light gray with transparency
         self.BAR_FILL = (160, 160, 160, 130)  # Slightly darker gray with transparency
         self.BAR_BORDER = (200, 200, 200, 150)  # Almost white with transparency
         self.TEXT_COLOR = (220, 220, 220)
+
+    @property
+    def shout_switch(self):
+        if self.shout_mode == 'intimidate':
+            self.shout_mode = False
+            return True
 
     def start_recording(self):
             try:
@@ -80,9 +87,10 @@ class STTHandler:
             else:
                 self.draw_recording_bar(screen)
 
-    def handle_record_button(self):
+    def handle_record_button(self, mode=False):
         if not self.is_recording:
             if self.start_recording():
+                self.shout_mode = mode
                 print("Started recording...")
 
     def dialog_use_voice(self, max_input_length, screen):

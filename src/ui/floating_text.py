@@ -4,7 +4,7 @@ from constants import FPS, RED
 
 
 class FloatingText:
-    def __init__(self, text, x, y, color=RED, duration=3.0, rise_speed=70):
+    def __init__(self, text, x, y, color=RED, duration=3.0, rise_speed=40):
         self.text = text
         self.x = x
         self.y = y
@@ -20,7 +20,7 @@ class FloatingTextManager:
     def __init__(self):
         self.floating_texts = []
 
-    def add_text(self, text, x, y, color=RED, duration=3.0, rise_speed=70):
+    def add_text(self, text, x, y, color=RED, duration=3.0, rise_speed=40):
         """Add a new floating text at the specified position"""
         self.floating_texts.append(FloatingText(text, x, y, color, duration, rise_speed))
 

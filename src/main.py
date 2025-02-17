@@ -209,6 +209,9 @@ class Game:
             if event.key == pg.K_BACKQUOTE:  # ` key record
                 self.state_manager.stt.handle_record_button()
 
+            if event.key == pg.K_2:  # 2 key record
+                self.state_manager.stt.handle_record_button('intimidate')
+
 
             # Movement
             if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):
@@ -328,7 +331,7 @@ class Game:
         pg.draw.rect(ap_surface, (50, 50, 150, 180), (0, 0, bar_width, bar_height))
 
         # Draw current AP with alpha
-        ap_percentage = self.state_manager.player.action_points / self.state_manager.player.max_action_points
+        ap_percentage = self.state_manager.player.get_ap_perc
         ap_width = int(bar_width * ap_percentage)
         pg.draw.rect(ap_surface, (100, 100, 255, 180), (0, 0, ap_width, bar_height))
 
@@ -336,7 +339,7 @@ class Game:
         self.screen.blit(ap_surface, (padding, ap_y))
 
         # AP text
-        ap_text = f"AP: {self.state_manager.player.action_points}/{self.state_manager.player.max_action_points}"
+        ap_text = f"AP: {self.state_manager.player.combat_stats.ap}/{self.state_manager.player.combat_stats.max_ap}"
         ap_text_surface = font.render(ap_text, True, WHITE)
         self.screen.blit(ap_text_surface, (padding + 5, ap_y + text_y_offset))
 

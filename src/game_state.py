@@ -180,7 +180,7 @@ class GameStateManager:
         # Heal all entities with combat stats
         self.current_day += 1
         self.player.heal_self()
-        self.player.action_points = self.player.max_action_points
+        self.player.combat_stats.reset_ap()
         if self.current_day > DAY_GAME_ENDS:
             self.show_ending_stats()
             self.change_state(GameState.DEMO_COMPLETE)
@@ -257,7 +257,7 @@ class GameStateManager:
                        face_path=SPRITES["BLUE_TROLL_FACE"], monster_type='troll',
                        description='big blue ugly hulking creature that loves jokes and riddles',
                        hp=int(MONSTER_BASE_HP * 1.5), dmg=int(MONSTER_BASE_DAMAGE * 2),
-                       armor=int(MONSTER_BASE_ARMOR * 2))
+                       armor=int(MONSTER_BASE_ARMOR * 2), max_damage=int(MONSTER_MAX_DAMAGE * 2))
 
     def create_green_troll(self, spawn_pos):
         return GreenTroll(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
@@ -265,7 +265,7 @@ class GameStateManager:
                           face_path=SPRITES["GREEN_TROLL_FACE"], monster_type='green_troll',
                           description='big green ugly hulking foul-mouthed creature',
                           hp=int(MONSTER_BASE_HP * 3), dmg=int(MONSTER_BASE_DAMAGE * 2),
-                          armor=int(MONSTER_BASE_ARMOR * 2))
+                          max_damage=int(MONSTER_MAX_DAMAGE * 2), armor=int(MONSTER_BASE_ARMOR * 2))
 
     def create_dryad(self, spawn_pos):
         return Dryad(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE, monster_type='dryad',
@@ -288,3 +288,6 @@ class GameStateManager:
         text = self.stt.draw_voice_recording(screen)
         if text:
             self.player.get_floating_nums(text, color=YELLOW)
+            if self.stt.shout_switch:
+                intimid_value = self.game.dialog_ui.dialogue_processor.evaluate_intimidation(text)
+                self.player.shout_intimidate(intimid_value)

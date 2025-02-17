@@ -1,9 +1,20 @@
 class CombatStats:
-    def __init__(self, base_hp, base_armor, base_damage):
+    def __init__(self, base_hp, base_armor, base_damage, max_damage, ap):
         self.max_hp = base_hp
         self.current_hp = base_hp
         self.armor = base_armor
         self.damage = base_damage
+        self.max_damage = max_damage
+        self.max_ap = ap
+        self.ap = ap
+
+    def spend_ap(self, ap_cost):
+        if self.ap >= ap_cost:
+            self.ap = max(0, self.ap - ap_cost)
+            return True
+
+    def reset_ap(self):
+        self.ap = self.max_ap
 
     def get_healed(self, amount=0):
         amount = self.current_hp + amount if amount else self.max_hp
@@ -27,6 +38,10 @@ class CombatStats:
     @property
     def is_alive(self):
         return self.current_hp > 0
+
+    @property
+    def get_ap_perc(self):
+        return self.ap / self.max_ap
 
     def get_status(self):
         hperc = self.current_hp / self.max_hp

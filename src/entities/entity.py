@@ -36,9 +36,7 @@ class Entity(ABC):
         self.breath_speed = random.uniform(0.5, 1.5) * BREATHING_SPEED
         self.is_breathing_in = True  # Direction of breathing
 
-        self.max_action_points = ap
-        self.action_points = ap
-        self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10)
+        self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10, max_damage=15, ap=ap)
 
         self.entity_id = f"{self.__class__.__name__.lower()}_{id(self)}"
 
@@ -104,13 +102,13 @@ class Entity(ABC):
         return dmg
 
     def spend_action_points(self, amount):
-        self.action_points = max(0, self.action_points - amount)
+        self.combat_stats.spend_ap(amount)
 
     def reset_action_points(self):
-        self.action_points = self.max_action_points
+        self.combat_stats.reset_ap()
 
     def can_do_action(self, action_price):
-        return action_price <= self.action_points
+        return action_price <= self.combat_stats.ap
 
     def get_floating_nums(self, txt, color=RED):
         self.game_state.floating_text_manager.add_text(txt, self.x + DISPLAY_TILE_SIZE // 2, self.y, color)

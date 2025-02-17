@@ -243,7 +243,7 @@ class WorldMap:
 
 
         # If monster still has AP and made a successful action, it can act again next frame
-        if monster.action_points > 0 and result:
+        if monster.combat_stats.ap > 0 and result:
             return True
         # If monster couldn't act or is out of AP, it's done
         return False
@@ -383,7 +383,7 @@ class WorldMap:
             self.state_manager.add_message(f"{monster.monster_type} {monster.name} ran away!", color=YELLOW)
             self.remove_entity(monster)
             monster.combat_stats.hp = 0
-            monster.action_points = 0
+            monster.combat_stats.ap = 0
             return False
         # Find nearest edge tree
         target = monster.find_nearest_edge_tree(self)
