@@ -10,24 +10,28 @@ class Monster(Entity):
     def __init__(self, x, y, sprite_path="MONSTER", name='Goblin', monster_type='goblin', voice='b', game_state=None,
                  can_talk=True, description="vile greenskin creature", ap=60, money=40, dmg=MONSTER_BASE_DAMAGE,
                  armor=MONSTER_BASE_ARMOR, hp=MONSTER_BASE_HP, max_damage=MONSTER_MAX_DAMAGE,
-                 face_path=SPRITES["NPC_FACE_3"]):
-        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_RED"], ap=ap, game_state=game_state, voice=voice)
+                 face_path=SPRITES["NPC_FACE_3"], loading=False):
+        sprite_name = SPRITES[sprite_path] if not loading else sprite_path
+        super().__init__(x, y, sprite_name, SPRITES["OUTLINE_RED"], ap=ap, game_state=game_state, voice=voice,
+                         loading=loading)
         self.name = random.choice(MONSTER_NAMES['orkoids'])
         self.monster_type = monster_type
-        self.sprite_path = sprite_path
         self.is_hostile = True
         self.is_fleeing = False
         self.can_talk = can_talk
         self.description = description
         self.dialog_cooldown = DIALOGUE_COOLDOWN
         self.shout_cooldown = SHOUT_COOLDOWN
-        self.set_stats(MONSTER_PERSONALITY_TYPES, dmg, max_damage, armor, hp, ap)
+        self.sprite_key = sprite_path
+        self.face_path = face_path
         self.face_surface = pg.image.load(face_path).convert_alpha()
         self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
 
         self.interaction_history = []
         self.money = money
         self.entity_id = f"{monster_type}_{self.name}_{id(self)}"
+        if not loading:
+            self.set_stats(MONSTER_PERSONALITY_TYPES, dmg, max_damage, armor, hp, ap)
 
     def set_stats(self, personality_types, dmg, maxdmg, armor, hp, ap):
         # Set personality-based traits
@@ -92,7 +96,8 @@ class Monster(Entity):
 
 
     def on_death(self):
-        dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_path.upper()}"], name=f"Dead {self.monster_type}",
+        dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_key.upper()}"],
+                       name=f"Dead {self.monster_type}",
                        description=f"The remains of a {self.monster_type} {self.name}",game_state=self.game_state)
         print('created', type(dead))
         self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
@@ -421,9 +426,9 @@ class GreenTroll(Monster):
     def __init__(self, x, y, game_state=None, sprite_path="GREEN_TROLL", name='Blaarggr', monster_type='green_troll',
                  voice='g', can_talk=True, description="an ugly hulking creature who likes to offend", ap=60, money=120,
                  dmg=MONSTER_BASE_DAMAGE *1.5, max_damage=MONSTER_MAX_DAMAGE*2, armor=MONSTER_BASE_ARMOR*1.5,
-                 hp=MONSTER_BASE_HP*1.5, face_path=SPRITES["GREEN_TROLL_FACE"]):
+                 hp=MONSTER_BASE_HP*1.5, face_path=SPRITES["GREEN_TROLL_FACE"],loading=False):
         super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
-                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         voice=voice, can_talk=can_talk, description=description, loading=loading, ap=ap, money=money,
                          dmg=dmg, max_damage=max_damage, armor=armor, hp=hp, face_path=face_path)
         self.rage_chance = 0.1
 
@@ -464,9 +469,9 @@ class Dryad(Monster):
     def __init__(self, x, y, game_state=None, sprite_path="DRYAD", name='Elleinara', monster_type='dryad',
                  voice='j', can_talk=True, description="A mysterious tempting forest spirit", ap=70, money=100,
                  dmg=MONSTER_BASE_DAMAGE * 0.8, max_damage=MONSTER_MAX_DAMAGE * 0.8, armor=MONSTER_BASE_ARMOR*0.8,
-                 hp=MONSTER_BASE_HP*0.8, face_path=SPRITES["DRYAD_FACE"]):
+                 hp=MONSTER_BASE_HP*0.8, face_path=SPRITES["DRYAD_FACE"], loading=False):
         super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
-                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         voice=voice, can_talk=can_talk, description=description, loading=loading, ap=ap, money=money,
                          dmg=dmg, max_damage=max_damage,  armor=armor, hp=hp, face_path=face_path)
 
         self.name = random.choice(MONSTER_NAMES['dryad'])
@@ -640,9 +645,9 @@ class KoboldTeacher(Monster):
     def __init__(self, x, y, game_state=None, sprite_path="KOBOLD", name='Teacherrr', monster_type='kobold', voice='b',
                  can_talk=True, description="a small reptilian creature wearing tiny glasses", ap=45, money=3,
                  dmg=MONSTER_BASE_DAMAGE * 2, max_damage=MONSTER_MAX_DAMAGE * 2, armor=MONSTER_BASE_ARMOR * 0.6,
-                 hp=MONSTER_BASE_HP * 0.6, face_path=SPRITES["KOBOLD_FACE"]):
+                 hp=MONSTER_BASE_HP * 0.6, face_path=SPRITES["KOBOLD_FACE"], loading=False):
         super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
-                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         voice=voice, can_talk=can_talk, description=description, loading=loading, ap=ap, money=money,
                          dmg=dmg, max_damage=max_damage,  armor=armor, hp=hp, face_path=face_path)
         self.dialog_cooldown = 1  # Override default cooldown
         self.has_passed_test = False
@@ -670,10 +675,10 @@ class KoboldTeacher(Monster):
 class HellBard(KoboldTeacher):
     def __init__(self, x, y, game_state=None, sprite_path="DEMON_BARD", name='Versifer', monster_type='demon_bard',
                  voice='d', can_talk=True, description="a melancholic figure in scorched robes holding a charred lute",
-                 ap=66, money=666, dmg=MONSTER_BASE_DAMAGE * 0.5, max_damage=MONSTER_MAX_DAMAGE,
+                 ap=66, money=666, dmg=MONSTER_BASE_DAMAGE * 0.5, max_damage=MONSTER_MAX_DAMAGE, loading=False,
                  armor=MONSTER_BASE_ARMOR * 0.5, hp=MONSTER_BASE_HP * 0.5, face_path=SPRITES["DEMON_BARD_FACE"]):
         super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
-                         voice=voice, can_talk=can_talk, description=description, ap=ap, money=money,
+                         voice=voice, can_talk=can_talk, description=description, loading=loading, ap=ap, money=money,
                          dmg=dmg, max_damage=max_damage, armor=armor, hp=hp, face_path=face_path)
         self.dialogue_chance = 0.4  # Very chatty
         self.current_verse = None
@@ -707,8 +712,8 @@ class WillowWhisper(Monster):
                  monster_type='willow_whisper', voice='w', can_talk=True,
                  description="a faint, translucent figure surrounded by ethereal wisps",
                  ap=40, money=0, dmg=1, max_damage=1, armor=MONSTER_BASE_ARMOR * 0.2,
-                 hp=MONSTER_BASE_HP * 4, face_path=SPRITES["WILLOW_FACE"]):
-        super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type,
+                 hp=MONSTER_BASE_HP * 4, face_path=SPRITES["WILLOW_FACE"], loading=False):
+        super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, loading=loading,
                          sprite_path=sprite_path, voice=voice, can_talk=can_talk, description=description,
                          ap=ap, money=money, dmg=dmg, max_damage=max_damage, armor=armor, hp=hp, face_path=face_path)
 

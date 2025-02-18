@@ -8,6 +8,18 @@ class CombatStats:
         self.max_ap = ap
         self.ap = ap
 
+    def save_stats(self):
+        return self.__dict__
+
+    def load_stats(self, stats):
+        self.max_hp = stats['max_hp']
+        self.current_hp = stats['current_hp']
+        self.armor = stats['armor']
+        self.damage = stats['damage']
+        self.max_damage = stats['max_damage']
+        self.max_ap = stats['max_ap']
+        self.ap = stats['ap']
+
     def spend_ap(self, ap_cost):
         if self.ap >= ap_cost:
             self.ap = max(0, self.ap - ap_cost)

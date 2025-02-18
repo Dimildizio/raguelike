@@ -97,7 +97,7 @@ SPRITES = {
     "KOBOLD_FACE": os.path.join(ASSET_DIR, "creatures/monsters/lizard_face.png"),
     "DEAD_KOBOLD": os.path.join(ASSET_DIR, "creatures/monsters/dead_lizard.png"),
 
-    "DEMON_BARD": os.path.join(ASSET_DIR, "creatures/monsters/bard.png"),
+    "DEMON_BARD": os.path.join(ASSET_DIR, "creatures/monsters/demon_bard.png"),
     "DEMON_BARD_FACE": os.path.join(ASSET_DIR, "creatures/monsters/bard_face.png"),
     "DEAD_DEMON_BARD": os.path.join(ASSET_DIR, "creatures/monsters/dead_bard.png"),
 

@@ -4,6 +4,7 @@ import time
 import gc
 from game_state import GameStateManager
 from systems.sound_manager import SoundManager
+from systems.save_system import SaveSystem
 from utils.async_requests_handler import AsyncRequestHandler
 from constants import *
 from entities.entity import House
@@ -199,6 +200,13 @@ class Game:
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_F11:
                 self.toggle_fullscreen()
+
+            elif event.key == pg.K_F8:
+                SaveSystem.load_game(self.state_manager)
+                self.state_manager.add_message("Game Loaded!", WHITE)
+            elif event.key == pg.K_F5 and self.state_manager.player:
+                SaveSystem.save_game(self.state_manager)
+                self.state_manager.add_message("Game saved!", WHITE)
             player_tile_x = self.state_manager.player.x // self.state_manager.current_map.tile_size
             player_tile_y = self.state_manager.player.y // self.state_manager.current_map.tile_size
 
@@ -266,7 +274,7 @@ class Game:
             self.state_manager.change_state(GameState.PLAYING)
         elif selected_option == "Load Game":
             # Implement load game functionality
-            pass
+            self.load_last_save()
         elif selected_option == "Settings":
             # Implement settings menu
             pass
@@ -407,6 +415,21 @@ class Game:
                                  y=WINDOW_HEIGHT // 2 + i * MENU_SPACING)
             self.screen.blit(text, rect)
 
+    def load_last_save(self):
+        save_files = os.listdir(SaveSystem.SAVE_DIR)
+        if save_files:
+            latest_save = max(
+                [os.path.join(SaveSystem.SAVE_DIR, f) for f in save_files],
+                key=os.path.getmtime)
+
+            if SaveSystem.load_game(self.state_manager, latest_save):
+                self.state_manager.change_state(GameState.PLAYING)
+                self.update_camera()
+                self.state_manager.add_message("Game loaded!", WHITE)
+            else:
+                self.state_manager.add_message("Failed to load game!", RED)
+        else:
+            self.state_manager.add_message("No save files found!", RED)
 
 if __name__ == "__main__":
     game = Game()

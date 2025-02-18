@@ -7,8 +7,8 @@ from systems.combat_stats import CombatStats
 
 
 class Character(Entity):
-    def __init__(self, x, y, sprite_path="PLAYER", game_state=None, voice='c'):
-        super().__init__(x, y, SPRITES[sprite_path], SPRITES["OUTLINE_GREEN"], game_state=game_state, voice=voice)
+    def __init__(self, x, y, sprite_path="PLAYER", game_state=None, voice='c', loading=False):
+        super().__init__(x, y, sprite_path, SPRITES["OUTLINE_GREEN"], game_state=game_state, voice=voice, loading=loading)
         self.combat_stats = CombatStats(base_hp=PLAYER_START_HP, base_armor=PLAYER_START_ARMOR, max_damage=PLAYER_MAX_DAMAGE,
                                         base_damage=PLAYER_BASE_DAMAGE, ap=PLAYER_BASE_AP)
         self.name = 'Ready_player_1'

@@ -4,13 +4,15 @@ import pygame as pg
 from constants import *
 from utils.sprite_loader import SpriteLoader
 from systems.combat_stats import CombatStats
-
+import copy
+import json
 
 class Entity(ABC):
-    def __init__(self, x, y, sprite_path, outline_path=None, hp=100, ap=100, game_state=None, voice='a'):
+    def __init__(self, x, y, sprite_path='', outline_path=None, hp=100, ap=100, game_state=None, voice='a', loading=False):
         self.x = x
         self.y = y
         self.game_state = game_state
+        self.sprite_path = sprite_path
         self.sprite_loader = SpriteLoader(
             ORIGINAL_SPRITE_SIZE,
             PREPROCESSED_TILE_SIZE,
@@ -18,32 +20,73 @@ class Entity(ABC):
         )
         self.name = 'No name'
         self.voice = voice
-        self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
-        self.outline = None
         self.is_passable = False
+        self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10, max_damage=15, ap=ap)
 
+        self.outline_path = outline_path
+        self.outline = None
+        self.surface = None
+        self.pil_sprite = None
         self.pil_outline = None
-        if outline_path:
-            self.outline, self.pil_outline = self.sprite_loader.load_sprite(outline_path)
 
         # Initialize rotation
         self.rotation = 0
         self.base_rotation = 0
-
         # Breathing animation properties
         self.current_angle = 0
         self.target_angle = random.uniform(-BREATHING_AMPLITUDE, BREATHING_AMPLITUDE)
         self.breath_speed = random.uniform(0.5, 1.5) * BREATHING_SPEED
         self.is_breathing_in = True  # Direction of breathing
 
-        self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10, max_damage=15, ap=ap)
-
-        self.entity_id = f"{self.__class__.__name__.lower()}_{id(self)}"
+        if not loading:
+            self.entity_id = f"{self.__class__.__name__.lower()}_{id(self)}"
+            self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
+            if outline_path:
+                self.outline, self.pil_outline = self.sprite_loader.load_sprite(outline_path)
 
         if game_state and hasattr(game_state.game.dialog_ui.dialogue_processor, 'rag_manager'):
             self.rag_manager = game_state.game.dialog_ui.dialogue_processor.rag_manager
-            if hasattr(self, 'can_talk') and self.can_talk:
+            if hasattr(self, 'can_talk') and self.can_talk and not loading:
                 self.rag_manager._create_entity_index(self.entity_id, self.__class__.__name__.lower())
+
+
+    def save_entity(self):
+        """Creates a dictionary of current attribute values"""
+        #print(self.__dict__)
+        save_dict = {'entity_class': self.__class__.__name__}
+        for key, value in self.__dict__.items():
+            # Skip certain attributes we don't want to save
+            if key in {'rag_manager', 'sprite_loader', 'game_state', 'surface', 'outline', 'pil_sprite',
+                       'pil_outline', 'face_surface'}:
+                continue
+            if key == 'combat_stats':
+                save_dict['combat_stats'] = self.combat_stats.save_stats()
+                continue
+            if key == 'discovered_clues':
+                save_dict['discovered_clues'] = list(self.discovered_clues)
+                continue
+            try:
+                copied_value = copy.deepcopy(value)
+                json.dumps(copied_value) # to test
+                save_dict[key] = copied_value
+
+            except Exception as e:
+                print(f"Couldn't serialize {key}:", e)
+                continue
+        return save_dict
+
+    def load_entity(self, save_dict):
+        for key, value in save_dict.items():
+            if key == 'combat_stats':
+                self.combat_stats.load_stats(save_dict[key])
+                continue
+            if key == 'discovered_clues':
+                self.discovered_clues = set(value)
+                continue
+            try:
+                setattr(self, key, value)
+            except Exception as e:
+                print(f"Couldn't load {key}:", e)
 
     def __repr__(self):
         return self.name
@@ -114,8 +157,8 @@ class Entity(ABC):
         self.game_state.floating_text_manager.add_text(txt, self.x + DISPLAY_TILE_SIZE // 2, self.y, color)
 
 class Remains(Entity):
-    def __init__(self, x, y, sprite_path, name="remains", description="", game_state=None):
-        super().__init__(x, y, sprite_path, None, game_state=game_state)  # No outline for remains
+    def __init__(self, x, y, sprite_path='', name="remains", description="", game_state=None, loading=False):
+        super().__init__(x, y, sprite_path, None, game_state=game_state, loading=loading)  # No outline for remains
         self.name = name
         self.description = description
         self.is_passable = True  # Can walk over remains
@@ -125,8 +168,8 @@ class Remains(Entity):
         pass
 
 class Tree(Entity):
-    def __init__(self, x, y, sprite_path, game_state=None, name='tree'):
-        super().__init__(x, y, sprite_path, None, game_state=game_state)
+    def __init__(self, x, y, sprite_path='', game_state=None, name='tree', loading=False):
+        super().__init__(x, y, sprite_path, None, game_state=game_state, loading=loading)
         self.is_passable = False
         self.name= name
 
@@ -135,17 +178,17 @@ class Tree(Entity):
 
 
 class House(Entity):
-    def __init__(self, x, y, name="Village House", voice='a',
+    def __init__(self, x, y, name="Village House", voice='a', loading=False,
                  description="A cozy village house promises warmth and a bed for a night"):
-        super().__init__(x, y, None, voice=voice)  # No sprite needed since tiles has visualization
+        super().__init__(x, y, None, voice=voice, loading=loading)  # No sprite needed since tiles has visualization
         self.name = name
         self.description = description
         self.is_passable = False
         self.monster_type = 'house'
         self.last_response = None
         self.fee = SLEEP_FEE
-        face_path = SPRITES["HOUSE_FACE"]
-        self.face_surface = pg.image.load(face_path).convert_alpha()
+        self.face_path = SPRITES["HOUSE_FACE"]
+        self.face_surface = pg.image.load(self.face_path).convert_alpha()
         self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
 
 

@@ -36,7 +36,7 @@ class GameStateManager:
         self.player = None
         self.current_map = None
         # Create player
-        self.player = Character(0, 0, "PLAYER", game_state=self, voice='c')
+        self.player = Character(0, 0, SPRITES["PLAYER"], game_state=self, voice='c')
 
         # Create monsters
         monsters = []
@@ -70,7 +70,7 @@ class GameStateManager:
         ]
         moods = ['playful', 'happy', 'silly', 'friendly', 'neutral', 'greedy', 'vicious', 'unfriendly']
         npcs = [
-            NPC(0, 0, npc['sprite'], face_path=npc['face'], name=npc['name'], voice=npc['voice'],
+            NPC(0, 0, SPRITES[npc['sprite']], face_path=npc['face'], name=npc['name'], voice=npc['voice'],
                 mood=random.choice(moods), game_state=self, description=npc['description']
                 ) for npc in npc_data
         ]
