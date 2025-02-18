@@ -1,4 +1,26 @@
-numpy==2.2.1
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
+espeakng-loader==0.2.4
+faiss-cpu==1.9.0.post1
+fastapi==0.111.0
+faster-whisper==1.0.3
+huggingface-hub==0.27.1
+joblib==1.4.2
+kokoro==0.7.16
+numpy==1.26.4
 ollama==0.4.5
 pillow==11.1.0
+pydantic==2.9.2
+pydantic-settings==2.7.1
+pydantic_core==2.23.4
 pygame==2.6.1
+sentence-transformers==3.3.1
+sounddevice==0.5.1
+soundfile==0.12.1
+spacy==3.8.4
+spacy-curated-transformers==0.3.0
+spacy-legacy==3.0.12
+spacy-loggers==1.0.5
+torch==2.5.1
+tqdm==4.67.1
+transformers==4.47.1
+uvicorn==0.30.6
