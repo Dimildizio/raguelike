@@ -17,13 +17,13 @@ VOICE_MAP = {
             'b': 'bm_lewis',  # default male
             'c': 'am_michael',
             'd': 'bf_emma',
-            'e': 'af',
+            'e': 'af_heart',
             'f': 'af_sarah',
             'g': 'am_adam',
             'h': 'bf_isabella',
             'i': 'bm_george',
             'j': 'af_nicole',
-            'k': 'af_sky'
+            'k': 'af_aoede'
         }
 
 
@@ -50,7 +50,6 @@ class KokoroTTSHandler:
     def generate_audio(self, text: str, voice_type: str) -> bytes:
         try:
             # Get voice name from mapping
-            print(voice_type)
             voice = VOICE_MAP.get(voice_type, 'af_heart')
 
             # Get pipeline for this language
