@@ -720,7 +720,9 @@ class WillowWhisper(Monster):
         self.dialog_cooldown = 1
         self.dialogue_chance = 0.3
         self.has_found_truth = False
-        self.death_story = self.game_state.game.dialog_ui.dialogue_processor.generate_death_story()
+        self.death_story = {'victim_name': 'placeholder'}
+        if not loading:
+            self.death_story = self.game_state.game.dialog_ui.dialogue_processor.generate_death_story()
         self.name = f"Spirit of {self.death_story['victim_name']}"
         self.discovered_clues = set()  # Track what the player has learned
         self.truth_requirements = 3

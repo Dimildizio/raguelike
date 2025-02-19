@@ -316,15 +316,15 @@ class SaveSystem:
             try:
                 with open(filename, 'r') as f:
                     data = json.load(f)
+                    for old_entity in game_state.current_map.entities[:]:
+                        game_state.current_map.remove_entity(old_entity)
                     for entity_data in data['entities']:
                         new_creature = cls.ENTITY_KEYS[entity_data['entity_class']]
                         entity = new_creature(entity_data['x'], entity_data['y'], sprite_path=entity_data['sprite_path'],
                                               game_state=game_state, loading=True)
-                        entity.load_entity(entity_data)
+                        entity.load_entity(entity_data, game_state)
+                        game_state.current_map.add_on_load(entity)
                         if new_creature == Character:
-                            t_size = game_state.current_map.tile_size
-                            game_state.current_map.remove_entity(game_state.player)
-                            game_state.current_map.add_entity(entity, entity.x // t_size, entity.y // t_size)
                             game_state.player = entity
 
             except ValueError as e:

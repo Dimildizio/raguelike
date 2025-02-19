@@ -80,6 +80,9 @@ class Game:
                     self.state_manager.achievement_manager.check_achievements(self.state_manager.stats)
                     if hasattr(self, 'monsters_queue') and self.monsters_queue:
                         self.process_next_monster()
+                        if not self.monsters_queue:
+                            self.state_manager.add_message("Your turn", BLUE)
+
             # Draw
             self.screen.fill(BLACK)
             if self.state_manager.current_state == GameState.PLAYING:
@@ -119,8 +122,6 @@ class Game:
         for monster in self.monsters_queue:
             monster.reset_action_points()
             monster.shout_cooldown = max(0, monster.shout_cooldown - 1)
-            print(monster.name, 'COOLDOWN', monster.shout_cooldown)
-
         # Start processing the first monster
         self.process_next_monster()
 
@@ -130,7 +131,6 @@ class Game:
             return
         # Get the next monster
         monster = self.monsters_queue[0]
-
         if monster.try_initiate_dialog((self.state_manager.player.x, self.state_manager.player.y)):
             # Monster wants to talk - switch to dialog state
             self.dialog_ui.current_npc = monster
@@ -140,7 +140,7 @@ class Game:
             self.dialog_ui.start_dialog(monster)
             self.monsters_queue.pop(0)
 
-            # If no dialog initiated, proceed with normal monster turn
+        # If no dialog initiated, proceed with normal monster turn
         elif monster.is_hostile:
             if monster.dist2player((self.state_manager.player.x, self.state_manager.player.y), DIALOGUE_DISTANCE)\
             and monster.can_shout():

@@ -6,22 +6,26 @@ from utils.sprite_loader import SpriteLoader
 from systems.combat_stats import CombatStats
 import copy
 import json
+import uuid
 
 class Entity(ABC):
     def __init__(self, x, y, sprite_path='', outline_path=None, hp=100, ap=100, game_state=None, voice='a', loading=False):
-        self.x = x
-        self.y = y
-        self.game_state = game_state
-        self.sprite_path = sprite_path
         self.sprite_loader = SpriteLoader(
             ORIGINAL_SPRITE_SIZE,
             PREPROCESSED_TILE_SIZE,
             DISPLAY_TILE_SIZE
         )
+        self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10, max_damage=15, ap=ap)
+
+        self.uuid = str(uuid.uuid4())
+        self.x = x
+        self.y = y
+        self.game_state = game_state
+        self.sprite_path = sprite_path
+
         self.name = 'No name'
         self.voice = voice
         self.is_passable = False
-        self.combat_stats = CombatStats(base_hp=hp, base_armor=0, base_damage=10, max_damage=15, ap=ap)
 
         self.outline_path = outline_path
         self.outline = None
@@ -38,8 +42,8 @@ class Entity(ABC):
         self.breath_speed = random.uniform(0.5, 1.5) * BREATHING_SPEED
         self.is_breathing_in = True  # Direction of breathing
 
+        self.entity_id = f"{self.__class__.__name__.lower()}_{id(self)}"
         if not loading:
-            self.entity_id = f"{self.__class__.__name__.lower()}_{id(self)}"
             self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
             if outline_path:
                 self.outline, self.pil_outline = self.sprite_loader.load_sprite(outline_path)
@@ -75,7 +79,7 @@ class Entity(ABC):
                 continue
         return save_dict
 
-    def load_entity(self, save_dict):
+    def load_entity(self, save_dict, game_state):
         for key, value in save_dict.items():
             if key == 'combat_stats':
                 self.combat_stats.load_stats(save_dict[key])
@@ -85,6 +89,15 @@ class Entity(ABC):
                 continue
             try:
                 setattr(self, key, value)
+                self.game_state = game_state
+                self.rag_manager = game_state.game.dialog_ui.dialogue_processor.rag_manager
+                self.surface, self.pil_sprite = self.sprite_loader.load_sprite(self.sprite_path)
+                if self.outline_path:
+                    self.outline, self.pil_outline = self.sprite_loader.load_sprite(self.outline_path)
+                if hasattr(self, 'face_path'):
+                    self.face_surface = pg.image.load(self.face_path).convert_alpha()
+                    self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
+
             except Exception as e:
                 print(f"Couldn't load {key}:", e)
 
@@ -159,10 +172,11 @@ class Entity(ABC):
 class Remains(Entity):
     def __init__(self, x, y, sprite_path='', name="remains", description="", game_state=None, loading=False):
         super().__init__(x, y, sprite_path, None, game_state=game_state, loading=loading)  # No outline for remains
-        self.name = name
-        self.description = description
-        self.is_passable = True  # Can walk over remains
-        self.rotation = 0  # Remains don't rotate with breathing
+        if not loading:
+            self.name = name
+            self.description = description
+            self.is_passable = True  # Can walk over remains
+            self.rotation = 0  # Remains don't rotate with breathing
 
     def update(self):
         pass
@@ -171,7 +185,7 @@ class Tree(Entity):
     def __init__(self, x, y, sprite_path='', game_state=None, name='tree', loading=False):
         super().__init__(x, y, sprite_path, None, game_state=game_state, loading=loading)
         self.is_passable = False
-        self.name= name
+        self.name = name
 
     def update(self):
         pass
@@ -188,8 +202,9 @@ class House(Entity):
         self.last_response = None
         self.fee = SLEEP_FEE
         self.face_path = SPRITES["HOUSE_FACE"]
-        self.face_surface = pg.image.load(self.face_path).convert_alpha()
-        self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
+        if not loading:
+            self.face_surface = pg.image.load(self.face_path).convert_alpha()
+            self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
 
 
     def draw(self, screen, offset_x=0, offset_y=0):

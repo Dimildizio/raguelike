@@ -12,6 +12,7 @@ class NPC(Entity):
                  game_state=None, description='', voice='a', loading=False):
         super().__init__(x, y, sprite_path, SPRITES["OUTLINE_YELLOW"], game_state=game_state, voice=voice,
                          loading=loading)
+
         self.last_response = "Hello traveler! How can I help you today?"
         self.monster_type = 'npc'
         self.name = name
@@ -32,8 +33,8 @@ class NPC(Entity):
         self.active_quests = []
         self.interaction_history = []
 
-        face_path = SPRITES[face_path] or SPRITES["NPC_FACE_1"]
-        self.face_surface = pygame.image.load(face_path).convert_alpha()
+        self.face_path = SPRITES[face_path] or SPRITES["NPC_FACE_1"]
+        self.face_surface = pygame.image.load(self.face_path).convert_alpha()
         self.face_surface = pygame.transform.scale(self.face_surface, (256, 256))
 
         self.money = 100  # Default starting money

@@ -11,14 +11,16 @@ class Character(Entity):
         super().__init__(x, y, sprite_path, SPRITES["OUTLINE_GREEN"], game_state=game_state, voice=voice, loading=loading)
         self.combat_stats = CombatStats(base_hp=PLAYER_START_HP, base_armor=PLAYER_START_ARMOR, max_damage=PLAYER_MAX_DAMAGE,
                                         base_damage=PLAYER_BASE_DAMAGE, ap=PLAYER_BASE_AP)
-        self.name = 'Ready_player_1'
-        self.facing = DIRECTION_PLAYER_START
-        self.face_surface = pygame.image.load(SPRITES["HERO_FACE"]).convert_alpha()
-        self.face_surface = pygame.transform.scale(self.face_surface, (256, 256))
-        self.active_quests = []
-        self.completed_quests = []
-        self.inventory = []
-        self.gold = 25
+        if not loading:
+            self.name = 'Ready_player_1'
+            self.facing = DIRECTION_PLAYER_START
+            self.face_path = SPRITES["HERO_FACE"]
+            self.face_surface = pygame.image.load(SPRITES["HERO_FACE"]).convert_alpha()
+            self.face_surface = pygame.transform.scale(self.face_surface, (256, 256))
+            self.active_quests = []
+            self.completed_quests = []
+            self.inventory = []
+            self.gold = 25
 
     def update(self):
         self.update_breathing()
