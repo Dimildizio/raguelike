@@ -163,6 +163,9 @@ class WorldMap:
             self.tiles[tile_y][tile_x].remove_entity(entity)
             self.entities.remove(entity)
 
+    def add_on_load(self, new_entity):
+        t_size = self.tile_size
+        self.add_entity(new_entity, new_entity.x // t_size, new_entity.y // t_size)
 
     def get_random_empty_position(self):
         """Find a random empty tile position"""
