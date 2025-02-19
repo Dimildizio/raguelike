@@ -684,13 +684,16 @@ class DialogUI:
                 shout = response.content
                 if monster and monster.is_alive:
                     # Clean up the shout and limit to first 6 words
-                    shout = " ".join(shout.split()[:min(10, len(shout.split()))])
-                    print('SHOUT:', shout)
-                    # Display floating text and play TTS
-                    audio_buffer = self.tts.generate_and_play_tts(shout, monster.voice)
-                    if audio_buffer:
-                        sound = pg.mixer.Sound(audio_buffer)
-                        self.sound_engine.play_narration(sound)
-                    monster.get_floating_nums(shout, color=YELLOW)
-                    self.game_state_manager.add_message(f"{monster.monster_type} {monster.name} shouts: {shout}", WHITE)
+                    try:
+                        shout = " ".join(shout.split()[:min(10, len(shout.split()))])
+                        print('SHOUT:', shout)
+                        # Display floating text and play TTS
+                        audio_buffer = self.tts.generate_and_play_tts(shout, monster.voice)
+                        if audio_buffer:
+                            sound = pg.mixer.Sound(audio_buffer)
+                            self.sound_engine.play_narration(sound)
+                        monster.get_floating_nums(shout, color=YELLOW)
+                        self.game_state_manager.add_message(f"{monster.monster_type} {monster.name} shouts: {shout}", WHITE)
+                    except Exception as e:
+                        print(f"Couldn't shout: {e}")
 
