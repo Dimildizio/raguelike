@@ -89,17 +89,22 @@ class Entity(ABC):
                 continue
             try:
                 setattr(self, key, value)
-                self.game_state = game_state
-                self.rag_manager = game_state.game.dialog_ui.dialogue_processor.rag_manager
-                self.surface, self.pil_sprite = self.sprite_loader.load_sprite(self.sprite_path)
-                if self.outline_path:
-                    self.outline, self.pil_outline = self.sprite_loader.load_sprite(self.outline_path)
-                if hasattr(self, 'face_path'):
-                    self.face_surface = pg.image.load(self.face_path).convert_alpha()
-                    self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
-
             except Exception as e:
                 print(f"Couldn't load {key}:", e)
+        self.postload_entity(game_state)
+
+    def postload_entity(self, game_state):
+        try:
+            self.game_state = game_state
+            self.rag_manager = game_state.game.dialog_ui.dialogue_processor.rag_manager
+            self.surface, self.pil_sprite = self.sprite_loader.load_sprite(self.sprite_path)
+            if self.outline_path:
+                self.outline, self.pil_outline = self.sprite_loader.load_sprite(self.outline_path)
+            if hasattr(self, 'face_path'):
+                self.face_surface = pg.image.load(self.face_path).convert_alpha()
+                self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
+        except Exception as e:
+            print(f"Couldn't load {self.name}:", e)
 
     def __repr__(self):
         return self.name
@@ -192,7 +197,7 @@ class Tree(Entity):
 
 
 class House(Entity):
-    def __init__(self, x, y, name="Village House", voice='a', loading=False,
+    def __init__(self, x, y, name="Village House", voice='a', loading=False, sprite_path=None, game_state=None,
                  description="A cozy village house promises warmth and a bed for a night"):
         super().__init__(x, y, None, voice=voice, loading=loading)  # No sprite needed since tiles has visualization
         self.name = name

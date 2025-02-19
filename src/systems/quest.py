@@ -153,27 +153,6 @@ class QuestManager:
                     if condition.is_met():
                         self.logger.info(f"Condition '{condition.type}' met for quest '{quest.quest_id}'!")
 
-    def check_quest_completion(self, quest_id: str, player) -> Optional[List[Dict]]:
-        """Check if quest is complete and return rewards if conditions are met"""
-        if quest_id not in self.quests:
-            return None
-
-        quest = self.quests[quest_id]
-        if quest.status != QuestStatus.IN_PROGRESS or not quest.is_completed():
-            return None
-
-        rewards = []
-        for reward_condition in quest.reward_conditions:
-            if reward_condition["type"] == "gold":
-                rewards.append({"type": "gold", "amount": reward_condition["amount"]})
-            elif reward_condition["type"] == "conditional":
-                if reward_condition["condition"] == "has_wolf_pelt" and "wolf_pelt" in player.inventory:
-                    rewards.append({"type": "gold", "amount": reward_condition["reward"]["gold"]})
-                    if reward_condition.get("consume_item"):
-                        player.inventory.remove(reward_condition["consume_item"])
-
-        quest.status = QuestStatus.COMPLETED
-        return rewards
 
     def check_quest_completion(self, quest_id: str, player, npc=None) -> Optional[List[Dict]]:
         """Check if quest is complete and return rewards if conditions are met"""

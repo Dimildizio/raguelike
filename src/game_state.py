@@ -1,3 +1,5 @@
+import random
+from datetime import datetime
 from enum import Enum
 from world.create_map import MapCreator
 from world.worldmap import WorldMap
@@ -11,7 +13,6 @@ from ui.floating_text import FloatingTextManager
 from utils.achievements import AchievementManager
 from utils.stt_helper import STTHandler
 from constants import *
-import random
 
 
 class GameStateManager:
@@ -31,6 +32,25 @@ class GameStateManager:
         self.quest_manager = QuestManager()
         self.floating_text_manager = FloatingTextManager()
         self.stt = STTHandler()
+
+    def save_game_state(self):
+        # TODO: Quest
+        idict = {"save_date": datetime.now().isoformat(),
+                 "world_map": self.current_map.save_map(),
+                 "current_day": self.current_day,
+                 "stats": self.stats}
+        return idict
+
+    def load_game_state(self, data):
+        self.change_state(GameState.PROCESSING)
+        self.current_map = WorldMap(self)
+        self.current_day = data['current_day']
+        self.stats = data['stats']
+        self.current_map.load_map(data['world_map'])
+        self.message_log = MessageLog()
+        self.message_log.add_message("The game has been loaded!", WHITE)
+        self.change_state(GameState.PLAYING)
+
 
     def start_new_game(self):
         self.player = None

@@ -143,7 +143,7 @@ class Game:
         # If no dialog initiated, proceed with normal monster turn
         elif monster.is_hostile:
             if monster.dist2player((self.state_manager.player.x, self.state_manager.player.y), DIALOGUE_DISTANCE)\
-            and monster.can_shout():
+              and monster.can_shout():
                 self.async_handler.add_request('shout', monster)
             # If there's an animation playing, wait
             if hasattr(self.state_manager.current_map, 'combat_animation') and \
@@ -220,7 +220,6 @@ class Game:
             if event.key == pg.K_2:  # 2 key record
                 self.state_manager.stt.handle_record_button('intimidate')
 
-
             # Movement
             if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):
                 direction, tile_x, tile_y = self.get_move_direction(event.key, player_tile_x, player_tile_y)
@@ -274,7 +273,7 @@ class Game:
             self.state_manager.change_state(GameState.PLAYING)
         elif selected_option == "Load Game":
             # Implement load game functionality
-            self.load_last_save()
+            pass
         elif selected_option == "Settings":
             # Implement settings menu
             pass
@@ -415,21 +414,6 @@ class Game:
                                  y=WINDOW_HEIGHT // 2 + i * MENU_SPACING)
             self.screen.blit(text, rect)
 
-    def load_last_save(self):
-        save_files = os.listdir(SaveSystem.SAVE_DIR)
-        if save_files:
-            latest_save = max(
-                [os.path.join(SaveSystem.SAVE_DIR, f) for f in save_files],
-                key=os.path.getmtime)
-
-            if SaveSystem.load_game(self.state_manager, latest_save):
-                self.state_manager.change_state(GameState.PLAYING)
-                self.update_camera()
-                self.state_manager.add_message("Game loaded!", WHITE)
-            else:
-                self.state_manager.add_message("Failed to load game!", RED)
-        else:
-            self.state_manager.add_message("No save files found!", RED)
 
 if __name__ == "__main__":
     game = Game()

@@ -4,21 +4,45 @@ from constants import *
 
 
 class Tile:
-    def __init__(self, x, y, sprite_path, passable=True, rotate=True):
+    def __init__(self, x, y, sprite_path, passable=True, rotate=True, loading=False):
         self.x = x
         self.y = y
-        self.sprite_loader = SpriteLoader(
-            ORIGINAL_SPRITE_SIZE,
-            PREPROCESSED_TILE_SIZE,
-            DISPLAY_TILE_SIZE
-        )
+        self.sprite_loader = SpriteLoader(ORIGINAL_SPRITE_SIZE, PREPROCESSED_TILE_SIZE, DISPLAY_TILE_SIZE)
         self.sprite_path = sprite_path
-        # Unpack the tuple returned by load_sprite
-        self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
+        if not loading:
+            self.surface, self.pil_sprite = self.sprite_loader.load_sprite(sprite_path)
         self.rotation = random.choice([0, 90, 180, 270]) if rotate else 0
         self.entities = []
         self.ground_items = []
         self.passable = passable
+
+    def __repr__(self):
+        return f'Tile({self.x}, {self.y}, {"passable" if self.passable else "not passable"}, {self.rotation})'
+
+    def load_tile(self, data):
+        for key, value in data.items():
+            try:
+                if key == 'ground_items':
+                    # TODO: logic
+                    continue
+                setattr(self, key, value)
+            except Exception as e:
+                print('Error creating a tile:', e)
+        self.postload_tile()
+
+
+    def postload_tile(self):
+        self.surface, self.pil_sprite = self.sprite_loader.load_sprite(self.sprite_path)
+
+    def save_tile(self):
+        idict = {}
+        for key, value in self.__dict__.items():
+            if key == 'ground_items':
+                # TODO: logic
+                continue
+            if key not in ('sprite_loader', 'surface', 'pil_sprite', 'entities'):
+                idict[key] = value
+        return idict
 
     def draw(self, screen, offset_x=0, offset_y=0):
         if self.pil_sprite:

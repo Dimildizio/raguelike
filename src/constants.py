@@ -303,3 +303,5 @@ class GameState(Enum):
     INVENTORY = 5
     DEAD = 6
     DEMO_COMPLETE = 7
+    PROCESSING = 8
+

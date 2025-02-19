@@ -6,11 +6,15 @@ from queue import PriorityQueue
 from .tile import Tile
 from constants import *
 from entities.character import Character
-from entities.monster import Monster
-from entities.entity import Remains, House
+from entities.monster import Monster, KoboldTeacher, Dryad,GreenTroll, WillowWhisper, HellBard
+from entities.npc import NPC
+from entities.entity import Entity, Remains, House, Tree
 from utils.sprite_loader import SpriteLoader
 from systems.combat_animation import CombatAnimation
 
+
+ENTITY_KEYS = {cls.__name__: cls for cls in [Entity, Character, NPC, House, Tree, Monster, KoboldTeacher, Dryad,
+                                             GreenTroll, WillowWhisper, HellBard,]}
 
 class WorldMap:
     def __init__(self, state_manager, width=MAP_WIDTH, height=MAP_HEIGHT):
@@ -29,10 +33,45 @@ class WorldMap:
         # Initialize empty tiles list
         self.tiles = [[None for _ in range(width)] for _ in range(height)]
         self.entities = []
-        
-        # Generate the map
-        #self.generate_map()
-    
+
+    def save_map(self):
+        idict = {'width': self.width, 'height': self.height, 'tile_size': self.tile_size,
+                 'tiles': [[tile.save_tile() for tile in row] for row in self.tiles],
+                 'entities': [entity.save_entity() for entity in self.get_all_entities()]
+                }
+        return idict
+
+    def load_map(self, data):
+        if 'tiles' in data:
+            new_tiles = [[None for _ in range(self.width)] for _ in range(self.height)]
+            for y, row in enumerate(data['tiles']):
+                for x, tile_data in enumerate(row):
+                    pixel_x = x * self.tile_size
+                    pixel_y = y * self.tile_size
+                    new_tile = Tile(tile_data['x'], tile_data['y'], tile_data['sprite_path'], loading=True)
+                    new_tile.load_tile(tile_data)
+                    new_tiles[y][x] = new_tile
+            self.tiles = new_tiles
+        for key, value in data.items():
+            try:
+                if key == 'tiles':
+                    continue
+                if key == 'entities':
+                    self.entities = []
+                    for entity_data in value:
+                        new_creature = ENTITY_KEYS[entity_data['entity_class']]
+                        entity = new_creature(entity_data['x'], entity_data['y'], sprite_path=entity_data['sprite_path'],
+                                              game_state=self.state_manager, loading=True)
+                        entity.load_entity(entity_data, self.state_manager)
+                        self.add_on_load(entity)
+                        if new_creature == Character:
+                            self.state_manager.player = entity
+                else:
+                    setattr(self, key, value)
+            except AssertionError as e:
+                print('Error loading a tile in World Map:', e)
+
+
     def generate_map(self):
         # Create a grid of tiles
         for y in range(self.height):
@@ -183,13 +222,15 @@ class WorldMap:
 
     def add_entity(self, entity, tile_x, tile_y):
         # Check if position is within bounds and no blocking entities
-        print(f'adding {entity} to worldmap', tile_x, tile_y)
+        print(f'adding {entity} to worldmap', tile_x, tile_y, type(self.tiles[tile_y]), type(self.tiles[tile_y][tile_x]))
         if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
             if isinstance(entity, Remains):
                 self.tiles[tile_y][tile_x].add_item(entity)
                 return True
             if isinstance(entity, House):
                 self.tiles[tile_y][tile_x].add_entity(entity)
+                return True
+
             if self.tiles[tile_y][tile_x].passable and not self.tiles[tile_y][tile_x].get_blocking_entity():
                 # Place entity
                 self.tiles[tile_y][tile_x].add_entity(entity)
