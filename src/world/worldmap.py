@@ -41,17 +41,17 @@ class WorldMap:
                 }
         return idict
 
-    def load_map(self, data):
+    def load_map(self, data, game_state):
+        game_state.increment_loading_progress(0)
         if 'tiles' in data:
-            new_tiles = [[None for _ in range(self.width)] for _ in range(self.height)]
+            self.tiles = [[None for _ in range(self.width)] for _ in range(self.height)]
             for y, row in enumerate(data['tiles']):
+                game_state.increment_loading_progress(30 / len(self.tiles))
                 for x, tile_data in enumerate(row):
-                    pixel_x = x * self.tile_size
-                    pixel_y = y * self.tile_size
                     new_tile = Tile(tile_data['x'], tile_data['y'], tile_data['sprite_path'], loading=True)
                     new_tile.load_tile(tile_data)
-                    new_tiles[y][x] = new_tile
-            self.tiles = new_tiles
+                    self.tiles[y][x] = new_tile
+
         for key, value in data.items():
             try:
                 if key == 'tiles':
@@ -59,6 +59,7 @@ class WorldMap:
                 if key == 'entities':
                     self.entities = []
                     for entity_data in value:
+                        game_state.increment_loading_progress(30 / len(value))
                         new_creature = ENTITY_KEYS[entity_data['entity_class']]
                         entity = new_creature(entity_data['x'], entity_data['y'], sprite_path=entity_data['sprite_path'],
                                               game_state=self.state_manager, loading=True)
@@ -68,9 +69,10 @@ class WorldMap:
                             self.state_manager.player = entity
                 else:
                     setattr(self, key, value)
+
             except AssertionError as e:
                 print('Error loading a tile in World Map:', e)
-
+        game_state.increment_loading_progress(30)
 
     def generate_map(self):
         # Create a grid of tiles

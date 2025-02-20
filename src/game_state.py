@@ -32,6 +32,7 @@ class GameStateManager:
         self.quest_manager = QuestManager()
         self.floating_text_manager = FloatingTextManager()
         self.stt = STTHandler()
+        self.loading_progress = 0
 
     def save_game_state(self):
         # TODO: Quest
@@ -42,22 +43,30 @@ class GameStateManager:
         return idict
 
     def load_game_state(self, data):
+        self.loading_progress = 0
         self.change_state(GameState.PROCESSING)
+        self.increment_loading_progress(10)
         self.current_map = WorldMap(self)
         self.current_day = data['current_day']
         self.stats = data['stats']
-        self.current_map.load_map(data['world_map'])
+        self.current_map.load_map(data['world_map'], self)
         self.message_log = MessageLog()
         self.message_log.add_message("The game has been loaded!", WHITE)
         self.change_state(GameState.PLAYING)
+        self.loading_progress = 0
 
+    def increment_loading_progress(self, value):
+        self.loading_progress += value
+        self.game.draw_loading_screen()
 
     def start_new_game(self):
+        self.loading_progress = 0
+        self.change_state(GameState.PROCESSING)
         self.player = None
         self.current_map = None
         # Create player
         self.player = Character(0, 0, SPRITES["PLAYER"], game_state=self, voice='c')
-
+        self.increment_loading_progress(10)
         # Create monsters
         monsters = []
         for n in range(NUM_MONSTERS):
@@ -68,7 +77,7 @@ class GameStateManager:
         monsters.append(self.create_kobold_teacher((0, 0)))
         monsters.append(self.create_hell_bard((0, 0)))
         monsters.append(self.create_willow_whisper((0, 0)))
-
+        self.increment_loading_progress(10)
         # Create NPCs with specific attributes
         npc_data = [
             {
@@ -94,16 +103,17 @@ class GameStateManager:
                 mood=random.choice(moods), game_state=self, description=npc['description']
                 ) for npc in npc_data
         ]
-
+        self.increment_loading_progress(10)
         # Create and setup map with MapCreator
         self.current_map = WorldMap(self, MAP_WIDTH, MAP_HEIGHT)
+        self.increment_loading_progress(30)
         if not self.message_log and self.current_map:
             self.message_log = MessageLog()
             self.message_log.add_message("Welcome to the game!", WHITE)
         map_creator = MapCreator(self.current_map.sprite_loader)
         tiles, house_pos, npc_positions, tree_positions = map_creator.create_map()
         self.current_map.tiles = tiles
-
+        self.increment_loading_progress(10)
         # Place house at random valid position from MapCreator
         for (h_x, h_y) in house_pos:
             self.current_map.add_entity(House(h_x, h_y, voice=random.choice([x for x in VOICE_MAP.keys()])), h_x, h_y)
@@ -118,20 +128,21 @@ class GameStateManager:
 
         # Place player and monsters in random valid positions
         valid_positions = self.current_map.get_valid_positions(len(monsters) + 1)
-
+        self.increment_loading_progress(10)
         # Place player
         player_pos = valid_positions.pop()
         print('npc', self.player, 'x', player_pos[0], 'y', player_pos[1])
         self.current_map.add_entity(self.player, player_pos[0], player_pos[1])
-
+        self.increment_loading_progress(10)
         # Place monsters
         for monster in monsters:
+            self.increment_loading_progress(10 / len(monsters))
             if valid_positions:
                 pos = valid_positions.pop()
                 print('monster', monster, 'x', pos[0], 'y', [pos[1]])
                 self.current_map.add_entity(monster, pos[0], pos[1])
-
-        self.change_state(GameState.MAIN_MENU)
+        self.loading_progress = 0
+        self.change_state(GameState.PLAYING)
 
     def change_state(self, new_state):
         self.current_state = new_state

@@ -43,7 +43,8 @@ STOP_SYMBOLS_SPEECH = '}' if WHOLE_DIALOG else '.!?'
 
 ASSET_DIR = "assets/images"
 SPRITES = {
-    "PLAYER": os.path.join(ASSET_DIR, "creatures/character/player.png"),
+    "LOADING": os.path.join(ASSET_DIR, "pictures/loading.png"),
+    "PLAYER": os.path.join(ASSET_DIR, "creatures/character/hero3.png"),
     "HERO_FACE": os.path.join(ASSET_DIR, "creatures/character/hero_face.png"),
     "FLOOR": os.path.join(ASSET_DIR, "textures/floor_tile.png"),
     "NPC_1": os.path.join(ASSET_DIR, "creatures/npcs/npc_amelia.png"),

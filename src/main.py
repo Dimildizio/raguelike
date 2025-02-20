@@ -18,6 +18,7 @@ class Game:
         pg.init()
         # self.screen = pg.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pg.FULLSCREEN)
         self.screen = pg.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.load_loading_image()
         pg.display.set_caption(GAME_TITLE)
         self.clock = pg.time.Clock()
         self.last_action_time = 0
@@ -82,7 +83,6 @@ class Game:
                         self.process_next_monster()
                         if not self.monsters_queue:
                             self.state_manager.add_message("Your turn", BLUE)
-
             # Draw
             self.screen.fill(BLACK)
             if self.state_manager.current_state == GameState.PLAYING:
@@ -99,7 +99,8 @@ class Game:
             elif self.state_manager.current_state == GameState.DIALOG:
                 self.dialog_ui.update()
                 self.dialog_ui.draw(self.screen, self.state_manager.current_npc)
-
+            elif self.state_manager.current_state == GameState.PROCESSING:
+                self.draw_loading_screen()
             elif self.state_manager.current_state == GameState.DEAD:
                 self.draw_death_screen()
             elif self.state_manager.current_state == GameState.DEMO_COMPLETE:
@@ -270,9 +271,9 @@ class Game:
         if selected_option == "New Game":
             self.dialog_ui.dialogue_processor.rag_manager.clear_knowledge_base()  # Clean db
             self.state_manager.start_new_game()  # Initialize player and entities
-            self.state_manager.change_state(GameState.PLAYING)
+            #self.state_manager.change_state(GameState.PLAYING)
         elif selected_option == "Load Game":
-            # Implement load game functionality
+            SaveSystem.load_game(self.state_manager)
             pass
         elif selected_option == "Settings":
             # Implement settings menu
@@ -387,6 +388,46 @@ class Game:
         text_surface = font.render("You Died!", True, RED)
         text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))
         self.screen.blit(text_surface, text_rect)
+
+    def load_loading_image(self):
+        loading_image = pg.image.load(SPRITES['LOADING']).convert()
+        image_aspect = loading_image.get_width() / loading_image.get_height()
+        scaled_width = WINDOW_WIDTH
+        scaled_height = int(WINDOW_WIDTH / image_aspect)
+
+        # If height is too large, scale based on height instead
+        if scaled_height > WINDOW_HEIGHT * 0.8:
+            scaled_height = int(WINDOW_HEIGHT * 0.8)
+            scaled_width = int(WINDOW_HEIGHT * image_aspect)
+
+        self.loading_image = pg.transform.scale(loading_image, (scaled_width, scaled_height))
+        self.loading_image_rect = self.loading_image.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+
+    def draw_loading_screen(self):
+        self.screen.fill(BLACK)
+        self.screen.blit(self.loading_image, self.loading_image_rect)
+
+        bar_width = int(WINDOW_WIDTH * 0.6)
+        bar_height = int(WINDOW_HEIGHT * 0.05)
+        x = (WINDOW_WIDTH - bar_width) // 2
+        y = WINDOW_HEIGHT - bar_height - 50  # Position bar near bottom
+
+        border_padding = int(bar_height * 0.1)
+        border_rect = pg.Rect(x - border_padding, y - border_padding,
+                              bar_width + (border_padding * 2), bar_height + (border_padding * 2))
+        pg.draw.rect(self.screen, WHITE, border_rect, 2)
+
+        progress_width = int((bar_width * int(self.state_manager.loading_progress)) / 100)
+        progress_rect = pg.Rect(x, y, progress_width, bar_height)
+        pg.draw.rect(self.screen, BLUE, progress_rect)
+
+        font_size = int(WINDOW_HEIGHT * 0.05)
+        font = pg.font.Font(None, font_size)
+        text = font.render(f"Loading... {int(self.state_manager.loading_progress)}%", True, WHITE)
+        text_rect = text.get_rect(center=(WINDOW_WIDTH // 2, y - int(bar_height * 1.5)))
+        self.screen.blit(text, text_rect)
+
+        pg.display.flip()
 
     def draw_demo_complete_screen(self):
         self.screen.fill(BLACK)
