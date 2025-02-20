@@ -35,9 +35,9 @@ class GameStateManager:
         self.loading_progress = 0
 
     def save_game_state(self):
-        # TODO: Quest
         idict = {"save_date": datetime.now().isoformat(),
                  "world_map": self.current_map.save_map(),
+                 "quests": self.quest_manager.save_quests(),
                  "current_day": self.current_day,
                  "stats": self.stats}
         return idict
@@ -45,6 +45,7 @@ class GameStateManager:
     def load_game_state(self, data):
         self.loading_progress = 0
         self.change_state(GameState.PROCESSING)
+        self.quest_manager.load_quests(data['quests'])
         self.increment_loading_progress(10)
         self.current_map = WorldMap(self)
         self.current_day = data['current_day']

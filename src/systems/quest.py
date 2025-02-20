@@ -3,11 +3,13 @@ from typing import Dict, List, Optional, Callable
 import json
 import logging
 
+
 class QuestStatus(Enum):
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
+
 
 class QuestCondition:
     def __init__(self, condition_type: str, required_value: int, current_value: int = 0, monster_tags: List[str] = None):
@@ -35,6 +37,7 @@ class QuestCondition:
             data["current_value"],
             data.get("monster_tags", [])
         )
+
 
 class Quest:
     def __init__(self,
@@ -87,8 +90,9 @@ class Quest:
             QuestStatus(data["status"])
         )
 
+
 class QuestManager:
-    def __init__(self):
+    def __init__(self, loading=False):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         # Add file handler for quest events
@@ -98,7 +102,20 @@ class QuestManager:
         fh.setFormatter(formatter)
         self.logger.addHandler(fh)
         self.quests: Dict[str, Quest] = {}
-        self.initialize_quests()
+        if not loading:
+            self.initialize_quests()
+
+    def save_quests(self):
+        idict = {}
+        for quest_id, quest in self.quests.items():
+            idict[quest_id] = quest.to_dict()
+        return idict
+
+    def load_quests(self, data):
+        self.quests = []
+        for quest_id, values in data.items():
+            self.quests[quest_id] = Quest.from_dict(values)
+
 
     def initialize_quests(self):
         """Initialize available quests"""
