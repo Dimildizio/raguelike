@@ -223,9 +223,9 @@ class GameStateManager:
             if hasattr(entity, 'combat_stats'):
                 if isinstance(entity, NPC):
                     entity.mood = random.choice(NPC_MOOD)
-                    entity.heal_self()
+                    entity.heal_self(entity)
                 elif isinstance(entity, Monster):
-                    entity.heal_self()
+                    entity.heal_self(entity)
 
         # Get player position
         player_x = self.player.x // DISPLAY_TILE_SIZE

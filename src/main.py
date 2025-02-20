@@ -218,7 +218,9 @@ class Game:
             if event.key == pg.K_BACKQUOTE:  # ` key record
                 self.state_manager.stt.handle_record_button()
 
-            if event.key == pg.K_2:  # 2 key record
+            if event.key == pg.K_1:
+                self.state_manager.player.heal_self(self.state_manager.player)
+            if event.key == pg.K_2:
                 self.state_manager.stt.handle_record_button('intimidate')
 
             # Movement
@@ -233,8 +235,6 @@ class Game:
                 print("\n" + quest_status + "\n")
                 print('money:', self.state_manager.player.gold)
                 print(self.state_manager.stats)
-            if event.key == pg.K_h:
-                self.state_manager.player.heal_self()
 
             # Interaction
             if event.key == pg.K_e:  # Interact
@@ -349,7 +349,18 @@ class Game:
         # AP text
         ap_text = f"AP: {self.state_manager.player.combat_stats.ap}/{self.state_manager.player.combat_stats.max_ap}"
         ap_text_surface = font.render(ap_text, True, WHITE)
+
+        # Draw bottom skills panel
+        self.draw_skills_panel()
+
         self.screen.blit(ap_text_surface, (padding + 5, ap_y + text_y_offset))
+
+    def draw_skills_panel(self):
+        """Draw the skills panel with numbered slots at the bottom of the screen"""
+        for i, skill in enumerate(self.state_manager.player.skills):
+            skill.draw(self.screen, (WINDOW_WIDTH // 2 - 2 * SKILL_PANEL_SIZE + SKILL_PANEL_SIZE * i + i * SKILL_OFFSET,
+                                     WINDOW_HEIGHT - 10 - SKILL_PANEL_SIZE))
+
 
     @staticmethod
     def get_move_direction(key, player_tile_x, player_tile_y):

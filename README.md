@@ -61,7 +61,8 @@ RAGuelike is an experimental game that explores the integration of various AI te
 - Automatic text-to-speech for all dialogue
 - Pathfinding system for monster movement
 - Entity memory system
-- Contextual knowledge sharing between entities
+- Contextual knowledge sharing between entities 
+- Save/Load functionality
 - Achievements system
 
 
@@ -106,12 +107,12 @@ Currently in active development with core systems implemented and functioning. A
 - Installation guide
 - Inventory GUI system
 - Trading mechanics
-- Skills and leveling system
+- Skills module
+- Effects module
+- Leveling system
 - Character abilities and skills GUI
-- Save/Load functionality
-- Refactor broken Kokoro dependencies
-- Generate a better hero sprite
-
+- Mouse controls
+- Voice spells (TFIDF cos similarity)
 
 ## Run
 

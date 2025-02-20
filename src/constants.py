@@ -110,6 +110,10 @@ SPRITES = {
     "TREE_2": os.path.join(ASSET_DIR, "textures/trees/tree_2.png"),
     "TREE_3": os.path.join(ASSET_DIR, "textures/trees/tree_3.png"),
 
+    'SKILL_1': os.path.join(ASSET_DIR, "effects/heal.png"),
+    'SKILL_2': os.path.join(ASSET_DIR, "effects/middlefinger.png"),
+    'SKILL_3': os.path.join(ASSET_DIR, "effects/spell.png"),
+
     "ACHIEVEMENT_QUEST_MASTER": os.path.join(ASSET_DIR, "achievements/quest_master.png"),
     "ACHIEVEMENT_GOBLIN_SLAYER": os.path.join(ASSET_DIR, "achievements/goblin_slayer.png"),
 }
@@ -288,7 +292,9 @@ INITIAL_ACTION_POINTS = 100
 MOVE_ACTION_COST = 10
 ATTACK_ACTION_COST = 35
 
-
+# Player ui
+SKILL_PANEL_SIZE = 64
+SKILL_OFFSET = 2
 # Forest generation settings
 FOREST_EDGE_THICKNESS = 1
 FOREST_EDGE_WIDTH = 4

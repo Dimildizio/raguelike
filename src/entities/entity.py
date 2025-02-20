@@ -4,6 +4,7 @@ import pygame as pg
 from constants import *
 from utils.sprite_loader import SpriteLoader
 from systems.combat_stats import CombatStats
+from systems.skills_system import Skill
 import copy
 import json
 import uuid
@@ -66,6 +67,9 @@ class Entity(ABC):
             if key == 'combat_stats':
                 save_dict['combat_stats'] = self.combat_stats.save_stats()
                 continue
+            if key == 'skills':
+                save_dict['skills'] = [skill.save_skill() for skill in self.skills]
+                continue
             if key == 'discovered_clues':
                 save_dict['discovered_clues'] = list(self.discovered_clues)
                 continue
@@ -86,6 +90,9 @@ class Entity(ABC):
                 continue
             if key == 'discovered_clues':
                 self.discovered_clues = set(value)
+                continue
+            if key == 'skills' and game_state.player:
+                self.skills = [Skill(game_state.player).load_skill(skill_value) for skill_value in save_dict[key]]
                 continue
             try:
                 setattr(self, key, value)
@@ -149,7 +156,7 @@ class Entity(ABC):
         """Base update method that includes breathing animation"""
         self.update_breathing()
 
-    def heal_self(self):
+    def heal_self(self, target=None):
         pass
 
     @property

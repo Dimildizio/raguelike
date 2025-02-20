@@ -4,6 +4,7 @@ from .entity import Entity
 from .monster import Monster
 from constants import *
 from systems.combat_stats import CombatStats
+from systems.skills_system import Skill
 
 
 class Character(Entity):
@@ -19,8 +20,21 @@ class Character(Entity):
             self.face_surface = pygame.transform.scale(self.face_surface, (256, 256))
             self.active_quests = []
             self.completed_quests = []
+            self.skills = self.generate_skills()
             self.inventory = []
             self.gold = 25
+
+    def use_skill(self, num):
+        self.skills[num].skill_activated(self)
+
+    def generate_skills(self):
+        heal = Skill(self, name='heal', ap_cost=10, value=-100, cooldown=1, dist=1, image_path=SPRITES['SKILL_1'],
+                     description='Heals a target',)
+        damage = Skill(self, name='damage',  ap_cost=10, value=20, cooldown=3, dist=3, image_path=SPRITES['SKILL_2'],
+                       description='Deal Damage to a target',)
+        multiply = Skill(self, name='multiply', ap_cost=40, value=2, cooldown=4, dist=1, image_path=SPRITES['SKILL_3'],
+                         description='Deal boosted damage to a target')
+        return [heal, damage, multiply]
 
     def update(self):
         self.update_breathing()
@@ -84,12 +98,12 @@ class Character(Entity):
             return True
         return False
 
-    def heal_self(self, amount=0, ap_cost=10):
+    def heal_self(self, target=None, amount=0, ap_cost=10):
         if self.combat_stats.spend_ap(ap_cost):
             amount = amount or self.combat_stats.max_hp
-            self.combat_stats.get_healed(amount)
-            self.get_floating_nums(f"+{int(amount)}", color=GREEN)
-            self.game_state.add_message(f"You get healed by {amount}", GREEN)
+            target.combat_stats.get_healed(amount)
+            target.get_floating_nums(f"+{int(amount)}", color=GREEN)
+            self.game_state.add_message(f"{target.name} gets healed by {amount}", GREEN)
 
 
     def get_dialogue_context(self):
