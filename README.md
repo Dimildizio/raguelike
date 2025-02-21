@@ -1,11 +1,9 @@
 # RAGuelike
 
-https://github.com/user-attachments/assets/3c0a1118-924e-4391-ab63-29a3534f6692
-
-
-For better quality click the [link](https://www.youtube.com/wwatch?v=GQLM4TZP-uk)
 
 A roguelike game that combines traditional gameplay with advanced AI-powered dialogue and combat systems.
+
+https://github.com/user-attachments/assets/3c0a1118-924e-4391-ab63-29a3534f6692
 
 ## Featuring
 - LLM for role-play dialogs, summarization and decision-making
