@@ -43,9 +43,8 @@ STOP_SYMBOLS_SPEECH = '}' if WHOLE_DIALOG else '.!?'
 
 ASSET_DIR = "assets/images"
 SPRITES = {
-    "LOADING": os.path.join(ASSET_DIR, "pictures/loading.png"),
     "PLAYER": os.path.join(ASSET_DIR, "creatures/character/hero1.png"),
-    "HERO_FACE": os.path.join(ASSET_DIR, "creatures/character/hero_face.png"),
+    "HERO_FACE": os.path.join(ASSET_DIR, "creatures/character/hero_face2.png"),
     "FLOOR": os.path.join(ASSET_DIR, "textures/floor_tile.png"),
     "NPC_1": os.path.join(ASSET_DIR, "creatures/npcs/npc_amelia.png"),
     "NPC_FACE_1": os.path.join(ASSET_DIR, "creatures/npcs/villager_face_1.png"),
@@ -169,6 +168,7 @@ SPRITES.update({
     "HOUSE_1_BOT2_BOT2": os.path.join(ASSET_DIR, "textures/house/house1_bot2_bot2.png"),
 })
 
+LOADING_IMG = {f"BG_{x}": os.path.join(ASSET_DIR, f"art/bg{x}.png") for x in range(1, 9)}
 
 COMBAT_TURN_TIMEOUT = 30  # seconds
 COMBAT_MIN_DAMAGE_MULT = 0.8

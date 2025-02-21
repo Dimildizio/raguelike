@@ -7,15 +7,15 @@ class Skill:
                  image_path=SPRITES['SKILL_1'], loading=False):
         self.owner = owner
         self.name = name
-        self.dist= dist,
+        self.dist = dist
         self.description = description
         self.ap_cost = ap_cost
         self.value = value
         self.cooldown = 0
         self.max_cooldown = cooldown
 
-        skills = {'heal': self.skill_damage, 'damage': self.skill_damage, 'multiply': self.multiply}
-        self.skill = skills.get(name.lower(), lambda x: None)
+        skills_list = {'heal': self.skill_damage, 'damage': self.skill_damage, 'multiply': self.multiply}
+        self.skill = skills_list.get(self.name.lower(), lambda x: None)
 
         self.image_path = image_path
         if not loading:
@@ -48,16 +48,19 @@ class Skill:
 
     def save_skill(self):
         idict = {}
-        for key, value in self.__dict__:
-            if key not in ('skill_surface', 'owner'):
+        for key, value in self.__dict__.items():
+            if key not in ('skill_surface', 'owner', 'skill'):
                 idict[key] = value
         return idict
 
     def load_skill(self, data):
         for key, value in data.items():
             setattr(self, key, value)
+        skills_list = {'heal': self.skill_damage, 'damage': self.skill_damage, 'multiply': self.multiply}
+        self.skill = skills_list.get(self.name.lower(), lambda x: None)
         self.skill_surface = pg.image.load(self.image_path).convert_alpha()
         self.skill_surface = pg.transform.scale(self.skill_surface, (64, 64))
+        return self
 
     def skill_damage(self, target):
         if self.owner.combat_stats.spend_ap(self.ap_cost):

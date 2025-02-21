@@ -2,6 +2,7 @@ import pygame as pg
 import sys
 import time
 import gc
+import random
 from game_state import GameStateManager
 from systems.sound_manager import SoundManager
 from systems.save_system import SaveSystem
@@ -203,6 +204,7 @@ class Game:
                 self.toggle_fullscreen()
 
             elif event.key == pg.K_F8:
+                self.load_loading_image()
                 SaveSystem.load_game(self.state_manager)
                 self.state_manager.add_message("Game Loaded!", WHITE)
             elif event.key == pg.K_F5 and self.state_manager.player:
@@ -269,10 +271,12 @@ class Game:
     def handle_menu_selection(self):
         selected_option = MENU_OPTIONS[self.state_manager.selected_menu_item]
         if selected_option == "New Game":
+            self.load_loading_image()
             self.dialog_ui.dialogue_processor.rag_manager.clear_knowledge_base()  # Clean db
             self.state_manager.start_new_game()  # Initialize player and entities
             #self.state_manager.change_state(GameState.PLAYING)
         elif selected_option == "Load Game":
+            self.load_loading_image()
             SaveSystem.load_game(self.state_manager)
             pass
         elif selected_option == "Settings":
@@ -389,7 +393,7 @@ class Game:
                 self.dialog_ui.current_npc = entity  # Reuse NPC dialogue UI for house
                 self.state_manager.current_npc = entity
                 self.state_manager.change_state(GameState.DIALOG)
-                self.dialog_ui.start_house_dialog(entity)  # New method for house dialogue
+                self.dialog_ui.start_house_dialog(entity)  
                 return True
         return False
 
@@ -401,7 +405,8 @@ class Game:
         self.screen.blit(text_surface, text_rect)
 
     def load_loading_image(self):
-        loading_image = pg.image.load(SPRITES['LOADING']).convert()
+        n = random.randint(1, 8)
+        loading_image = pg.image.load(LOADING_IMG[f'BG_{n}']).convert()
         image_aspect = loading_image.get_width() / loading_image.get_height()
         scaled_width = WINDOW_WIDTH
         scaled_height = int(WINDOW_WIDTH / image_aspect)

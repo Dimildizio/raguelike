@@ -91,7 +91,7 @@ class Entity(ABC):
             if key == 'discovered_clues':
                 self.discovered_clues = set(value)
                 continue
-            if key == 'skills' and game_state.player:
+            if key == 'skills':
                 self.skills = [Skill(game_state.player).load_skill(skill_value) for skill_value in save_dict[key]]
                 continue
             try:
