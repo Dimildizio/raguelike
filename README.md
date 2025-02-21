@@ -1,5 +1,10 @@
 # RAGuelike
 
+https://github.com/user-attachments/assets/3c0a1118-924e-4391-ab63-29a3534f6692
+
+
+For better quality click the [link](https://www.youtube.com/wwatch?v=GQLM4TZP-uk)
+
 A roguelike game that combines traditional gameplay with advanced AI-powered dialogue and combat systems.
 
 ## Featuring
@@ -9,9 +14,15 @@ A roguelike game that combines traditional gameplay with advanced AI-powered dia
 - Speech-to-text
 - All local models, neither paid API nor any kind of requests to the internet are required (apart from downloading the models of course)
 
+![screenshot](https://raw.githubusercontent.com/Dimildizio/raguelike/refs/heads/main/src/assets/images/art/bg7.png)
+*Blue trolls are riddlers*
+
 ## Overview
 
 RAGuelike is an experimental game that explores the integration of various AI technologies into traditional roguelike gameplay. Players navigate a procedurally generated world, interacting with NPCs and monsters through natural language conversations while managing resources and combat encounters.
+
+![dryad](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg8.png)
+*Be careful next to a dryad in the woods*
 
 ## Core Features
 
@@ -21,6 +32,9 @@ RAGuelike is an experimental game that explores the integration of various AI te
 - NPCs and monsters remember past interactions
 - Entities can overhear nearby conversations and incorporate that knowledge
 - Voice interaction support (Speech-to-Text and Text-to-Speech)
+
+![spirit](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg5.png)
+*Solving a spirits mystery would help you both*
 
 ### Monster Interactions
 - **Goblins**: Cowardly creatures that beg for mercy when wounded
@@ -87,6 +101,10 @@ RAGuelike is an experimental game that explores the integration of various AI te
 - Sentence transformers for text embedding
 - FAISS for efficient similarity search
 
+  
+![bard](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg3.png)
+*A cursed bard challenges you to an epic poetic battle*
+
 ## Models used
 - [Gemma2:2b](https://ollama.com/library/gemma:2b) in Ollama for LLM dialogues, backstory generation and summarization
 - [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) from Sentence Transformer for text embedding
@@ -98,6 +116,9 @@ RAGuelike is an experimental game that explores the integration of various AI te
 - [RMBG2.0](https://huggingface.co/briaai/RMBG-2.0) to remove background
 - [MusicGen](https://github.com/facebookresearch/audiocraft) for music generation
 
+
+![goblins](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg6.png)
+*Pest control*
 
 ## Project Status
 Currently in active development with core systems implemented and functioning. Additional features and improvements are planned for future releases.
@@ -113,6 +134,10 @@ Currently in active development with core systems implemented and functioning. A
 - Character abilities and skills GUI
 - Mouse controls
 - Voice spells (TFIDF cos similarity)
+
+
+![test](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg2.png)
+*Kobolds are strict and harsh teachers*
 
 ## Run
 
@@ -146,3 +171,7 @@ From project root dir go to `src` and run the game
 cd src
 python3 main.py
 ```
+
+
+![happy](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg1.png)
+*Green trolls are nearly as happy as the adventures in a fight*
