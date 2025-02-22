@@ -178,14 +178,13 @@ class WorldMap:
                     return True
             return False
 
-        if isinstance(entity, Character) and not entity.can_do_action(MOVE_ACTION_COST):
-            return False
-
-        # Move to new tile
+        # Move entity logic
         old_tile_x = entity.x // self.tile_size
         old_tile_y = entity.y // self.tile_size
+        movement_cost = self.get_movement_cost(old_tile_x, old_tile_y, new_tile_x, new_tile_y)
+        if isinstance(entity, Character) and not entity.can_do_action(movement_cost):
+            return False
 
-        # Update tiles
         self.tiles[old_tile_y][old_tile_x].remove_entity(entity)
         destination_tile.add_entity(entity)
 
@@ -193,7 +192,7 @@ class WorldMap:
         entity.x = new_tile_x * self.tile_size
         entity.y = new_tile_y * self.tile_size
         if isinstance(entity, Character):
-            entity.spend_action_points(MOVE_ACTION_COST)
+            entity.spend_action_points(movement_cost)
         return True
 
     def remove_entity(self, entity):
@@ -531,3 +530,11 @@ class WorldMap:
 
         # Add to new position
         self.tiles[new_y][new_x].add_entity(entity)
+
+
+    def get_movement_cost(self, from_x, from_y, to_x, to_y):
+        dx = abs(to_x - from_x)
+        dy = abs(to_y - from_y)
+        if dx == 1 and dy == 1:
+            return int(MOVE_ACTION_COST * 1.5)
+        return MOVE_ACTION_COST

@@ -125,3 +125,60 @@ class Character(Entity):
                         dmg = random.randint(1, max(1, damage))
                         entity.take_damage(dmg)
                         self.game_state.add_message(f"{entity.monster_type} {entity.name} was intimidated", YELLOW)
+
+    def move_to_target(self, target_x, target_y, current_map):
+        """Try to move towards target position using pathfinding
+        Returns True if movement was made, False if no movement possible"""
+        # Get current tile position
+        start_x = self.x // DISPLAY_TILE_SIZE
+        start_y = self.y // DISPLAY_TILE_SIZE
+
+        # If we're already at the target tile, no need to move
+        if start_x == target_x and start_y == target_y:
+            return False
+
+        # Check if target tile is adjacent
+        dx = abs(target_x - start_x)
+        dy = abs(target_y - start_y)
+        movement_cost = self.game_state.current_map.get_movement_cost(start_x, start_y, target_x, target_y)
+        if dx <= 1 and dy <= 1:  # Adjacent tile (including diagonals)
+            if current_map.move_entity(self, target_x, target_y):
+                return True
+            return False
+
+        # Find path to target tile
+        path = current_map.find_path_to_target(start_x, start_y, target_x, target_y)
+
+        # If no direct path exists, try to find path to closest reachable tile
+        if not path:
+            # Search in expanding radius around target for accessible tile
+            for radius in range(1, 6):  # Check up to 5 tiles away
+                for dy in range(-radius, radius + 1):
+                    for dx in range(-radius, radius + 1):
+                        check_x = target_x + dx
+                        check_y = target_y + dy
+
+                        # Skip if out of bounds
+                        if not (0 <= check_x < current_map.width and 0 <= check_y < current_map.height):
+                            continue
+
+                        # Skip if tile is not passable
+                        if not current_map.tiles[check_y][check_x].passable:
+                            continue
+
+                        # Try to find path to this tile
+                        path = current_map.find_path_to_target(start_x, start_y, check_x, check_y)
+                        if path:
+                            break
+                    if path:
+                        break
+                if path:
+                    break
+
+        # Try to move along the path if we have enough AP
+        if path and self.can_do_action(MOVE_ACTION_COST):
+            next_x, next_y = path[0]  # Get first step
+            if current_map.move_entity(self, next_x, next_y):
+                return True
+
+        return False

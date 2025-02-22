@@ -12,6 +12,7 @@ from entities.entity import House
 from entities.monster import Monster
 from entities.npc import NPC
 from ui.dialog_ui import DialogUI
+from ui.mouse_ui import MouseUI
 
 
 class Game:
@@ -27,6 +28,7 @@ class Game:
         self.state_manager = GameStateManager(self.sound_manager, self)
         self.dialog_ui = DialogUI(self.state_manager, self.sound_manager)
         self.async_handler = AsyncRequestHandler()
+        self.mouse_ui = MouseUI(self)
         self.monsters_queue = None
         self.camera_x = None
         self.camera_y = None
@@ -199,6 +201,9 @@ class Game:
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 self.state_manager.change_state(GameState.MAIN_MENU)  # Only allow ESC key during monster turns
             return
+        if event.type in (pg.MOUSEBUTTONDOWN, pg.MOUSEBUTTONUP, pg.MOUSEMOTION):
+            self.mouse_ui.handle_mouse_input(event)
+            return
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_F11:
                 self.toggle_fullscreen()
@@ -356,8 +361,9 @@ class Game:
 
         # Draw bottom skills panel
         self.draw_skills_panel()
-
+        self.mouse_ui.draw(self.screen)
         self.screen.blit(ap_text_surface, (padding + 5, ap_y + text_y_offset))
+
 
     def draw_skills_panel(self):
         """Draw the skills panel with numbered slots at the bottom of the screen"""
@@ -374,7 +380,7 @@ class Game:
                  pg.K_d: {'direction': DIRECTION_RIGHT, 'tile_x': player_tile_x + 1, 'tile_y': player_tile_y}}
         return moves[key]['direction'], int(moves[key]['tile_x']), int(moves[key]['tile_y'])
 
-    def try_interact_with_npc(self, tile_x, tile_y):
+    def try_interact_with_npc(self, tile_x, tile_y, click_talk=False):
         """Try to interact with an NPC at the given tile position"""
         if not (0 <= tile_x < self.state_manager.current_map.width and
                 0 <= tile_y < self.state_manager.current_map.height):
@@ -382,23 +388,19 @@ class Game:
 
         tile = self.state_manager.current_map.tiles[tile_y][tile_x]
         for entity in tile.entities:
-            if isinstance(entity, NPC):
+            if isinstance(entity, NPC) or isinstance(entity, House) or (isinstance(entity, Monster) and click_talk):
                 self.dialog_ui.current_npc = entity
                 self.state_manager.current_npc = entity
                 self.state_manager.change_state(GameState.DIALOG)
-                self.dialog_ui.start_dialog(entity)
-
-                return True
-            elif isinstance(entity, House):
-                self.dialog_ui.current_npc = entity  # Reuse NPC dialogue UI for house
-                self.state_manager.current_npc = entity
-                self.state_manager.change_state(GameState.DIALOG)
-                self.dialog_ui.start_house_dialog(entity)  
+                if isinstance(entity, House):
+                    self.dialog_ui.start_house_dialog(entity)
+                else:
+                    self.dialog_ui.start_dialog(entity)
                 return True
         return False
 
     def draw_death_screen(self):
-        self.screen.fill(BLACK+(100,))
+        self.screen.fill(BLACK + (100,))
         font = pg.font.Font(None, MENU_FONT_SIZE * 2)
         text_surface = font.render("You Died!", True, RED)
         text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))
