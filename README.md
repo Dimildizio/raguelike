@@ -126,12 +126,18 @@ Currently in active development with core systems implemented and functioning. A
 - Installation guide
 - Inventory GUI system
 - Trading mechanics
-- Skills module
 - Effects module
 - Leveling system
-- Character abilities and skills GUI
-- Mouse controls
+- Character abilities and skills windows GUI
 - Voice spells (TFIDF cos similarity)
+- Change House sprites
+- Order the daily order monster show-up
+
+  ## Completed
+  - Save\Load
+  - Gaming UI
+  - Mouse controls
+  - Skills module
 
 
 ![test](src/assets/images/art/bg2.png)
