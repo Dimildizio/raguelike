@@ -12,14 +12,14 @@ https://github.com/user-attachments/assets/3c0a1118-924e-4391-ab63-29a3534f6692
 - Speech-to-text
 - All local models, neither paid API nor any kind of requests to the internet are required (apart from downloading the models of course)
 
-![screenshot](https://raw.githubusercontent.com/Dimildizio/raguelike/refs/heads/main/src/assets/images/art/bg7.png)
+![screenshot](src/assets/images/art/bg7.png)
 *Blue trolls are riddlers*
 
 ## Overview
 
 RAGuelike is an experimental game that explores the integration of various AI technologies into traditional roguelike gameplay. Players navigate a procedurally generated world, interacting with NPCs and monsters through natural language conversations while managing resources and combat encounters.
 
-![dryad](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg8.png)
+![dryad](src/assets/images/art/bg8.png)
 *Be careful next to a dryad in the woods*
 
 ## Core Features
@@ -31,7 +31,7 @@ RAGuelike is an experimental game that explores the integration of various AI te
 - Entities can overhear nearby conversations and incorporate that knowledge
 - Voice interaction support (Speech-to-Text and Text-to-Speech)
 
-![spirit](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg5.png)
+![spirit](src/assets/images/art/bg5.png)
 *Solving a spirits mystery would help you both*
 
 ### Monster Interactions
@@ -100,7 +100,7 @@ RAGuelike is an experimental game that explores the integration of various AI te
 - FAISS for efficient similarity search
 
   
-![bard](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg3.png)
+![bard](src/assets/images/art/bg3.png)
 *A cursed bard challenges you to an epic poetic battle*
 
 ## Models used
@@ -115,7 +115,7 @@ RAGuelike is an experimental game that explores the integration of various AI te
 - [MusicGen](https://github.com/facebookresearch/audiocraft) for music generation
 
 
-![goblins](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg6.png)
+![goblins](src/assets/images/art/bg6.png)
 *Pest control*
 
 ## Project Status
@@ -134,7 +134,7 @@ Currently in active development with core systems implemented and functioning. A
 - Voice spells (TFIDF cos similarity)
 
 
-![test](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg2.png)
+![test](src/assets/images/art/bg2.png)
 *Kobolds are strict and harsh teachers*
 
 ## Run
@@ -171,5 +171,5 @@ python3 main.py
 ```
 
 
-![happy](https://github.com/Dimildizio/raguelike/blob/main/src/assets/images/art/bg1.png)
+![happy](src/assets/images/art/bg1.png)
 *Green trolls are nearly as happy as the adventures in a fight*
