@@ -7,9 +7,9 @@ from entities.npc import NPC
 class ContextMenu:
     def __init__(self, options, pos, font_size=24, title=None):
         self.options = options
-        self.x, self.y = pos
         self.font = pg.font.Font(None, font_size)
         self.padding = 10
+        self.margin_top = 5  # New margin for top spacing
         self.hover_index = -1
         self.title = title
 
@@ -20,7 +20,17 @@ class ContextMenu:
         self.width = max(text_widths) + self.padding * 2
         self.height = len(options) * (font_size + self.padding)
         if title:
-            self.height += font_size + self.padding
+            self.height += font_size + self.padding * 2  # Extra padding for separator line
+
+        # Adjust position to ensure menu fits on screen
+        x, y = pos
+        if x + self.width > WINDOW_WIDTH:
+            x = WINDOW_WIDTH - self.width
+        if y + self.height > WINDOW_HEIGHT:
+            y = WINDOW_HEIGHT - self.height
+
+        self.x = max(0, x)  # Ensure x is not negative
+        self.y = max(0, y)  # Ensure y is not negative
 
     def draw(self, screen):
         # Draw background with alpha
@@ -29,12 +39,18 @@ class ContextMenu:
         screen.blit(menu_surface, (self.x, self.y))
         pg.draw.rect(screen, WHITE, (self.x, self.y, self.width, self.height), 2)
 
-        y_offset = 0
+        y_offset = self.margin_top
         # Draw title if exists
         if self.title:
             text = self.font.render(self.title, True, YELLOW)
-            screen.blit(text, (self.x + self.padding, self.y + self.padding))
-            y_offset = self.font.get_height() + self.padding
+            screen.blit(text, (self.x + self.padding, self.y + y_offset))
+            y_offset += self.font.get_height() + self.padding
+
+            # Draw separator line
+            pg.draw.line(screen, WHITE,
+                         (self.x, self.y + y_offset),
+                         (self.x + self.width, self.y + y_offset))
+            y_offset += self.padding
 
         # Draw options
         for i, option in enumerate(self.options):
@@ -48,8 +64,11 @@ class ContextMenu:
         if not (self.x <= mx <= self.x + self.width and self.y <= my <= self.y + self.height):
             return -1
 
-        y_offset = self.title is not None and self.font.get_height() + self.padding
-        option_idx = (my - self.y - (y_offset or 0)) // (self.font.get_height() + self.padding)
+        title_offset = 0
+        if self.title:
+            title_offset = self.font.get_height() + self.padding * 2 + self.margin_top
+
+        option_idx = (my - self.y - title_offset) // (self.font.get_height() + self.padding)
         if 0 <= option_idx < len(self.options):
             return option_idx
         return -1
@@ -139,12 +158,17 @@ class MouseUI:
                     if option_idx >= 0:
                         selected = self.context_menu.options[option_idx]
                         if 'submenu' in selected:
-                            # Store the selected entity before showing submenu
                             self.selected_entity = selected.get('entity')
-                            # Show submenu at current mouse position
+                            # Calculate position for submenu
+                            submenu_x = mouse_pos[0]
+                            # Position y so that mouse points to first option
+                            font_height = self.context_menu.font.get_height()
+                            title_offset = font_height + self.context_menu.padding * 2 + self.context_menu.margin_top
+                            submenu_y = mouse_pos[1] - title_offset
+
                             self.context_menu = ContextMenu(
                                 selected['submenu'],
-                                mouse_pos,
+                                (submenu_x, submenu_y),
                                 title=selected['name']
                             )
                         else:
@@ -190,16 +214,6 @@ class MouseUI:
         self.selected_entity = None
 
     def draw(self, screen):
-        # Draw target outline
-        if self.selected_tile:
-            tile_x, tile_y = self.selected_tile
-            outline_rect = pg.Rect(
-                tile_x * DISPLAY_TILE_SIZE - self.game.camera_x,
-                tile_y * DISPLAY_TILE_SIZE - self.game.camera_y,
-                DISPLAY_TILE_SIZE, DISPLAY_TILE_SIZE
-            )
-            pg.draw.rect(screen, RED, outline_rect, 2)
-
         # Draw context menu if active
         if self.context_menu:
             self.context_menu.draw(screen)
