@@ -1,12 +1,11 @@
 import random
 import math
-import heapq
 from queue import PriorityQueue
 
 from .tile import Tile
 from constants import *
 from entities.character import Character
-from entities.monster import Monster, KoboldTeacher, Dryad,GreenTroll, WillowWhisper, HellBard
+from entities.monster import Monster, KoboldTeacher, Dryad, GreenTroll, WillowWhisper, HellBard
 from entities.npc import NPC
 from entities.entity import Entity, Remains, House, Tree
 from utils.sprite_loader import SpriteLoader
@@ -15,6 +14,7 @@ from systems.combat_animation import CombatAnimation
 
 ENTITY_KEYS = {cls.__name__: cls for cls in [Entity, Character, NPC, House, Tree, Monster, KoboldTeacher, Dryad,
                                              GreenTroll, WillowWhisper, HellBard,]}
+
 
 class WorldMap:
     def __init__(self, state_manager, width=MAP_WIDTH, height=MAP_HEIGHT):
@@ -38,7 +38,7 @@ class WorldMap:
         idict = {'width': self.width, 'height': self.height, 'tile_size': self.tile_size,
                  'tiles': [[tile.save_tile() for tile in row] for row in self.tiles],
                  'entities': [entity.save_entity() for entity in self.get_all_entities()]
-                }
+                 }
         return idict
 
     def load_map(self, data, game_state):
@@ -61,7 +61,8 @@ class WorldMap:
                     for entity_data in value:
                         game_state.increment_loading_progress(30 / len(value))
                         new_creature = ENTITY_KEYS[entity_data['entity_class']]
-                        entity = new_creature(entity_data['x'], entity_data['y'], sprite_path=entity_data['sprite_path'],
+                        entity = new_creature(entity_data['x'], entity_data['y'],
+                                              sprite_path=entity_data['sprite_path'],
                                               game_state=self.state_manager, loading=True)
                         entity.load_entity(entity_data, self.state_manager)
                         self.add_on_load(entity)
@@ -85,39 +86,67 @@ class WorldMap:
                 # Create tile with preprocessed sprite
                 self.tiles[y][x] = Tile(pixel_x, pixel_y, SPRITES["FLOOR"])
 
-    def update(self):
+    def update(self, camera_x, camera_y):
+        if not camera_x or not camera_y:
+            return
+        start_tile_x = max(0, camera_x // self.tile_size + 1)
+        start_tile_y = max(0, camera_y // self.tile_size + 1)
+        end_tile_x = min(self.width, (camera_x + WINDOW_WIDTH) // self.tile_size - 1)
+        end_tile_y = min(self.height, (camera_y + WINDOW_HEIGHT) // self.tile_size - 1)
+
+        # Update only entities within visible range
         self.entities = [entity for entity in self.entities if entity.is_alive]
         for entity in self.entities:
-            entity.update()
+            # Calculate entity's tile position
+            entity_tile_x = entity.x // self.tile_size
+            entity_tile_y = entity.y // self.tile_size
 
+            # Only update if entity is in visible range
+            if (start_tile_x <= entity_tile_x < end_tile_x) and (start_tile_y <= entity_tile_y < end_tile_y):
+                entity.update()
+
+        # Combat animation should still update regardless of visibility
         if hasattr(self, 'combat_animation'):
             self.combat_animation.update()
 
     def draw(self, screen, camera_x=0, camera_y=0):
-        # Draw tiles
-        for y in range(self.height):
-            for x in range(self.width):
+        # Calculate visible tile range
+        start_tile_x = max(0, camera_x // self.tile_size - 1)
+        start_tile_y = max(0, camera_y // self.tile_size - 1)
+        end_tile_x = min(self.width, (camera_x + screen.get_width()) // self.tile_size + 2)
+        end_tile_y = min(self.height, (camera_y + screen.get_height()) // self.tile_size + 2)
+
+        # Draw only visible tiles
+        for y in range(int(start_tile_y), int(end_tile_y)):
+            for x in range(int(start_tile_x), int(end_tile_x)):
                 self.tiles[y][x].draw(screen, -camera_x, -camera_y)
 
-        # Draw entities with potential shake offset
+        # Draw only visible entities
         for entity in self.entities:
-            draw_x = entity.x
-            draw_y = entity.y
+            # Calculate entity's tile position
+            entity_tile_x = entity.x // self.tile_size
+            entity_tile_y = entity.y // self.tile_size
 
-            # Apply shake offset if this is the target entity
-            if (hasattr(self, 'combat_animation') and
-                    self.combat_animation.is_playing and
-                    entity == self.combat_animation.target):
-                draw_x += self.combat_animation.shake_offset[0]
-                draw_y += self.combat_animation.shake_offset[1]
+            # Check if entity is in visible range
+            if (start_tile_x - 1 <= entity_tile_x <= end_tile_x + 1 and
+                    start_tile_y - 1 <= entity_tile_y <= end_tile_y + 1):
 
-            # Draw the entity at the calculated position
-            entity.draw(screen, -camera_x + (draw_x - entity.x), -camera_y + (draw_y - entity.y))
+                draw_x = entity.x
+                draw_y = entity.y
+
+                # Apply shake offset if this is the target entity
+                if (hasattr(self, 'combat_animation') and
+                        self.combat_animation.is_playing and
+                        entity == self.combat_animation.target):
+                    draw_x += self.combat_animation.shake_offset[0]
+                    draw_y += self.combat_animation.shake_offset[1]
+
+                # Draw the entity at the calculated position
+                entity.draw(screen, -camera_x + (draw_x - entity.x), -camera_y + (draw_y - entity.y))
 
         # Draw combat animation effects
         if hasattr(self, 'combat_animation'):
             self.combat_animation.draw(screen, camera_x, camera_y)
-
 
     def get_facing_tile_position(self, player):
         """Get the tile position that the player is facing"""
@@ -223,7 +252,7 @@ class WorldMap:
 
     def add_entity(self, entity, tile_x, tile_y):
         # Check if position is within bounds and no blocking entities
-        print(f'adding {entity} to worldmap', tile_x, tile_y, type(self.tiles[tile_y]), type(self.tiles[tile_y][tile_x]))
+        print(f'Add {entity} to worldmap', tile_x, tile_y, type(self.tiles[tile_y]), type(self.tiles[tile_y][tile_x]))
         if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
             if isinstance(entity, Remains):
                 self.tiles[tile_y][tile_x].add_item(entity)
@@ -285,14 +314,11 @@ class WorldMap:
         elif decision == 'moveto':
             dx, dy = monster.locate_target(self)
             result = self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
-
-
         # If monster still has AP and made a successful action, it can act again next frame
         if monster.combat_stats.ap > 0 and result:
             return True
         # If monster couldn't act or is out of AP, it's done
         return False
-
 
     def execute_attack(self, monster, player):
         """Execute attack action"""
@@ -531,8 +557,8 @@ class WorldMap:
         # Add to new position
         self.tiles[new_y][new_x].add_entity(entity)
 
-
-    def get_movement_cost(self, from_x, from_y, to_x, to_y):
+    @staticmethod
+    def get_movement_cost(from_x, from_y, to_x, to_y):
         dx = abs(to_x - from_x)
         dy = abs(to_y - from_y)
         if dx == 1 and dy == 1:

@@ -9,8 +9,10 @@ import copy
 import json
 import uuid
 
+
 class Entity(ABC):
-    def __init__(self, x, y, sprite_path='', outline_path=None, hp=100, ap=100, game_state=None, voice='a', loading=False):
+    def __init__(self, x, y, sprite_path='', outline_path=None, hp=100, ap=100, game_state=None, voice='a',
+                 loading=False):
         self.sprite_loader = SpriteLoader(
             ORIGINAL_SPRITE_SIZE,
             PREPROCESSED_TILE_SIZE,
@@ -54,10 +56,8 @@ class Entity(ABC):
             if hasattr(self, 'can_talk') and self.can_talk and not loading:
                 self.rag_manager._create_entity_index(self.entity_id, self.__class__.__name__.lower())
 
-
     def save_entity(self):
         """Creates a dictionary of current attribute values"""
-        #print(self.__dict__)
         save_dict = {'entity_class': self.__class__.__name__}
         for key, value in self.__dict__.items():
             # Skip certain attributes we don't want to save
@@ -75,7 +75,7 @@ class Entity(ABC):
                 continue
             try:
                 copied_value = copy.deepcopy(value)
-                json.dumps(copied_value) # to test
+                json.dumps(copied_value)  # Sanity check
                 save_dict[key] = copied_value
 
             except Exception as e:
@@ -181,6 +181,7 @@ class Entity(ABC):
     def get_floating_nums(self, txt, color=RED):
         self.game_state.floating_text_manager.add_text(txt, self.x + DISPLAY_TILE_SIZE // 2, self.y, color)
 
+
 class Remains(Entity):
     def __init__(self, x, y, sprite_path='', name="remains", description="", game_state=None, loading=False):
         super().__init__(x, y, sprite_path, None, game_state=game_state, loading=loading)  # No outline for remains
@@ -192,6 +193,7 @@ class Remains(Entity):
 
     def update(self):
         pass
+
 
 class Tree(Entity):
     def __init__(self, x, y, sprite_path='', game_state=None, name='tree', loading=False):
@@ -218,8 +220,6 @@ class House(Entity):
             self.face_surface = pg.image.load(self.face_path).convert_alpha()
             self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
 
-
     def draw(self, screen, offset_x=0, offset_y=0):
         # No draw implementation needed since house tiles has visualization
         pass
-

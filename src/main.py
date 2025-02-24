@@ -78,7 +78,7 @@ class Game:
                 if self.state_manager.player:  # Check if player exists
                     self.state_manager.player.update()
                     self.state_manager.floating_text_manager.update()
-                    self.state_manager.current_map.update()
+                    self.state_manager.current_map.update(self.camera_x, self.camera_y)
                     self.check_async_requests()
                     self.update_camera()
                     self.state_manager.achievement_manager.check_achievements(self.state_manager.stats)
