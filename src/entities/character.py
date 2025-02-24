@@ -24,19 +24,20 @@ class Character(Entity):
             self.inventory = []
             self.gold = 25
 
-    def use_skill(self, num):
-        self.skills[num].skill_activated(self)
+    def use_skill(self, num, target=None):
+        self.skills[num].skill_activated(target=target)
 
     def generate_skills(self):
         heal = Skill(self, name='heal', ap_cost=10, value=-100, cooldown=1, dist=1, image_path=SPRITES['SKILL_1'],
                      description='Heals a target',)
-        damage = Skill(self, name='damage',  ap_cost=10, value=20, cooldown=3, dist=3, image_path=SPRITES['SKILL_2'],
+        damage = Skill(self, name='shout',  ap_cost=10, value=10, cooldown=1, dist=1, image_path=SPRITES['SKILL_2'],
                        description='Deal Damage to a target',)
         multiply = Skill(self, name='multiply', ap_cost=40, value=2, cooldown=4, dist=1, image_path=SPRITES['SKILL_3'],
                          description='Deal boosted damage to a target')
         return [heal, damage, multiply]
 
     def update(self):
+        self.check_dead()
         self.update_breathing()
         self.rotation = self.facing + self.current_angle
 
@@ -111,11 +112,7 @@ class Character(Entity):
         return context
 
     def shout_intimidate(self, intimidation_level: int):
-        if not self.combat_stats.spend_ap(10):
-            self.get_floating_nums(f"Not enough AP!", color=BLUE)
-            return
         damage = intimidation_level * 2  # 2-20 damage based on rating
-
         # Find all creatures within 5 tiles
         current_pos = (self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
         for y in range(max(0, current_pos[1] - 5), min(self.game_state.current_map.height, current_pos[1] + 6)):

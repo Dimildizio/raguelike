@@ -14,18 +14,28 @@ class Skill:
         self.cooldown = 0
         self.max_cooldown = cooldown
 
-        skills_list = {'heal': self.skill_damage, 'damage': self.skill_damage, 'multiply': self.multiply}
-        self.skill = skills_list.get(self.name.lower(), lambda x: None)
+        self.skills_list = {'heal': self.skill_damage, 'damage': self.skill_damage, 'multiply': self.multiply,
+                            'shout': self.shout}
+        self.skill = self.skills_list.get(self.name.lower(), lambda x: None)
 
         self.image_path = image_path
         if not loading:
             self.skill_surface = pg.image.load(self.image_path).convert_alpha()
             self.skill_surface = pg.transform.scale(self.skill_surface, (SKILL_PANEL_SIZE, SKILL_PANEL_SIZE))
 
-    def skill_activated(self):
+    def skill_activated(self, target=None):
         if self.cooldown <= 0:
-            if self.skill(self.owner):
+            target = self.owner if target is None else target
+            try:
+                if self.skill(target):
+                    self.cooldown = self.max_cooldown
+                    return True
+
+            except Exception as e:
+                print(f"Skill error (handled): {e}")
                 self.cooldown = self.max_cooldown
+                return True
+        return False
 
     def update(self):
         pass
@@ -37,7 +47,7 @@ class Skill:
         # If on cooldown, draw red overlay with alpha
         if self.cooldown > 0:
             overlay = pg.Surface((64, 64), pg.SRCALPHA)
-            overlay.fill((255, 0, 0, 128))  # Red with 50% transparency
+            overlay.fill((255, 0, 0, 64))  # Red with 50% transparency
             screen.blit(overlay, (x, y))
 
             # Draw cooldown number
@@ -49,15 +59,14 @@ class Skill:
     def save_skill(self):
         idict = {}
         for key, value in self.__dict__.items():
-            if key not in ('skill_surface', 'owner', 'skill'):
+            if key not in ('skill_surface', 'owner', 'skill', 'skills_list'):
                 idict[key] = value
         return idict
 
     def load_skill(self, data):
         for key, value in data.items():
             setattr(self, key, value)
-        skills_list = {'heal': self.skill_damage, 'damage': self.skill_damage, 'multiply': self.multiply}
-        self.skill = skills_list.get(self.name.lower(), lambda x: None)
+        self.skill = self.skills_list.get(self.name.lower(), lambda x: None)
         self.skill_surface = pg.image.load(self.image_path).convert_alpha()
         self.skill_surface = pg.transform.scale(self.skill_surface, (64, 64))
         return self
@@ -65,11 +74,11 @@ class Skill:
     def skill_damage(self, target):
         if self.owner.combat_stats.spend_ap(self.ap_cost):
             sign = '-' if self.value > 0 else '+'
-            target.take_damage(self.value) if self.value > 0 else target.combat_stats.get_healed(self.value)
+            target.combat_stats.take_damage(self.value, armor=False) if self.value > 0 else (
+                                                                        target.combat_stats.get_healed(-self.value))
             target.get_floating_nums(f"{sign}{int(self.value)}", color=GREEN)
-            self.owner.game_state.add_message(f"{self.owner.name} does {target.name} {sign}{self.value} to hp", WHITE)
+            self.owner.game_state.add_message(f"{self.owner.name} does {target.name} {sign}{abs(self.value)} to hp", WHITE)
             return True
-
 
     def multiply(self, target):
         if self.owner.combat_stats.spend_ap(self.ap_cost):
@@ -78,4 +87,14 @@ class Skill:
             self.owner.game_state.add_message(f"{self.owner.name} casts {self.name} on {target.name} for {damage} dmg", RED)
             return True
 
+    def shout(self, target):
+        if not self.owner.combat_stats.spend_ap(self.ap_cost):
+            self.owner.get_floating_nums(f"Not enough AP!", color=BLUE)
+            return
+
+        shouted = self.owner.game_state.stt.handle_record_button('intimidate')  # STT record logic handled in game_state
+        if not shouted:
+            self.owner.get_floating_nums('I... I.. will hurt you! Yes!', color=YELLOW)
+            self.owner.shout_intimidate(1)  # Minimal value
+        return True
 

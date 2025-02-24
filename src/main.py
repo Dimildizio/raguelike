@@ -226,9 +226,11 @@ class Game:
                 self.state_manager.stt.handle_record_button()
 
             if event.key == pg.K_1:
-                self.state_manager.player.heal_self(self.state_manager.player)
+                self.state_manager.player.use_skill(0)  # heal_self
             if event.key == pg.K_2:
-                self.state_manager.stt.handle_record_button('intimidate')
+                self.state_manager.player.use_skill(1)  # shout
+            if event.key == pg.K_3:
+                self.state_manager.player.use_skill(2)  # multiply hit
 
             # Movement
             if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):

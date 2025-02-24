@@ -92,6 +92,7 @@ class STTHandler:
             if self.start_recording():
                 self.shout_mode = mode
                 print("Started recording...")
+                return True
 
     def dialog_use_voice(self, max_input_length, screen):
         if self.is_recording:

@@ -56,6 +56,7 @@ class Entity(ABC):
             if hasattr(self, 'can_talk') and self.can_talk and not loading:
                 self.rag_manager._create_entity_index(self.entity_id, self.__class__.__name__.lower())
 
+
     def save_entity(self):
         """Creates a dictionary of current attribute values"""
         save_dict = {'entity_class': self.__class__.__name__}

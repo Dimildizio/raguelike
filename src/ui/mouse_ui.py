@@ -81,7 +81,7 @@ class MouseUI:
         self.context_menu = None
         self.hovering_skill = None
         self.selected_skill = None
-        self.selected_entity = None  # Add this to store the currently selected entity
+        self.selected_entity = None
 
     def get_tile_menu_options(self, tile_x, tile_y):
         if not (0 <= tile_x < self.game.state_manager.current_map.width and
@@ -228,5 +228,6 @@ class MouseUI:
             skill_rect = pg.Rect(skill_x, panel_y, SKILL_PANEL_SIZE, SKILL_PANEL_SIZE)
             if skill_rect.collidepoint(mouse_pos):
                 print(self.game.state_manager.player.skills[i].name)
+                self.game.state_manager.player.use_skill(i)
                 return i
         return -1
