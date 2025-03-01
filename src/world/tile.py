@@ -46,7 +46,7 @@ class Tile:
 
     def draw(self, screen, offset_x=0, offset_y=0):
         if self.pil_sprite:
-            # Use PIL-based rotation
+            # PIL-based rotation
             rotated_surface = self.sprite_loader.rotate_sprite(self.pil_sprite, self.rotation)
             if rotated_surface:
                 screen.blit(rotated_surface, (self.x + offset_x, self.y + offset_y))
@@ -54,7 +54,7 @@ class Tile:
             # Fallback to regular surface if PIL sprite isn't available
             screen.blit(self.surface, (self.x + offset_x, self.y + offset_y))
         for item in self.ground_items:
-            item.draw(screen, offset_x, offset_y)
+            item.draw(screen, self.x + offset_x, self.y + offset_y)
 
     def add_item(self, item):
         print('Added item at: (x,y)', self.x, self.y)

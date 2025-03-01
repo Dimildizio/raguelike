@@ -255,6 +255,7 @@ class WorldMap:
         print(f'Add {entity} to worldmap', tile_x, tile_y, type(self.tiles[tile_y]), type(self.tiles[tile_y][tile_x]))
         if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
             if isinstance(entity, Remains):
+                print('remains added')
                 self.tiles[tile_y][tile_x].add_item(entity)
                 return True
             if isinstance(entity, House):
@@ -309,6 +310,7 @@ class WorldMap:
             result = self.execute_flee(monster, dx, dy, monster_tile_x, monster_tile_y)
         elif decision == "attack":
             result = self.execute_attack(monster, player)
+
         elif decision == "approach":
             result = self.execute_approach(monster, dx, dy, monster_tile_x, monster_tile_y)
         elif decision == 'moveto':
@@ -564,3 +566,9 @@ class WorldMap:
         if dx == 1 and dy == 1:
             return int(MOVE_ACTION_COST * 1.5)
         return MOVE_ACTION_COST
+
+    def put_item(self, x, y, item):
+        self.tiles[y][x].add_item(item)
+
+    def remove_item(self, x, y, item):
+        self.tiles[y][x].remove_item(item)

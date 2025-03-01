@@ -2,6 +2,7 @@ import pygame as pg
 from constants import *
 from entities.monster import Monster
 from entities.npc import NPC
+from entities.item import Item
 
 
 class ContextMenu:
@@ -93,7 +94,6 @@ class MouseUI:
 
         # First menu: Select target (tile or entities)
         target_options = []
-
         # Add tile as an option
         target_options.append({
             'name': 'Ground',
@@ -103,7 +103,31 @@ class MouseUI:
                 {'name': 'Examine', 'action': 'examine'}
             ]
         })
-
+        if tile.ground_items:
+            if len(tile.ground_items) == 1:
+                # Single item - show specific options
+                item = tile.ground_items[0]
+                item_data = ({
+                    'name': f"{item.name}",
+                    'type': 'item',
+                    'item': item,
+                    'submenu': [{'name': 'Examine', 'action': 'examine_item'},
+                                {'name': 'Use', 'action': 'use_item'}]})
+                if isinstance(item, Item):
+                    item_data['submenu'].append({'name': 'Pick up', 'action': 'pickup'})
+                target_options.append(item_data)
+            else:
+                # Multiple items - show group options
+                item_names = [item.name for item in tile.ground_items]
+                target_options.append({
+                    'name': f"Items ({len(tile.ground_items)})",
+                    'type': 'items',
+                    'items': item_names,
+                    'submenu': [
+                        {'name': 'Examine', 'action': 'examine_items'},
+                        {'name': 'Open', 'action': 'open_items'}
+                    ]
+                })
         # Add entities
         for entity in tile.entities:
             if isinstance(entity, Monster):
@@ -158,7 +182,14 @@ class MouseUI:
                     if option_idx >= 0:
                         selected = self.context_menu.options[option_idx]
                         if 'submenu' in selected:
-                            self.selected_entity = selected.get('entity')
+                            print('SELECTED', selected)
+                            if 'entity' in selected:
+                                self.selected_entity = selected['entity']
+                            elif 'item' in selected:
+                                self.selected_entity = selected['item']
+                            elif 'items' in selected:
+                                self.selected_entity = selected['items']
+
                             # Calculate position for submenu
                             submenu_x = mouse_pos[0]
                             # Position y so that mouse points to first option
@@ -189,10 +220,10 @@ class MouseUI:
 
         tile_x, tile_y = self.selected_tile
         action = option.get('action')
-        entity = self.selected_entity  # Use the stored entity instead of getting it from the option
+        entity = self.selected_entity
+        tile = self.game.state_manager.current_map.tiles[tile_y][tile_x]
 
         if action == 'move':
-            # Keep trying to move until we can't anymore
             player = self.game.state_manager.player
             while player.move_to_target(tile_x, tile_y, self.game.state_manager.current_map):
                 pass  # Continue moving until we can't move anymore
@@ -208,6 +239,43 @@ class MouseUI:
         elif action == 'attack':
             if isinstance(entity, Monster):
                 pass
+        elif action == 'pickup':
+            print('THE ACTION IS PICKUP', self.selected_entity)
+            item = self.selected_entity
+            if isinstance(item, Item) and self.game.state_manager.player:
+                # Add to player inventory
+                self.game.state_manager.player.inventory.append(item)
+                # Remove from ground
+                tile.remove_item(item)
+                self.game.state_manager.add_message(f"Picked up {item.name}", WHITE)
+        elif action == 'examine_item':
+
+            print('THE ACTION IS EXAMINE', self.selected_entity)
+            item = self.selected_entity
+            if isinstance(item, Item):
+                stat_text = item.get_stat_text()
+                self.game.state_manager.add_message(f"You examine {item.name}: {item.description}\n{stat_text}", WHITE)
+            elif item:
+                self.game.state_manager.add_message(f'You see {item.description}')
+        elif action == 'use_item':
+            print('THE ACTION IS USE', self.selected_entity)
+            item = self.selected_entity
+            if item:
+                if item.use(self.game.state_manager.player):
+                    tile.remove_item(item)
+                else:
+                    self.game.state_manager.add_message(f"You can't use {item.name} this way", WHITE)
+        elif action == 'examine_items':
+            print("THE ACTION IS EXAMINE ITEMES", self.selected_entity)
+            items = self.selected_entity
+            if items:
+                item_list = ", ".join([item.name for item in items])
+                self.game.state_manager.add_message(f"You see: {item_list}", WHITE)
+        elif action == 'open_items':
+
+            print("THE ACTION IS OPEN", self.selected_entity)
+            # This will be implemented later for trade inventory
+            self.game.state_manager.add_message("This feature is not yet implemented", RED)
 
         self.context_menu = None
         self.selected_tile = None

@@ -8,6 +8,7 @@ from systems.quest import QuestManager
 from entities.monster import Monster, GreenTroll, Dryad, KoboldTeacher, HellBard, WillowWhisper
 from entities.entity import Tree, House
 from entities.npc import NPC
+from entities.item import Item
 from ui.log_ui import MessageLog
 from ui.floating_text import FloatingTextManager
 from utils.achievements import AchievementManager
@@ -142,6 +143,9 @@ class GameStateManager:
                 pos = valid_positions.pop()
                 print('monster', monster, 'x', pos[0], 'y', [pos[1]])
                 self.current_map.add_entity(monster, pos[0], pos[1])
+        it = Item('potion', SPRITES['POTION_1'], item_type="consumable", description="Slightly red health potion",
+                   price=15, weight=1, equippable=False, slot=None, stats={'heal': 10}, game_state=self)
+        self.current_map.put_item(6, 6, it)
         self.loading_progress = 0
         self.change_state(GameState.PLAYING)
 

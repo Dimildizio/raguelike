@@ -113,6 +113,8 @@ SPRITES = {
     'SKILL_2': os.path.join(ASSET_DIR, "effects/middlefinger.png"),
     'SKILL_3': os.path.join(ASSET_DIR, "effects/spell.png"),
 
+    "POTION_1": os.path.join(ASSET_DIR, "items/potion_1.png"),
+
     "ACHIEVEMENT_QUEST_MASTER": os.path.join(ASSET_DIR, "achievements/quest_master.png"),
     "ACHIEVEMENT_GOBLIN_SLAYER": os.path.join(ASSET_DIR, "achievements/goblin_slayer.png"),
 }
