@@ -135,6 +135,7 @@ class Game:
             return
         # Get the next monster
         monster = self.monsters_queue[0]
+        print(monster.name, 'acts')
         if monster.try_initiate_dialog((self.state_manager.player.x, self.state_manager.player.y)):
             # Monster wants to talk - switch to dialog state
             self.dialog_ui.current_npc = monster
@@ -280,8 +281,7 @@ class Game:
         if selected_option == "New Game":
             self.load_loading_image()
             self.dialog_ui.dialogue_processor.rag_manager.clear_knowledge_base()  # Clean db
-            self.state_manager.start_new_game()  # Initialize player and entities
-            #self.state_manager.change_state(GameState.PLAYING)
+            self.state_manager.start_new_game()
         elif selected_option == "Load Game":
             self.load_loading_image()
             SaveSystem.load_game(self.state_manager)
@@ -295,7 +295,7 @@ class Game:
 
     def handle_death_input(self, event):
         if event.type == pg.KEYDOWN:
-            if event.key == pg.K_ESCAPE:  # Return to main menu
+            if event.key == pg.K_ESCAPE:
                 self.state_manager.change_state(GameState.MAIN_MENU)
 
     def draw_menu(self):
