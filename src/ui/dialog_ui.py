@@ -696,4 +696,8 @@ class DialogUI:
                         self.game_state_manager.add_message(f"{monster.monster_type} {monster.name} shouts: {shout}", WHITE)
                     except Exception as e:
                         print(f"Couldn't shout: {e}")
+                        shout = 'I will kill you!'
+                        monster.get_floating_nums(shout, color=YELLOW)
+                        self.game_state_manager.add_message(f"{monster.monster_type} {monster.name} shouts: {shout}",
+                                                            WHITE)
 

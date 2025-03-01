@@ -394,7 +394,7 @@ class Monster(Entity):
     def can_shout(self):
         """Check if monster can attempt to shout"""
         if self.shout_cooldown <= 0:
-            if self.monster_type == 'green_troll':
+            if self.monster_type == 'green_troll' and random.random() < 0.9:
                 self.shout_cooldown = SHOUT_COOLDOWN
                 return True
             elif random.random() < self.shout_chance:

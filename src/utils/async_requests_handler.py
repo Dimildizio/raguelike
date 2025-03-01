@@ -40,6 +40,7 @@ class AsyncRequestHandler:
                                 self.completed_requests.append(request)
                     except Exception as e:
                         print(f"Error processing async request: {e}")
+                        self.completed_requests.append(request)
 
                 self.current_thread = threading.Thread(target=process_request, args=(request,))
                 self.current_thread.daemon = True
