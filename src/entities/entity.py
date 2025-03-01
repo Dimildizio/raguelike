@@ -179,6 +179,9 @@ class Entity(ABC):
     def can_do_action(self, action_price):
         return action_price <= self.combat_stats.ap
 
+    def use(self, *args):
+        pass
+
     def get_floating_nums(self, txt, color=RED):
         self.game_state.floating_text_manager.add_text(txt, self.x + DISPLAY_TILE_SIZE // 2, self.y, color)
 
@@ -194,6 +197,9 @@ class Remains(Entity):
 
     def update(self):
         pass
+
+    def draw(self, screen, offset_x=0, offset_y=0):
+        screen.blit(self.surface, (offset_x, offset_y))
 
 
 class Tree(Entity):
