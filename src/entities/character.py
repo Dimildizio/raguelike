@@ -22,6 +22,7 @@ class Character(Entity):
             self.completed_quests = []
             self.skills = self.generate_skills()
             self.inventory = []
+            self.inv_slots = {'head': None, 'body': None, 'weapon': None, 'shield': None}
             self.gold = 25
 
     def use_skill(self, num, target=None):
@@ -34,7 +35,7 @@ class Character(Entity):
                        description='Deal Damage to a target',)
         multiply = Skill(self, name='multiply', ap_cost=40, value=2, cooldown=4, dist=1, image_path=SPRITES['SKILL_3'],
                          description='Deal boosted damage to a target')
-        breath = Skill(self, name='second_breath', ap_cost=5, value=30, cooldown=4, dist=1,
+        breath = Skill(self, name='second_breath', ap_cost=5, value=30, cooldown=0, dist=1,
                        image_path=SPRITES['SKILL_3'], description='Recharge AP at the cost of taking damage')
         return [heal, damage, multiply, breath]
 
@@ -57,12 +58,25 @@ class Character(Entity):
         self.combat_stats.spend_ap(val)
 
     @property
+    def deal_dmg(self):
+        weapon_dmg = 0
+        if self.inv_slots['weapon']:
+            weapon_dmg = self.inv_slots['weapon'].stats['damage']
+        return self.combat_stats.get_dmg_val + weapon_dmg
+
+
+    @property
     def get_ap_perc(self):
         return self.combat_stats.get_ap_perc
 
     def check_dead(self):
         if not self.is_alive:
             self.game_state.change_state(GameState.DEAD)
+
+    def reset_turn(self):
+        self.reset_action_points()
+        for skill in self.skills:
+            skill.update_cooldown()
 
     def accept_quest(self, quest_id: str) -> bool:
         """Accept a new quest if not already active or completed"""
@@ -122,7 +136,7 @@ class Character(Entity):
                 for entity in self.game_state.current_map.tiles[y][x].entities:
                     if isinstance(entity, Monster) and entity.is_alive:
                         dmg = random.randint(1, max(1, damage))
-                        entity.take_damage(dmg)
+                        entity.take_damage(dmg, armor=False)
                         self.game_state.add_message(f"{entity.monster_type} {entity.name} was intimidated", YELLOW)
 
     def move_to_target(self, target_x, target_y, current_map):

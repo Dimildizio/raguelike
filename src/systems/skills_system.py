@@ -25,6 +25,9 @@ class Skill:
 
     def skill_activated(self, target=None):
         if self.cooldown <= 0:
+            if not self.owner.combat_stats.spend_ap(self.ap_cost):
+                self.owner.get_floating_nums(f"Not enough AP!", color=BLUE)
+                return
             target = self.owner if target is None else target
             try:
                 if self.skill(target):
@@ -39,6 +42,9 @@ class Skill:
 
     def update(self):
         pass
+
+    def update_cooldown(self):
+        self.cooldown = max(0, self.cooldown-1)
 
     def draw(self, screen, pos):
         x, y = pos
@@ -72,26 +78,20 @@ class Skill:
         return self
 
     def skill_damage(self, target):
-        if self.owner.combat_stats.spend_ap(self.ap_cost):
-            sign = '-' if self.value > 0 else '+'
-            target.combat_stats.take_damage(self.value, armor=False) if self.value > 0 else (
-                                                                        target.combat_stats.get_healed(-self.value))
-            target.get_floating_nums(f"{sign}{int(self.value)}", color=GREEN)
-            self.owner.game_state.add_message(f"{self.owner.name} does {target.name} {sign}{abs(self.value)} to hp", WHITE)
-            return True
+        sign = '-' if self.value > 0 else '+'
+        target.combat_stats.take_damage(self.value, armor=False) if self.value > 0 else (
+                                                                    target.combat_stats.get_healed(-self.value))
+        target.get_floating_nums(f"{sign}{int(self.value)}", color=GREEN)
+        self.owner.game_state.add_message(f"{self.owner.name} does {target.name} {sign}{abs(self.value)} to hp", WHITE)
+        return True
 
     def multiply(self, target):
-        if self.owner.combat_stats.spend_ap(self.ap_cost):
-            damage = self.value * self.owner.combat_stats.max_damage
-            target.take_damage(damage)
-            self.owner.game_state.add_message(f"{self.owner.name} casts {self.name} on {target.name} for {damage} dmg", RED)
-            return True
+        damage = self.value * self.owner.combat_stats.max_damage
+        target.take_damage(damage)
+        self.owner.game_state.add_message(f"{self.owner.name} casts {self.name} on {target.name} for {damage} dmg", RED)
+        return True
 
     def shout(self, target):
-        if not self.owner.combat_stats.spend_ap(self.ap_cost):
-            self.owner.get_floating_nums(f"Not enough AP!", color=BLUE)
-            return
-
         shouted = self.owner.game_state.stt.handle_record_button('intimidate')  # STT record logic handled in game_state
         if not shouted:
             self.owner.get_floating_nums('I... I.. will hurt you! Yes!', color=YELLOW)
@@ -99,10 +99,9 @@ class Skill:
         return True
 
     def second_breath(self, target):
-        if self.owner.combat_stats.spend_ap(self.ap_cost):
-            target.take_damage(self.value, armor=False)
-            target.combat_stats.ap = target.combat_stats.max_ap
-            target.get_floating_nums(f"Takes a deep breath", color=BLUE)
-            self.owner.game_state.add_message(f"{self.owner.name} gets a second breath losing {self.value} hp", WHITE)
-            return True
+        target.take_damage(self.value, armor=False)
+        target.combat_stats.ap = target.combat_stats.max_ap
+        target.get_floating_nums(f"Takes a deep breath", color=BLUE)
+        self.owner.game_state.add_message(f"{self.owner.name} gets a second breath losing {self.value} hp", WHITE)
+        return True
 

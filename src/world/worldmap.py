@@ -194,7 +194,7 @@ class WorldMap:
                 if entity.can_do_action(ATTACK_ACTION_COST):
                     # Handle combat
                     entity.spend_action_points(ATTACK_ACTION_COST)
-                    damage = blocking_entity.take_damage(entity.combat_stats.damage)
+                    damage = blocking_entity.take_damage(entity.deal_dmg)
 
                     if hasattr(self, 'combat_animation'):
                         self.combat_animation.start_attack(entity, blocking_entity)
@@ -255,14 +255,13 @@ class WorldMap:
         print(f'Add {entity} to worldmap', tile_x, tile_y, type(self.tiles[tile_y]), type(self.tiles[tile_y][tile_x]))
         if 0 <= tile_x < self.width and 0 <= tile_y < self.height:
             if isinstance(entity, Remains):
-                print('remains added')
                 self.tiles[tile_y][tile_x].add_item(entity)
                 return True
-            if isinstance(entity, House):
+            elif isinstance(entity, House):
                 self.tiles[tile_y][tile_x].add_entity(entity)
                 return True
 
-            if self.tiles[tile_y][tile_x].passable and not self.tiles[tile_y][tile_x].get_blocking_entity():
+            elif self.tiles[tile_y][tile_x].passable and not self.tiles[tile_y][tile_x].get_blocking_entity():
                 # Place entity
                 self.tiles[tile_y][tile_x].add_entity(entity)
                 entity.x = tile_x * self.tile_size

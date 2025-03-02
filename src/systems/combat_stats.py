@@ -1,3 +1,6 @@
+import random
+
+
 class CombatStats:
     def __init__(self, base_hp, base_armor, base_damage, max_damage, ap):
         self.max_hp = base_hp
@@ -35,11 +38,17 @@ class CombatStats:
     def take_damage(self, amount, armor=True):
         if self.current_hp <= 0:
             return 0
+        print('armor', armor, self.armor)
+        print('amount', amount)
         actual_damage = int(max(1, amount - (self.armor if armor else 0)))  # Minimum 1 damage
         self.current_hp -= actual_damage
         if self.current_hp <= 0:
             self.current_hp = 0
         return actual_damage
+
+    @property
+    def get_dmg_val(self):
+        return random.randint(self.damage, self.max_damage)
 
 
     @property
