@@ -66,8 +66,7 @@ class Monster(Entity):
 
     def attack(self, target):
         # Basic attack with random variation
-        base_damage = self.combat_stats.damage * random.uniform(0.8, 1.2)
-
+        base_damage = self.deal_dmg
         # Personality affects critical hit chance
         crit_chance = CRITICAL_HIT_CHANCE
         if self.personality == "aggressive":
@@ -668,8 +667,8 @@ class KoboldTeacher(Monster):
             self.set_hostility(False)
             print("player passed the test")
         else:
-            player.spend_ap(self.combat_stats.damage)
-            player.take_damage(self.combat_stats.damage)
+            player.spend_ap(self.deal_dmg)
+            player.take_damage(self.deal_dmg)
             self.game_state.add_message('Words hurt you!')
 
 class HellBard(KoboldTeacher):

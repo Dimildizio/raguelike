@@ -133,8 +133,12 @@ class Game:
         # If there are no more monsters to process, we're done
         if not self.monsters_queue:
             return
+
         # Get the next monster
         monster = self.monsters_queue[0]
+        if not monster.is_alive:
+            self.monsters_queue.pop(0)
+            return self.process_next_monster()
         print(monster.name, 'acts')
         if monster.try_initiate_dialog((self.state_manager.player.x, self.state_manager.player.y)):
             # Monster wants to talk - switch to dialog state
@@ -220,8 +224,8 @@ class Game:
             player_tile_y = self.state_manager.player.y // self.state_manager.current_map.tile_size
 
             if event.key == pg.K_SPACE:  # End turn
-                self.state_manager.player.reset_action_points()
                 self.handle_monster_turns()
+                self.state_manager.player.reset_turn()
                 return
             if event.key == pg.K_BACKQUOTE:  # ` key record
                 self.state_manager.stt.handle_record_button()
@@ -233,7 +237,7 @@ class Game:
             if event.key == pg.K_3:
                 self.state_manager.player.use_skill(2)  # multiply hit
             if event.key == pg.K_4:
-                self.state_manager.player.use_skill(2)  # multiply hit
+                self.state_manager.player.use_skill(3)  # recharge ap
 
             # Movement
             if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):

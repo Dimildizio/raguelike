@@ -56,6 +56,9 @@ class Entity(ABC):
             if hasattr(self, 'can_talk') and self.can_talk and not loading:
                 self.rag_manager._create_entity_index(self.entity_id, self.__class__.__name__.lower())
 
+    @property
+    def deal_dmg(self):
+        return self.combat_stats.get_dmg_val
 
     def save_entity(self):
         """Creates a dictionary of current attribute values"""
@@ -164,10 +167,10 @@ class Entity(ABC):
     def is_alive(self):
         return self.combat_stats and self.combat_stats.current_hp > 0  # Explicitly check current HP
 
-    def take_damage(self, amount):
+    def take_damage(self, amount, armor=True):
         if not self.is_alive:
             return 0
-        dmg = self.combat_stats.take_damage(amount)
+        dmg = self.combat_stats.take_damage(amount, armor)
         return dmg
 
     def spend_action_points(self, amount):

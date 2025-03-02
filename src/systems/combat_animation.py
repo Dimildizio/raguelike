@@ -30,12 +30,11 @@ class CombatAnimation:
         # self.original_target_rotation = target.rotation
         self.shake_offset = (0, 0)
 
-        # Calculate and set target rotation immediately
+        # Calculate and set target rotation
         dx = attacker.x - target.x
         dy = attacker.y - target.y
         angle = math.degrees(math.atan2(-dy, dx)) + 90
         target.base_rotation = angle
-
         return True
 
     def update(self):
@@ -53,6 +52,9 @@ class CombatAnimation:
             self.attacker.x, self.attacker.y = self.original_pos
             # self.target.rotation = self.original_target_rotation
             self.shake_offset = (0, 0)
+            if self.target and not self.target.is_alive:
+                if hasattr(self.target, 'game_state') and self.target.game_state:
+                    self.target.game_state.current_map.remove_entity(self.target)
             return
 
         # Calculate animation progress (0 to 1)
