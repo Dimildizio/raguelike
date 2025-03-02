@@ -5,6 +5,7 @@ from .tile import Tile
 from constants import *
 from entities.npc import NPC
 from entities.monster import Monster
+from entities.item import Item
 
 
 class MapCreator:
@@ -133,3 +134,20 @@ class MapCreator:
         npc_positions = self.get_npc_positions()
         tree_positions = self.calculate_tree_positions()
         return self.tiles, house_pos, npc_positions, tree_positions
+
+    @staticmethod
+    def initiate_items(SPRITES, game_state):
+        i_items = []
+
+        for it in range(3):
+            i_items.append(Item('Heal Potion', SPRITES['POTION_1'], item_type="consumable",
+                                description="Slightly red health potion", price=15, weight=1, equippable=False,
+                                slot=None, stats={'heal': 10}, game_state=game_state))
+        i_items.append(Item('Leather Armor', SPRITES["ARMOR_1"], inv_sprite=SPRITES["ARMOR_INV_1"], item_type="armor",
+                            description="Simple leather armor that protects most important parts of the body", price=50,
+                            weight=20, equippable=True, slot='body', stats={'armor': 15}, game_state=game_state))
+        i_items.append(Item('Basic sword', SPRITES["SWORD_1"], inv_sprite=SPRITES["SWORD_INV_1"], item_type="weapon",
+                            description="Simple sword, sharp and balanced", price=40,
+                            weight=5, equippable=True, slot='weapon', stats={'damage': 35}, game_state=game_state))
+        return i_items
+

@@ -143,9 +143,7 @@ class GameStateManager:
                 pos = valid_positions.pop()
                 print('monster', monster, 'x', pos[0], 'y', [pos[1]])
                 self.current_map.add_entity(monster, pos[0], pos[1])
-        it = Item('potion', SPRITES['POTION_1'], item_type="consumable", description="Slightly red health potion",
-                   price=15, weight=1, equippable=False, slot=None, stats={'heal': 10}, game_state=self)
-        self.current_map.put_item(6, 6, it)
+        self.create_items(map_creator)
         self.loading_progress = 0
         self.change_state(GameState.PLAYING)
 
@@ -319,6 +317,19 @@ class GameStateManager:
         return WillowWhisper(x=spawn_pos[0] * DISPLAY_TILE_SIZE, y=spawn_pos[1] * DISPLAY_TILE_SIZE,
                              sprite_path="WILLOW", name='Whecretio', voice='a', game_state=self,
                              face_path=SPRITES["WILLOW_FACE"], monster_type='willow_whisper')
+
+    def create_items(self, map_creator):
+        i_items = map_creator.initiate_items(SPRITES, self)
+        for item in i_items:
+            x, y = 1, 1
+            positioned = False
+            while not positioned:
+                x, y = random.randint(1, MAP_WIDTH),  random.randint(1, MAP_HEIGHT)
+                positioned = self.current_map.is_valid_move(x, y)
+            self.current_map.put_item(x, y, item)
+
+
+
 
     def draw_progress_voice(self, screen):
         text = self.stt.draw_voice_recording(screen)

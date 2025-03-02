@@ -113,7 +113,14 @@ SPRITES = {
     'SKILL_2': os.path.join(ASSET_DIR, "effects/middlefinger.png"),
     'SKILL_3': os.path.join(ASSET_DIR, "effects/spell.png"),
 
-    "POTION_1": os.path.join(ASSET_DIR, "items/potion_1.png"),
+    "POTION_1": os.path.join(ASSET_DIR, "items/potion_2_bg.png"),
+
+    "BAG_1": os.path.join(ASSET_DIR, "items/bag_1_bg.png"),
+    "BAG_2": os.path.join(ASSET_DIR, "items/bag_2_bg.png"),
+    "ARMOR_1": os.path.join(ASSET_DIR, "items/armor_leather_bg.png"),
+    "ARMOR_INV_1": os.path.join(ASSET_DIR, "items/armor_leather_inv.png"),
+    "SWORD_1": os.path.join(ASSET_DIR, "items/sword_bg.png"),
+    "SWORD_INV_1": os.path.join(ASSET_DIR, "items/sword_inv.png"),
 
     "ACHIEVEMENT_QUEST_MASTER": os.path.join(ASSET_DIR, "achievements/quest_master.png"),
     "ACHIEVEMENT_GOBLIN_SLAYER": os.path.join(ASSET_DIR, "achievements/goblin_slayer.png"),
