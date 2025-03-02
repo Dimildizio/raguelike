@@ -15,7 +15,7 @@ class Skill:
         self.max_cooldown = cooldown
 
         self.skills_list = {'heal': self.skill_damage, 'damage': self.skill_damage, 'multiply': self.multiply,
-                            'shout': self.shout}
+                            'shout': self.shout, 'second_breath': self.second_breath}
         self.skill = self.skills_list.get(self.name.lower(), lambda x: None)
 
         self.image_path = image_path
@@ -97,4 +97,12 @@ class Skill:
             self.owner.get_floating_nums('I... I.. will hurt you! Yes!', color=YELLOW)
             self.owner.shout_intimidate(1)  # Minimal value
         return True
+
+    def second_breath(self, target):
+        if self.owner.combat_stats.spend_ap(self.ap_cost):
+            target.take_damage(self.value, armor=False)
+            target.combat_stats.ap = target.combat_stats.max_ap
+            target.get_floating_nums(f"Takes a deep breath", color=BLUE)
+            self.owner.game_state.add_message(f"{self.owner.name} gets a second breath losing {self.value} hp", WHITE)
+            return True
 

@@ -34,7 +34,9 @@ class Character(Entity):
                        description='Deal Damage to a target',)
         multiply = Skill(self, name='multiply', ap_cost=40, value=2, cooldown=4, dist=1, image_path=SPRITES['SKILL_3'],
                          description='Deal boosted damage to a target')
-        return [heal, damage, multiply]
+        breath = Skill(self, name='second_breath', ap_cost=5, value=30, cooldown=4, dist=1,
+                       image_path=SPRITES['SKILL_3'], description='Recharge AP at the cost of taking damage')
+        return [heal, damage, multiply, breath]
 
     def update(self):
         self.check_dead()

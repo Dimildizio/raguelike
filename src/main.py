@@ -232,6 +232,8 @@ class Game:
                 self.state_manager.player.use_skill(1)  # shout
             if event.key == pg.K_3:
                 self.state_manager.player.use_skill(2)  # multiply hit
+            if event.key == pg.K_4:
+                self.state_manager.player.use_skill(2)  # multiply hit
 
             # Movement
             if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):
@@ -244,6 +246,7 @@ class Game:
                 quest_status = self.state_manager.quest_manager.format_all_quests_status()
                 print("\n" + quest_status + "\n")
                 print('money:', self.state_manager.player.gold)
+                print('inv:', self.state_manager.player.inventory)
                 print(self.state_manager.stats)
 
             # Interaction
