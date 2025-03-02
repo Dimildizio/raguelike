@@ -68,13 +68,17 @@ class MapCreator:
             tile_x = house_x + dx
             tile_y = house_y + dy
 
-            self.tiles[tile_y][tile_x] = Tile(
+            new_tile = Tile(
                 tile_x * DISPLAY_TILE_SIZE,
                 tile_y * DISPLAY_TILE_SIZE,
                 sprite_path,
                 passable=False,
                 rotate=False  # Prevent rotation for house pieces
             )
+            if new_tile.surface:
+                new_tile.surface = new_tile.surface.convert_alpha()
+
+            self.tiles[tile_y][tile_x] = new_tile
             pos.append((tile_x, tile_y))
         return pos
 

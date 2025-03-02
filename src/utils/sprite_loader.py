@@ -27,6 +27,7 @@ class SpriteLoader:
             # Convert PIL to pygame surface
             str_data = pil_image.tobytes()
             surface = pygame.image.fromstring(str_data, pil_image.size, 'RGBA')
+            surface = surface.convert_alpha()
 
             return surface, pil_image
 
@@ -34,7 +35,7 @@ class SpriteLoader:
             print(f"Error loading sprite {path}: {e}")
             # Create a default colored square as fallback
             surface = pygame.Surface((self.display_scale, self.display_scale))
-            surface.fill((255, 0, 255))  # Magenta for missing textures
+            surface.fill((255, 0, 255, 128))  # Magenta for missing textures
             return surface, None
 
     @staticmethod
