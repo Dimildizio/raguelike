@@ -26,7 +26,7 @@ class Entity(ABC):
         self.game_state = game_state
         self.sprite_path = sprite_path
 
-        self.name = 'No name'
+        self.name = 'An object'
         self.voice = voice
         self.is_passable = False
 
@@ -59,6 +59,9 @@ class Entity(ABC):
     @property
     def deal_dmg(self):
         return self.combat_stats.get_dmg_val
+
+    def get_description(self):
+        return f'You see {self.description.lower() if hasattr(self, "description") else self.name}'
 
     def save_entity(self):
         """Creates a dictionary of current attribute values"""
@@ -218,7 +221,7 @@ class Tree(Entity):
 class House(Entity):
     def __init__(self, x, y, name="Village House", voice='a', loading=False, sprite_path=None, game_state=None,
                  description="A cozy village house promises warmth and a bed for a night"):
-        super().__init__(x, y, None, voice=voice, loading=loading)  # No sprite needed since tiles has visualization
+        super().__init__(x, y, sprite_path, voice=voice, loading=loading)
         self.name = name
         self.description = description
         self.is_passable = False
@@ -231,5 +234,7 @@ class House(Entity):
             self.face_surface = pg.transform.scale(self.face_surface, (256, 256))
 
     def draw(self, screen, offset_x=0, offset_y=0):
-        # No draw implementation needed since house tiles has visualization
-        pass
+        # Override the parent draw method to draw the house part
+        if self.surface:
+            screen.blit(self.surface, (self.x + offset_x, self.y + offset_y))
+

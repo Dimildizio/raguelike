@@ -46,6 +46,9 @@ class Skill:
     def update_cooldown(self):
         self.cooldown = max(0, self.cooldown-1)
 
+    def reset_cooldown(self):
+        self.cooldown = 0
+
     def draw(self, screen, pos):
         x, y = pos
         screen.blit(self.skill_surface, (x, y))

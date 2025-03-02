@@ -35,6 +35,10 @@ class CombatStats:
         amount = self.current_hp + amount if amount else self.max_hp
         self.current_hp = min(self.max_hp, amount)
 
+    def reset_values(self):
+        self.reset_ap()
+        self.get_healed(self.max_hp)
+
     def take_damage(self, amount, armor=True):
         if self.current_hp <= 0:
             return 0
@@ -69,10 +73,10 @@ class CombatStats:
         if hperc > .99:
             return 'unharmed'
         elif hperc > .75:
-            return 'light wounds'
+            return 'lightly wounded'
         elif hperc > .50:
-            return 'moderate wounds'
+            return 'moderately wounded'
         elif hperc > .25:
-            return 'heavy wounds'
+            return 'heavily wounded'
         else:
-            return 'mortal wounds'
+            return 'mortally wounded'

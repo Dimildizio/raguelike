@@ -117,8 +117,10 @@ class GameStateManager:
         self.current_map.tiles = tiles
         self.increment_loading_progress(10)
         # Place house at random valid position from MapCreator
-        for (h_x, h_y) in house_pos:
-            self.current_map.add_entity(House(h_x, h_y, voice=random.choice([x for x in VOICE_MAP.keys()])), h_x, h_y)
+        for (h_x, h_y, sprite_path) in house_pos:
+            self.current_map.add_entity(
+                House(h_x, h_y, voice=random.choice([x for x in VOICE_MAP.keys()]), sprite_path=sprite_path,),
+                h_x, h_y)
         # Place NPCs at their designated positions from MapCreator
         for npc, position in zip(npcs, npc_positions):
             x, y = position
@@ -213,8 +215,8 @@ class GameStateManager:
         print('night has passed')
         # Heal all entities with combat stats
         self.current_day += 1
-        self.player.heal_self()
-        self.player.combat_stats.reset_ap()
+        self.player.revivify()
+        self.add_message(f"The night has passed! Now is day {self.current_day}", color=GREEN)
         if self.current_day > DAY_GAME_ENDS:
             self.show_ending_stats()
             self.change_state(GameState.DEMO_COMPLETE)
@@ -327,9 +329,6 @@ class GameStateManager:
                 x, y = random.randint(1, MAP_WIDTH),  random.randint(1, MAP_HEIGHT)
                 positioned = self.current_map.is_valid_move(x, y)
             self.current_map.put_item(x, y, item)
-
-
-
 
     def draw_progress_voice(self, screen):
         text = self.stt.draw_voice_recording(screen)

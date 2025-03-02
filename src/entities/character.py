@@ -127,6 +127,11 @@ class Character(Entity):
             target.get_floating_nums(f"+{int(amount)}", color=GREEN)
             self.game_state.add_message(f"{target.name} gets healed by {amount}", GREEN)
 
+    def revivify(self):
+        self.combat_stats.reset_values()
+        for skill in self.skills:
+            skill.reset_cooldown()
+        # add effects update later
 
     def get_dialogue_context(self):
         context = {"player_health": self.combat_stats.get_status()}

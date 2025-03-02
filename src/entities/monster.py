@@ -64,6 +64,9 @@ class Monster(Entity):
                                         max_damage=maxdmg * perc['dmg'],
                                         ap=ap)
 
+    def get_description(self):
+        return f"You see {self.description}\n{self.monster_type.capitalize()} looks {self.combat_stats.get_status}"
+
     def attack(self, target):
         # Basic attack with random variation
         base_damage = self.deal_dmg
@@ -92,7 +95,6 @@ class Monster(Entity):
             amount = amount or self.combat_stats.max_hp
             self.combat_stats.get_healed(amount)
             self.game_state.add_message(f"{self.monster_type} got healed for {amount}", WHITE)
-
 
     def on_death(self):
         dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_key.upper()}"],
@@ -299,9 +301,9 @@ class Monster(Entity):
             elif decision == 'approach' and distance <= MONSTER_AGGRO_RANGE:
                 return 'approach'
             return 'none'  # Default to no action if decision can't be executed
-        except Exception as e:
+        except Exception as e:  # Fallback
             print(f"Error in LLM decision: {str(e)}")
-            return self.decide_monster_action_auto(distance)
+            return self.decide_monster_action(distance)
 
     def detect_nearby_monsters(self, current_map, radius=5):
         """
@@ -387,7 +389,6 @@ class Monster(Entity):
                 if any(isinstance(entity, Tree) for entity in tile.entities):
                     return True
         return False
-
 
     def can_shout(self):
         """Check if monster can attempt to shout"""

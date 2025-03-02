@@ -33,6 +33,7 @@ class WorldMap:
         # Initialize empty tiles list
         self.tiles = [[None for _ in range(width)] for _ in range(height)]
         self.entities = []
+        self.houses = []
 
     def save_map(self):
         idict = {'width': self.width, 'height': self.height, 'tile_size': self.tile_size,
@@ -122,7 +123,7 @@ class WorldMap:
                 self.tiles[y][x].draw(screen, -camera_x, -camera_y)
 
         # Draw only visible entities
-        for entity in self.entities:
+        for entity in self.entities + self.houses:
             # Calculate entity's tile position
             entity_tile_x = entity.x // self.tile_size
             entity_tile_y = entity.y // self.tile_size
@@ -259,6 +260,9 @@ class WorldMap:
                 return True
             elif isinstance(entity, House):
                 self.tiles[tile_y][tile_x].add_entity(entity)
+                entity.x = tile_x * self.tile_size
+                entity.y = tile_y * self.tile_size
+                self.houses.append(entity)
                 return True
 
             elif self.tiles[tile_y][tile_x].passable and not self.tiles[tile_y][tile_x].get_blocking_entity():

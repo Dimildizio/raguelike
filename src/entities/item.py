@@ -35,6 +35,9 @@ class Item:
     def __repr__(self):
         return f"{self.name}, {self.description}, id: {self.uuid}"
 
+    def get_description(self):
+        return f"You see a {self.description.lower()}"
+
     def use(self, character):
         """Use the item (for consumables)"""
         if self.item_type == "consumable":

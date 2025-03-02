@@ -232,7 +232,7 @@ class MouseUI:
         elif action == 'examine':
             if entity:
                 self.game.state_manager.add_message(
-                    f"You see {entity.description}", WHITE)
+                    f"{entity.get_description()}", WHITE)
             else:
                 self.game.state_manager.add_message(
                     "You see nothing special here", WHITE)

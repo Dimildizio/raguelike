@@ -48,13 +48,14 @@ class MapCreator:
                 self.tiles[road_y][x] = Tile(x * DISPLAY_TILE_SIZE, road_y * DISPLAY_TILE_SIZE, SPRITES["FLOOR"])
 
     def place_house(self):
-        """Place 6x6 house using separate sprite pieces"""
+        """Place 6x6 house using separate sprite pieces as entities on grass tiles"""
         house_x = self.width // 2 + 3  # A bit to the right of road
         house_y = self.height // 2 - 2  # Aligned with road, moved up a bit
 
         # Map of positions to sprite pieces for 6x6 house
         positions = ['top', 'top2', 'mid', 'mid2', 'bot', 'bot2']
         house_pieces = []
+        house_positions = []
 
         # Generate all combinations for 6x6 grid
         for row_idx, row in enumerate(positions):
@@ -62,25 +63,28 @@ class MapCreator:
                 sprite_key = f"HOUSE_1_{row.upper()}_{col.upper()}"
                 house_pieces.append([(col_idx, row_idx), SPRITES[sprite_key]])
 
-        # Place each piece
-        pos = []
+        # Make sure all tiles are grass first
+        for row_idx in range(len(positions)):
+            for col_idx in range(len(positions)):
+                tile_x = house_x + col_idx
+                tile_y = house_y + row_idx
+
+                # Create grass tile underneath
+                grass_sprite = random.choice([SPRITES["GRASS_0"], SPRITES["GRASS_2"]])
+                self.tiles[tile_y][tile_x] = Tile(
+                    tile_x * DISPLAY_TILE_SIZE,
+                    tile_y * DISPLAY_TILE_SIZE,
+                    grass_sprite,
+                    passable=True  # Grass is passable
+                )
+
+        # Return positions for house entities to be created later
         for (dx, dy), sprite_path in house_pieces:
             tile_x = house_x + dx
             tile_y = house_y + dy
+            house_positions.append((tile_x, tile_y, sprite_path))
 
-            new_tile = Tile(
-                tile_x * DISPLAY_TILE_SIZE,
-                tile_y * DISPLAY_TILE_SIZE,
-                sprite_path,
-                passable=False,
-                rotate=False  # Prevent rotation for house pieces
-            )
-            if new_tile.surface:
-                new_tile.surface = new_tile.surface.convert_alpha()
-
-            self.tiles[tile_y][tile_x] = new_tile
-            pos.append((tile_x, tile_y))
-        return pos
+        return house_positions
 
     def get_npc_positions(self):
         """Get designated positions for NPCs"""
