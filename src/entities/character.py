@@ -2,6 +2,7 @@ import random
 import pygame
 from .entity import Entity
 from .monster import Monster
+from .item import Item
 from constants import *
 from systems.combat_stats import CombatStats
 from systems.skills_system import Skill
@@ -21,8 +22,11 @@ class Character(Entity):
             self.active_quests = []
             self.completed_quests = []
             self.skills = self.generate_skills()
-            self.inventory = []
-            self.inv_slots = {'head': None, 'body': None, 'weapon': None, 'shield': None}
+            sword = Item('Basic sword', SPRITES["SWORD_1"], inv_sprite=SPRITES["SWORD_INV_1"], item_type="weapon",
+                            description="Simple sword, sharp and balanced", price=40,
+                            weight=5, equippable=True, slot='weapon', stats={'damage': 35}, game_state=game_state)
+            self.inventory = [sword]
+            self.inv_slots = {'head': None, 'body': None, 'weapon': sword, 'shield': None}
             self.gold = 25
 
     def use_skill(self, num, target=None):
@@ -62,6 +66,7 @@ class Character(Entity):
         weapon_dmg = 0
         if self.inv_slots['weapon']:
             weapon_dmg = self.inv_slots['weapon'].stats['damage']
+        print(weapon_dmg)
         return self.combat_stats.get_dmg_val + weapon_dmg
 
 

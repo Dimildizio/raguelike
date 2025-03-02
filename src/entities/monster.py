@@ -79,8 +79,8 @@ class Monster(Entity):
         actual_damage = target.take_damage(base_damage)
         return actual_damage
 
-    def take_damage(self, amount):
-        actual_damage = self.combat_stats.take_damage(amount)
+    def take_damage(self, amount, armor=True):
+        actual_damage = self.combat_stats.take_damage(amount, armor)
         self.get_floating_nums(f"-{actual_damage}", color=RED)
         self.game_state.add_message(f"{self.name} got hit for {int(actual_damage)} dmg", WHITE)
         if not self.is_alive:
@@ -164,7 +164,6 @@ class Monster(Entity):
         dy = abs(self.y - player_pos[1])
         distance = math.sqrt(dx * dx + dy * dy)
         return distance <= limit * DISPLAY_TILE_SIZE
-
 
     def locate_target(self, current_map):
         return current_map.get_random_nearby_tile(self)
