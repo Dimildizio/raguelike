@@ -43,8 +43,15 @@ class CombatAnimation:
 
         current_time = time.time()
         elapsed = current_time - self.start_time
+        if elapsed > ATTACK_ANIMATION_DURATION * 2:
+            print("Animation timed out - forcing completion")
+            self.is_playing = False
+            if self.attacker:
+                self.attacker.x, self.attacker.y = self.original_pos
+            self.shake_offset = (0, 0)
+            return
 
-        if elapsed > ATTACK_ANIMATION_DURATION:
+        elif elapsed > ATTACK_ANIMATION_DURATION:
             # Animation finished
             self.sound_manager.play_hit_sound()
             self.hit_played = True

@@ -97,18 +97,6 @@ class Monster(Entity):
             self.game_state.add_message(f"{self.monster_type} got healed for {amount}", WHITE)
 
     def on_death(self):
-        dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_key.upper()}"],
-                       name=f"Dead {self.monster_type}",
-                       description=f"The remains of a {self.monster_type} {self.name}", game_state=self.game_state)
-        print('created', type(dead))
-        self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
-        self.update_quest_progress()
-        self.add_self_to_stats()
-        self.game_state.add_message(f"{self.monster_type} dies", WHITE)
-        if hasattr(self, 'rag_manager'):
-            self.rag_manager.remove_entity_knowledge(self.entity_id)
-
-    def on_death(self):
         # Create remains
         dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_key.upper()}"],
                        name=f"Dead {self.monster_type}",
