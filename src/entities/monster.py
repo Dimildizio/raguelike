@@ -65,7 +65,7 @@ class Monster(Entity):
                                         ap=ap)
 
     def get_description(self):
-        return f"You see {self.description}\n{self.monster_type.capitalize()} looks {self.combat_stats.get_status}"
+        return f"You see {self.description}\nThe creature looks {self.combat_stats.get_status()}"
 
     def attack(self, target):
         # Basic attack with random variation
@@ -99,9 +99,27 @@ class Monster(Entity):
     def on_death(self):
         dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_key.upper()}"],
                        name=f"Dead {self.monster_type}",
-                       description=f"The remains of a {self.monster_type} {self.name}",game_state=self.game_state)
+                       description=f"The remains of a {self.monster_type} {self.name}", game_state=self.game_state)
         print('created', type(dead))
         self.game_state.current_map.add_entity(dead, self.x // DISPLAY_TILE_SIZE, self.y // DISPLAY_TILE_SIZE)
+        self.update_quest_progress()
+        self.add_self_to_stats()
+        self.game_state.add_message(f"{self.monster_type} dies", WHITE)
+        if hasattr(self, 'rag_manager'):
+            self.rag_manager.remove_entity_knowledge(self.entity_id)
+
+    def on_death(self):
+        # Create remains
+        dead = Remains(self.x, self.y, SPRITES[f"DEAD_{self.sprite_key.upper()}"],
+                       name=f"Dead {self.monster_type}",
+                       description=f"The remains of a {self.monster_type} {self.name}", game_state=self.game_state)
+        print('created', type(dead))
+
+        tile_x = self.x // DISPLAY_TILE_SIZE
+        tile_y = self.y // DISPLAY_TILE_SIZE
+
+        self.game_state.current_map.tiles[tile_y][tile_x].remove_entity(self)
+        self.game_state.current_map.add_entity(dead, tile_x, tile_y)
         self.update_quest_progress()
         self.add_self_to_stats()
         self.game_state.add_message(f"{self.monster_type} dies", WHITE)
@@ -145,7 +163,9 @@ class Monster(Entity):
         """Change monster's hostility status"""
         self.is_hostile = is_hostile
         # Update outline color based on hostility
-        self.outline, self.pil_outline = self.sprite_loader.load_sprite(SPRITES["OUTLINE_RED"] if is_hostile else SPRITES["OUTLINE_YELLOW"])
+        self.outline, self.pil_outline = self.sprite_loader.load_sprite(SPRITES[
+                                                                            "OUTLINE_RED"] if is_hostile else SPRITES[
+            "OUTLINE_YELLOW"])
         self.game_state.add_message(f"{self.monster_type} {self.name} is "
                                     f"{'hostile' if self.is_hostile else 'friendly'}", YELLOW)
 
@@ -245,7 +265,7 @@ class Monster(Entity):
                     if (entity != self and
                             (isinstance(entity, Monster) or (hasattr(entity, 'monster_type')
                                                              and entity.monster_type == 'npc')
-                            and hasattr(entity, 'interaction_history'))):
+                             and hasattr(entity, 'interaction_history'))):
                         # Add overheard conversation to entity's knowledge
                         overheard = {
                             "type": "overheard",
@@ -259,7 +279,7 @@ class Monster(Entity):
         """Decide what action the monster should take based on its personality and situation"""
         # Should we flee?
         if self.lost_resolve():
-                return "flee"
+            return "flee"
         # Should we attack?
         if distance == 1:  # Adjacent to player
             # Aggressive monsters are more likely to attack
@@ -335,7 +355,7 @@ class Monster(Entity):
                         if distance <= radius:  # Only include if within circular radius
                             nearby_monsters.append((entity, distance))
         result = [(x[0], x[0].get_dialogue_context()) for x in sorted(
-                   nearby_monsters, key=lambda x: x[1])] if nearby_monsters else ('', 'None')
+            nearby_monsters, key=lambda x: x[1])] if nearby_monsters else ('', 'None')
         print(result)
         return result
 
@@ -402,7 +422,7 @@ class Monster(Entity):
 
     def get_shout_prompt(self):
         self.shout_cooldown = SHOUT_COOLDOWN
-        return  f"""You are a {self.personality} {self.monster_type} named {self.name}. 
+        return f"""You are a {self.personality} {self.monster_type} named {self.name}. 
                     You cannot use emoji.
                     Extra info:{self.get_dialogue_context()}
                     Generate a single short battle shout or taunt (max 6 words).
@@ -424,8 +444,8 @@ class Monster(Entity):
 class GreenTroll(Monster):
     def __init__(self, x, y, game_state=None, sprite_path="GREEN_TROLL", name='Blaarggr', monster_type='green_troll',
                  voice='g', can_talk=True, description="an ugly hulking creature who likes to offend", ap=60, money=120,
-                 dmg=MONSTER_BASE_DAMAGE *1.5, max_damage=MONSTER_MAX_DAMAGE*2, armor=MONSTER_BASE_ARMOR*1.5,
-                 hp=MONSTER_BASE_HP*1.5, face_path=SPRITES["GREEN_TROLL_FACE"],loading=False):
+                 dmg=MONSTER_BASE_DAMAGE * 1.5, max_damage=MONSTER_MAX_DAMAGE * 2, armor=MONSTER_BASE_ARMOR * 1.5,
+                 hp=MONSTER_BASE_HP * 1.5, face_path=SPRITES["GREEN_TROLL_FACE"], loading=False):
         super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
                          voice=voice, can_talk=can_talk, description=description, loading=loading, ap=ap, money=money,
                          dmg=dmg, max_damage=max_damage, armor=armor, hp=hp, face_path=face_path)
@@ -464,14 +484,15 @@ class GreenTroll(Monster):
                 return "approach"
         return "none"
 
+
 class Dryad(Monster):
     def __init__(self, x, y, game_state=None, sprite_path="DRYAD", name='Elleinara', monster_type='dryad',
                  voice='j', can_talk=True, description="A mysterious tempting forest spirit", ap=70, money=100,
-                 dmg=MONSTER_BASE_DAMAGE * 0.8, max_damage=MONSTER_MAX_DAMAGE * 0.8, armor=MONSTER_BASE_ARMOR*0.8,
-                 hp=MONSTER_BASE_HP*0.8, face_path=SPRITES["DRYAD_FACE"], loading=False):
+                 dmg=MONSTER_BASE_DAMAGE * 0.8, max_damage=MONSTER_MAX_DAMAGE * 0.8, armor=MONSTER_BASE_ARMOR * 0.8,
+                 hp=MONSTER_BASE_HP * 0.8, face_path=SPRITES["DRYAD_FACE"], loading=False):
         super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
                          voice=voice, can_talk=can_talk, description=description, loading=loading, ap=ap, money=money,
-                         dmg=dmg, max_damage=max_damage,  armor=armor, hp=hp, face_path=face_path)
+                         dmg=dmg, max_damage=max_damage, armor=armor, hp=hp, face_path=face_path)
 
         self.name = random.choice(MONSTER_NAMES['dryad'])
         self.transformed = False
@@ -506,9 +527,8 @@ class Dryad(Monster):
         monster_x = self.x // DISPLAY_TILE_SIZE
         monster_y = self.y // DISPLAY_TILE_SIZE
 
-        distance_to_player = math.sqrt(abs(player_x - monster_x)**2 + abs(player_y - monster_y)**2)
+        distance_to_player = math.sqrt(abs(player_x - monster_x) ** 2 + abs(player_y - monster_y) ** 2)
         return distance_to_player <= 2
-
 
     def transform(self):
         """Transform into powerful form or disappear with rewards"""
@@ -574,7 +594,7 @@ class Dryad(Monster):
                 tile = current_map.tiles[y][x]
                 if any(isinstance(entity, Tree) for entity in tile.entities):
                     distance = abs(x - monster_x) + abs(y - monster_y)
-                    if distance < min_distance and distance > 0:  # Ensure we don't target the tree we're already at
+                    if 0 < distance < min_distance:  # Ensure we don't target the tree we're already at
                         min_distance = distance
                         nearest_tree = (x, y)
 
@@ -647,7 +667,7 @@ class KoboldTeacher(Monster):
                  hp=MONSTER_BASE_HP * 0.6, face_path=SPRITES["KOBOLD_FACE"], loading=False):
         super().__init__(x, y, game_state=game_state, name=name, monster_type=monster_type, sprite_path=sprite_path,
                          voice=voice, can_talk=can_talk, description=description, loading=loading, ap=ap, money=money,
-                         dmg=dmg, max_damage=max_damage,  armor=armor, hp=hp, face_path=face_path)
+                         dmg=dmg, max_damage=max_damage, armor=armor, hp=hp, face_path=face_path)
         self.dialog_cooldown = 1  # Override default cooldown
         self.has_passed_test = False
         self.dialogue_chance = 0.3  # More likely to initiate dialogue
@@ -670,6 +690,7 @@ class KoboldTeacher(Monster):
             player.spend_ap(self.deal_dmg)
             player.take_damage(self.deal_dmg)
             self.game_state.add_message('Words hurt you!')
+
 
 class HellBard(KoboldTeacher):
     def __init__(self, x, y, game_state=None, sprite_path="DEMON_BARD", name='Versifer', monster_type='demon_bard',
@@ -699,7 +720,8 @@ class HellBard(KoboldTeacher):
             print("player passed the rhyme test")
         else:
             gold = int(max(0, player.gold - self.combat_stats.damage))
-            self.game_state.add_message(f'Rhymes hurt! You lost {int(player.gold-gold)} gold and {self.name} got stronger')
+            self.game_state.add_message(
+                f'Rhymes hurt! You lost {int(player.gold - gold)} gold and {self.name} got stronger')
             player.gold = gold
             self.combat_stats.current_hp *= 1.1
             self.combat_stats.max_hp *= 1.1
@@ -726,8 +748,6 @@ class WillowWhisper(Monster):
         self.discovered_clues = set()  # Track what the player has learned
         self.truth_requirements = 3
 
-
-
     def check_truth_discovery(self, player_input: str) -> bool:
         """Check if player's question/statement reveals new truth"""
         story = self.death_story
@@ -748,7 +768,6 @@ class WillowWhisper(Monster):
 
         return bool(new_discoveries)
 
-
     def decide_monster_action(self, distance):
         """Decide what action the monster should take based on its personality and situation"""
         # Should we flee?
@@ -756,7 +775,6 @@ class WillowWhisper(Monster):
             self.words_hurt(self.game_state.player)
             return 'moveto'
         return "none"
-
 
     def words_hurt(self, player, discovered_new=False):
         """Spiritual damage when player fails to help or leaves too soon"""

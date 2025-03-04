@@ -373,13 +373,11 @@ class Game:
         self.mouse_ui.draw(self.screen)
         self.screen.blit(ap_text_surface, (padding + 5, ap_y + text_y_offset))
 
-
     def draw_skills_panel(self):
         """Draw the skills panel with numbered slots at the bottom of the screen"""
         for i, skill in enumerate(self.state_manager.player.skills):
             skill.draw(self.screen, (WINDOW_WIDTH // 2 - 2 * SKILL_PANEL_SIZE + SKILL_PANEL_SIZE * i + i * SKILL_OFFSET,
                                      WINDOW_HEIGHT - 10 - SKILL_PANEL_SIZE))
-
 
     @staticmethod
     def get_move_direction(key, player_tile_x, player_tile_y):

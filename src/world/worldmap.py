@@ -172,11 +172,13 @@ class WorldMap:
         new_tile_x = int(new_tile_x)
         new_tile_y = int(new_tile_y)
         if hasattr(self, 'combat_animation') and self.combat_animation.is_playing:
+            print('still playing animation')
             return False
 
         # Check if movement is valid
         if not (0 <= new_tile_x < self.width and 0 <= new_tile_y < self.height) or (
                 not self.tiles[new_tile_y][new_tile_x].passable):
+            print('the tile is not passable')
             return False
 
         # Get destination tile and blocking entity
@@ -185,6 +187,7 @@ class WorldMap:
 
         if blocking_entity:
             if not blocking_entity.is_alive:
+                print('the blocking entity is dead')
                 # Remove dead entity and allow movement
                 destination_tile.remove_entity(blocking_entity)
                 if blocking_entity in self.entities:
@@ -198,6 +201,7 @@ class WorldMap:
                     damage = blocking_entity.take_damage(entity.deal_dmg)
 
                     if hasattr(self, 'combat_animation'):
+                        print('attack animation')
                         self.combat_animation.start_attack(entity, blocking_entity)
 
                     if not blocking_entity.is_alive:
@@ -206,6 +210,7 @@ class WorldMap:
                         if blocking_entity in self.entities:
                             self.entities.remove(blocking_entity)
                     return True
+            print('otherwise')
             return False
 
         # Move entity logic
@@ -213,6 +218,7 @@ class WorldMap:
         old_tile_y = entity.y // self.tile_size
         movement_cost = self.get_movement_cost(old_tile_x, old_tile_y, new_tile_x, new_tile_y)
         if isinstance(entity, Character) and not entity.can_do_action(movement_cost):
+            print('cannot move')
             return False
 
         self.tiles[old_tile_y][old_tile_x].remove_entity(entity)
@@ -223,6 +229,7 @@ class WorldMap:
         entity.y = new_tile_y * self.tile_size
         if isinstance(entity, Character):
             entity.spend_action_points(movement_cost)
+        print('moved well')
         return True
 
     def remove_entity(self, entity):
@@ -290,6 +297,9 @@ class WorldMap:
 
     def handle_monster_turn(self, monster):
         if not monster.is_alive:
+            monster_tile_x = monster.x // self.tile_size
+            monster_tile_y = monster.y // self.tile_size
+            self.tiles[monster_tile_y][monster_tile_x].remove_entity(monster)
             return False
         monster.count_dialogue_turns()
 
