@@ -13,6 +13,7 @@ from entities.monster import Monster
 from entities.npc import NPC
 from ui.dialog_ui import DialogUI
 from ui.mouse_ui import MouseUI
+from ui.inventory_ui import InventoryUI
 
 
 class Game:
@@ -29,6 +30,7 @@ class Game:
         self.dialog_ui = DialogUI(self.state_manager, self.sound_manager)
         self.async_handler = AsyncRequestHandler()
         self.mouse_ui = MouseUI(self)
+        self.inventory_ui = None
         self.monsters_queue = None
         self.camera_x = None
         self.camera_y = None
@@ -99,6 +101,11 @@ class Game:
                     self.state_manager.achievement_manager.draw(self.screen)
             elif self.state_manager.current_state == GameState.MAIN_MENU:
                 self.draw_menu()
+            elif self.state_manager.current_state == GameState.INVENTORY:
+                if not self.inventory_ui:
+                    self.inventory_ui = InventoryUI(self.state_manager)
+                #self.state_manager.current_map.draw(self.screen, self.camera_x, self.camera_y)
+                self.inventory_ui.draw(self.screen)
             elif self.state_manager.current_state == GameState.DIALOG:
                 self.dialog_ui.update()
                 self.dialog_ui.draw(self.screen, self.state_manager.current_npc)
@@ -185,12 +192,24 @@ class Game:
                 self.state_manager.message_log.handle_event(event)
         elif self.state_manager.current_state == GameState.MAIN_MENU:
             self.handle_menu_input(event)
+        elif self.state_manager.current_state == GameState.INVENTORY:
+            self.handle_inv_ui(event)
         elif self.state_manager.current_state == GameState.DIALOG:
             self.dialog_ui.handle_input(event)
         elif self.state_manager.current_state == GameState.DEAD:
             self.handle_death_input(event)
         elif self.state_manager.current_state == GameState.DEMO_COMPLETE:
             self.handle_demo_complete_input(event)
+
+    def handle_inv_ui(self, event):
+        if event.type == pg.KEYDOWN and (event.key == pg.K_ESCAPE or event.key == pg.K_i):
+            self.state_manager.change_state(GameState.PLAYING)
+            if self.inventory_ui:
+                self.inventory_ui.destroy_ui()
+                self.inventory_ui = None
+            return
+        if self.inventory_ui:
+            self.inventory_ui.handle_input(event)
 
     def toggle_fullscreen(self):
         is_fullscreen = bool(self.screen.get_flags() & pg.FULLSCREEN)
@@ -222,48 +241,52 @@ class Game:
                 self.state_manager.add_message("Game saved!", WHITE)
             player_tile_x = self.state_manager.player.x // self.state_manager.current_map.tile_size
             player_tile_y = self.state_manager.player.y // self.state_manager.current_map.tile_size
+            if self.state_manager.current_state == GameState.PLAYING:
+                if event.key == pg.K_SPACE:  # End turn
+                    self.handle_monster_turns()
+                    self.state_manager.player.reset_turn()
+                    return
+                elif event.key == pg.K_BACKQUOTE:  # ` key record
+                    self.state_manager.stt.handle_record_button()
 
-            if event.key == pg.K_SPACE:  # End turn
-                self.handle_monster_turns()
-                self.state_manager.player.reset_turn()
-                return
-            if event.key == pg.K_BACKQUOTE:  # ` key record
-                self.state_manager.stt.handle_record_button()
+                elif event.key == pg.K_1:
+                    self.state_manager.player.use_skill(0)  # heal_self
+                elif event.key == pg.K_2:
+                    self.state_manager.player.use_skill(1)  # shout
+                elif event.key == pg.K_3:
+                    self.state_manager.player.use_skill(2)  # multiply hit
+                elif event.key == pg.K_4:
+                    self.state_manager.player.use_skill(3)  # recharge ap
 
-            if event.key == pg.K_1:
-                self.state_manager.player.use_skill(0)  # heal_self
-            if event.key == pg.K_2:
-                self.state_manager.player.use_skill(1)  # shout
-            if event.key == pg.K_3:
-                self.state_manager.player.use_skill(2)  # multiply hit
-            if event.key == pg.K_4:
-                self.state_manager.player.use_skill(3)  # recharge ap
+                # Movement
+                elif event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):
+                    direction, tile_x, tile_y = self.get_move_direction(event.key, player_tile_x, player_tile_y)
+                    self.state_manager.player.set_facing(direction)
+                    if not self.try_interact_with_npc(tile_x, tile_y):
+                        self.state_manager.current_map.move_entity(self.state_manager.player, tile_x, tile_y)
 
-            # Movement
-            if event.key in (pg.K_w, pg.K_s, pg.K_a, pg.K_d):
-                direction, tile_x, tile_y = self.get_move_direction(event.key, player_tile_x, player_tile_y)
-                self.state_manager.player.set_facing(direction)
-                if not self.try_interact_with_npc(tile_x, tile_y):
-                    self.state_manager.current_map.move_entity(self.state_manager.player, tile_x, tile_y)
+                elif event.key == pg.K_j:  # View quest journal
+                    quest_status = self.state_manager.quest_manager.format_all_quests_status()
+                    print("\n" + quest_status + "\n")
+                    print('money:', self.state_manager.player.gold)
+                    print('inv:', self.state_manager.player.inventory)
+                    print(self.state_manager.stats)
 
-            if event.key == pg.K_j:  # View quest journal
-                quest_status = self.state_manager.quest_manager.format_all_quests_status()
-                print("\n" + quest_status + "\n")
-                print('money:', self.state_manager.player.gold)
-                print('inv:', self.state_manager.player.inventory)
-                print(self.state_manager.stats)
+                # Interaction
+                elif event.key == pg.K_e:  # Interact
+                    # Check adjacent tiles for NPCs
+                    facing_pos = self.state_manager.current_map.get_facing_tile_position(self.state_manager.player)
+                    if facing_pos:
+                        self.try_interact_with_npc(facing_pos[0], facing_pos[1])
 
-            # Interaction
-            if event.key == pg.K_e:  # Interact
-                # Check adjacent tiles for NPCs
-                facing_pos = self.state_manager.current_map.get_facing_tile_position(self.state_manager.player)
-                if facing_pos:
-                    self.try_interact_with_npc(facing_pos[0], facing_pos[1])
-
-            # Menu controls
-            elif event.key == pg.K_i:  # Inventory
-                self.state_manager.change_state(GameState.INVENTORY)
-            elif event.key == pg.K_ESCAPE:  # Menu
+                # Menu controls
+                elif event.key == pg.K_i:  # Inventory
+                    self.inventory_ui = InventoryUI(self.state_manager)
+                    self.state_manager.change_state(GameState.INVENTORY)
+            #elif self.state_manager.current_state == GameState.INVENTORY and event.key == pg.K_i:  # Inventory
+            #    self.inventory_ui.destroy_ui()
+            #    self.state_manager.change_state(GameState.PLAYING)
+            if event.key == pg.K_ESCAPE:  # Menu
                 self.state_manager.change_state(GameState.MAIN_MENU)
 
     def handle_menu_input(self, event):

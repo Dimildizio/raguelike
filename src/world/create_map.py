@@ -148,9 +148,9 @@ class MapCreator:
         i_items = []
 
         for it in range(3):
-            i_items.append(Item('Heal Potion', SPRITES['POTION_1'], item_type="consumable",
+            i_items.append(Item('Heal Potion', SPRITES['POTION_1'], inv_sprite=SPRITES["POTION_1"],
                                 description="Slightly red health potion", price=15, weight=1, equippable=False,
-                                slot=None, stats={'heal': 10}, game_state=game_state))
+                                item_type="consumable", slot=None, stats={'heal': 10}, game_state=game_state))
         i_items.append(Item('Leather Armor', SPRITES["ARMOR_1"], inv_sprite=SPRITES["ARMOR_INV_1"], item_type="armor",
                             description="Simple leather armor that protects most important parts of the body", price=50,
                             weight=20, equippable=True, slot='body', stats={'armor': 15}, game_state=game_state))

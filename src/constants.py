@@ -12,6 +12,7 @@ GAME_TITLE = "RAGuelike"
 ORIGINAL_SPRITE_SIZE = 512
 PREPROCESSED_TILE_SIZE = 256
 DISPLAY_TILE_SIZE = 128
+INVENTORY_TILE_SIZE = 64
 
 # Map settings
 MAP_WIDTH = 20  # in tiles
@@ -207,6 +208,7 @@ RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+GREY = (50, 50, 50)
 
 # Combat settings
 TURN_TIMEOUT = 30  # seconds

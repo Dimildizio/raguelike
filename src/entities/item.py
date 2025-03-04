@@ -31,6 +31,7 @@ class Item:
         self.surface = pg.transform.scale(self.surface, (DISPLAY_TILE_SIZE, DISPLAY_TILE_SIZE))
 
         self.inv_surface, self.inv_pil_sprite = self.sprite_loader.load_sprite(inv_sprite)
+        self.inv_surface = pg.transform.scale(self.inv_surface, (INVENTORY_TILE_SIZE, INVENTORY_TILE_SIZE))
 
     def __repr__(self):
         return f"{self.name}, {self.description}, id: {self.uuid}"
